@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Icon } from '../shared/ui/icon';
 import { rotuloDoPapel } from '../core/auth/role-label';
 import { SessionService } from '../core/auth/session.service';
 
@@ -9,7 +10,7 @@ import { SessionService } from '../core/auth/session.service';
  */
 @Component({
   selector: 'mamao-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
   template: `
     <div class="shell">
       <aside class="sidebar">
@@ -21,18 +22,35 @@ import { SessionService } from '../core/auth/session.service';
           </span>
         </div>
 
+        <!-- O icone acompanha o rotulo, nunca o substitui: navegacao so com desenho
+             obriga o usuario a decorar o que cada um significa. -->
         <nav>
-          <a routerLink="/inicio" routerLinkActive="active">Visão geral</a>
-          <a routerLink="/pessoas" routerLinkActive="active">Pessoas</a>
-          <a routerLink="/disponibilidade" routerLinkActive="active">Disponibilidade</a>
-          <a routerLink="/calendario" routerLinkActive="active">Calendário</a>
-          <a routerLink="/escala" routerLinkActive="active">Escala</a>
+          <a routerLink="/inicio" routerLinkActive="active">
+            <mamao-icon name="inicio" [size]="18" /> Visão geral
+          </a>
+          <a routerLink="/pessoas" routerLinkActive="active">
+            <mamao-icon name="pessoas" [size]="18" /> Pessoas
+          </a>
+          <a routerLink="/disponibilidade" routerLinkActive="active">
+            <mamao-icon name="disponibilidade" [size]="18" /> Disponibilidade
+          </a>
+          <a routerLink="/calendario" routerLinkActive="active">
+            <mamao-icon name="calendario" [size]="18" /> Calendário
+          </a>
+          <a routerLink="/demandas" routerLinkActive="active">
+            <mamao-icon name="demandas" [size]="18" /> Demandas
+          </a>
+          <a routerLink="/escala" routerLinkActive="active">
+            <mamao-icon name="escala" [size]="18" /> Escala
+          </a>
         </nav>
 
         <div class="sidebar__foot">
           <div class="tenant">{{ session.tenantName() }}</div>
           <div class="role muted">{{ rotuloDoPapel(session.role()) }}</div>
-          <button type="button" class="btn btn--ghost" (click)="session.logout()">Sair</button>
+          <button type="button" class="btn btn--ghost" (click)="session.logout()">
+          <mamao-icon name="sair" [size]="16" /> Sair
+        </button>
         </div>
       </aside>
 
@@ -62,8 +80,11 @@ import { SessionService } from '../core/auth/session.service';
 
     nav { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
     nav a {
+      align-items: center;
       border-radius: var(--radius-sm);
       color: var(--text-on-dark);
+      display: flex;
+      gap: 10px;
       opacity: 0.82;
       padding: var(--space-2) var(--space-3);
       text-decoration: none;
@@ -74,7 +95,7 @@ import { SessionService } from '../core/auth/session.service';
     .sidebar__foot { border-top: 1px solid rgb(255 255 255 / 12%); display: flex; flex-direction: column; gap: var(--space-2); padding-top: var(--space-4); }
     .tenant { font-weight: 500; }
     .role { color: rgb(247 243 234 / 65%); font-size: 13px; }
-    .sidebar__foot .btn { border-color: rgb(255 255 255 / 25%); color: var(--text-on-dark); }
+    .sidebar__foot .btn { align-items: center; border-color: rgb(255 255 255 / 25%); color: var(--text-on-dark); display: flex; gap: 8px; justify-content: center; }
 
     .content { padding: var(--space-6); min-width: 0; }
 

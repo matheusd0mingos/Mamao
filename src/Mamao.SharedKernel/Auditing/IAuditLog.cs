@@ -103,6 +103,13 @@ public static class AuditActions
     public const string MissionConfirmed = "mission.confirmed";
     public const string MissionCancelled = "mission.cancelled";
 
+    // Demandas. O "moved" existe porque a pergunta que sobra depois e "quem deu isso por
+    // concluido, e quando" — e o quadro sozinho so mostra o estado atual.
+    public const string WorkItemCreated = "work.created";
+    public const string WorkItemUpdated = "work.updated";
+    public const string WorkItemMoved = "work.moved";
+    public const string WorkItemDeleted = "work.deleted";
+
     public const string InviteCreated = "invite.created";
     public const string InviteAccepted = "invite.accepted";
     public const string InviteRevoked = "invite.revoked";

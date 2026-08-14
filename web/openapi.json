@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:34263"
+      "url": "http://127.0.0.1:36225"
     }
   ],
   "paths": {
@@ -1801,6 +1801,220 @@
           }
         }
       }
+    },
+    "/api/v1/work": {
+      "get": {
+        "tags": [
+          "Work"
+        ],
+        "operationId": "workBoard",
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assigneeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "includeDone",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkBoard"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Work"
+        ],
+        "operationId": "createWorkItem",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/work/{id}": {
+      "put": {
+        "tags": [
+          "Work"
+        ],
+        "operationId": "updateWorkItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Work"
+        ],
+        "operationId": "deleteWorkItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/work/{id}/move": {
+      "post": {
+        "tags": [
+          "Work"
+        ],
+        "operationId": "moveWorkItem",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveWorkItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkItemResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2318,6 +2532,44 @@
         "properties": {
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "CreateWorkItemRequest": {
+        "required": [
+          "title",
+          "details",
+          "priority",
+          "assigneeId",
+          "dueOn",
+          "departmentId"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "$ref": "#/components/schemas/WorkItemPriority"
+          },
+          "assigneeId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         }
       },
@@ -2974,6 +3226,17 @@
           }
         }
       },
+      "MoveWorkItemRequest": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/WorkItemStatus"
+          }
+        }
+      },
       "OccupancyId": {
         "type": "string",
         "format": "uuid"
@@ -3351,6 +3614,200 @@
           }
         }
       },
+      "UpdateWorkItemRequest": {
+        "required": [
+          "title",
+          "details",
+          "priority",
+          "assigneeId",
+          "dueOn",
+          "departmentId"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "$ref": "#/components/schemas/WorkItemPriority"
+          },
+          "assigneeId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "WorkAlert": {
+        "required": [
+          "kind",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/WorkAlertKind"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "WorkAlertKind": {
+        "enum": [
+          "Atrasada",
+          "ResponsavelAusente",
+          "ResponsavelSai",
+          "SemResponsavel"
+        ]
+      },
+      "WorkBoard": {
+        "required": [
+          "items",
+          "atrasadas",
+          "semResponsavel",
+          "comRiscoDeAusencia"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkItemResponse"
+            }
+          },
+          "atrasadas": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "semResponsavel": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "comRiscoDeAusencia": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "WorkItemId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "WorkItemPriority": {
+        "enum": [
+          "Baixa",
+          "Normal",
+          "Alta"
+        ]
+      },
+      "WorkItemResponse": {
+        "required": [
+          "id",
+          "title",
+          "details",
+          "status",
+          "priority",
+          "assigneeId",
+          "assigneeName",
+          "dueOn",
+          "departmentId",
+          "departmentName",
+          "createdAt",
+          "createdByName",
+          "completedAt",
+          "alert"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/WorkItemId"
+          },
+          "title": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkItemStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/WorkItemPriority"
+          },
+          "assigneeId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeId"
+              }
+            ],
+            "nullable": true
+          },
+          "assigneeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "alert": {
+            "type": "object",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WorkAlert"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "WorkItemStatus": {
+        "enum": [
+          "Aberta",
+          "EmAndamento",
+          "Concluida",
+          "Cancelada"
+        ]
+      },
       "WorkScheduleType": {
         "enum": [
           "Administrativo",
@@ -3384,6 +3841,9 @@
     },
     {
       "name": "Missions"
+    },
+    {
+      "name": "Work"
     }
   ]
 }

@@ -580,6 +580,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/work": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["workBoard"];
+        put?: never;
+        post: operations["createWorkItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/work/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateWorkItem"];
+        post?: never;
+        delete: operations["deleteWorkItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/work/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["moveWorkItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -722,6 +770,17 @@ export interface components {
         };
         CreatePositionRequest: {
             name: string;
+        };
+        CreateWorkItemRequest: {
+            title: string;
+            details: string | null;
+            priority: components["schemas"]["WorkItemPriority"];
+            /** Format: uuid */
+            assigneeId: string | null;
+            /** Format: date */
+            dueOn: string | null;
+            /** Format: uuid */
+            departmentId: string | null;
         };
         DecideAbsenceRequest: {
             note: string | null;
@@ -897,6 +956,9 @@ export interface components {
         MoveDepartmentRequest: {
             parentId: (string & components["schemas"]["DepartmentId"]) | null;
         };
+        MoveWorkItemRequest: {
+            status: components["schemas"]["WorkItemStatus"];
+        };
         /** Format: uuid */
         OccupancyId: string;
         /** @enum {unknown} */
@@ -1000,6 +1062,58 @@ export interface components {
         UpdatePositionRequest: {
             name: string;
         };
+        UpdateWorkItemRequest: {
+            title: string;
+            details: string | null;
+            priority: components["schemas"]["WorkItemPriority"];
+            /** Format: uuid */
+            assigneeId: string | null;
+            /** Format: date */
+            dueOn: string | null;
+            /** Format: uuid */
+            departmentId: string | null;
+        };
+        WorkAlert: {
+            kind: components["schemas"]["WorkAlertKind"];
+            message: string;
+        };
+        /** @enum {unknown} */
+        WorkAlertKind: "Atrasada" | "ResponsavelAusente" | "ResponsavelSai" | "SemResponsavel";
+        WorkBoard: {
+            items: components["schemas"]["WorkItemResponse"][];
+            /** Format: int32 */
+            atrasadas: number;
+            /** Format: int32 */
+            semResponsavel: number;
+            /** Format: int32 */
+            comRiscoDeAusencia: number;
+        };
+        /** Format: uuid */
+        WorkItemId: string;
+        /** @enum {unknown} */
+        WorkItemPriority: "Baixa" | "Normal" | "Alta";
+        WorkItemResponse: {
+            id: components["schemas"]["WorkItemId"];
+            title: string;
+            details: string | null;
+            status: components["schemas"]["WorkItemStatus"];
+            priority: components["schemas"]["WorkItemPriority"];
+            assigneeId: (string & components["schemas"]["EmployeeId"]) | null;
+            assigneeName: string | null;
+            /** Format: date */
+            dueOn: string | null;
+            /** Format: uuid */
+            departmentId: string | null;
+            departmentName: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            createdByName: string;
+            /** Format: date-time */
+            completedAt: string | null;
+            alert: components["schemas"]["WorkAlert"] | null;
+        };
+        /** @enum {unknown} */
+        WorkItemStatus: "Aberta" | "EmAndamento" | "Concluida" | "Cancelada";
         /** @enum {unknown} */
         WorkScheduleType: "Administrativo" | "CincoDois" | "SeisUm" | "DozePorTrintaESeis" | "Rodizio" | "Outro";
     };
@@ -2331,6 +2445,155 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    workBoard: {
+        parameters: {
+            query?: {
+                departmentId?: string;
+                assigneeId?: string;
+                includeDone?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkBoard"];
+                };
+            };
+        };
+    };
+    createWorkItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateWorkItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteWorkItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    moveWorkItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveWorkItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkItemResponse"];
+                };
+            };
             /** @description Bad Request */
             400: {
                 headers: {

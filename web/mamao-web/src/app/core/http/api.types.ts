@@ -69,3 +69,12 @@ export type MissionResponse = Schemas['MissionResponse'];
 export type CreateMissionRequest = Schemas['CreateMissionRequest'];
 export type MissionSuggestion = Schemas['MissionSuggestion'];
 export type SuggestedPerson = Schemas['SuggestedPerson'];
+
+export type WorkBoard = Schemas['WorkBoard'];
+export type WorkItemResponse = Schemas['WorkItemResponse'];
+export type WorkItemStatus = Schemas['WorkItemStatus'];
+export type WorkItemPriority = Schemas['WorkItemPriority'];
+export type WorkAlert = Schemas['WorkAlert'];
+export type WorkAlertKind = Schemas['WorkAlertKind'];
+export type CreateWorkItemRequest = Schemas['CreateWorkItemRequest'];
+export type UpdateWorkItemRequest = Schemas['UpdateWorkItemRequest'];

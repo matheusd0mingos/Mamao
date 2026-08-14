@@ -11,6 +11,7 @@
     <ProjectReference Include="../Mamao.Identity/Mamao.Identity.csproj" />
     <ProjectReference Include="../Mamao.Messaging/Mamao.Messaging.csproj" />
     <ProjectReference Include="../Modules/People/Mamao.People.Infrastructure/Mamao.People.Infrastructure.csproj" />
+    <ProjectReference Include="../Mamao.Notifications/Mamao.Notifications.csproj" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Mamao.Audit/Mamao.Audit.csproj" />

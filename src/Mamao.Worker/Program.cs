@@ -1,5 +1,6 @@
 using Mamao.Identity;
 using Mamao.Messaging;
+using Mamao.Notifications;
 using Mamao.People.Contracts.Events;
 using Mamao.People.Infrastructure;
 using Mamao.ServiceDefaults;
@@ -26,6 +27,12 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddSingleton<ICurrentActor, SystemActor>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
 builder.Services.AddScoped<TenantRlsConnectionInterceptor>();
+
+// AddNotifications antes dos modulos que dependem dele. O modulo People registra
+// servicos que injetam IEmailSender; sem este registro o Worker nem constroi o container
+// em Development, e em Production quebraria so na hora de usar — que e pior, porque
+// passa no deploy e falha no cliente.
+builder.Services.AddNotifications(builder.Configuration, builder.Environment);
 
 builder.Services
     .AddMamaoIdentity(builder.Configuration, connectionString)

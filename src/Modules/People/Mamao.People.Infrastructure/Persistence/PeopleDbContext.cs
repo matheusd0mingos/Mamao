@@ -4,6 +4,7 @@ using Mamao.People.Domain.Availability;
 using Mamao.People.Domain.Missions;
 using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Organization;
+using Mamao.People.Domain.Work;
 using Mamao.SharedKernel.Messaging;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
     public DbSet<AbsenceRequest> AbsenceRequests => Set<AbsenceRequest>();
     public DbSet<Mission> Missions => Set<Mission>();
     public DbSet<MissionAssignment> MissionAssignments => Set<MissionAssignment>();
+    public DbSet<WorkItem> WorkItems => Set<WorkItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -41,6 +43,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new AbsenceRequestConfiguration());
         modelBuilder.ApplyConfiguration(new MissionConfiguration());
         modelBuilder.ApplyConfiguration(new MissionAssignmentConfiguration());
+        modelBuilder.ApplyConfiguration(new WorkItemConfiguration());
 
         // Outbox e auditoria moram em schemas de outros donos (messaging e audit), que sao
         // quem gera as migrations delas. Aqui sao apenas MAPEADAS, para que o Enqueue e o
@@ -73,6 +76,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         configurationBuilder.Properties<OccupancyId>().HaveConversion<OccupancyIdConverter>();
         configurationBuilder.Properties<AbsenceRequestId>().HaveConversion<AbsenceRequestIdConverter>();
         configurationBuilder.Properties<MissionId>().HaveConversion<MissionIdConverter>();
+        configurationBuilder.Properties<WorkItemId>().HaveConversion<WorkItemIdConverter>();
         base.ConfigureConventions(configurationBuilder);
     }
 
@@ -302,6 +306,49 @@ public sealed class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(m => m.Assignments).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+public sealed class WorkItemIdConverter()
+    : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<WorkItemId, Guid>(
+        id => id.Value,
+        value => new WorkItemId(value));
+
+public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
+{
+    public void Configure(EntityTypeBuilder<WorkItem> builder)
+    {
+        builder.ToTable("work_items");
+        builder.HasKey(w => w.Id);
+
+        builder.Property(w => w.Title).HasMaxLength(WorkItem.MaxTitulo).IsRequired();
+        builder.Property(w => w.Details).HasMaxLength(WorkItem.MaxDetalhes);
+        builder.Property(w => w.CreatedByName).HasMaxLength(200).IsRequired();
+
+        builder.Property(w => w.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(w => w.Priority).HasConversion<string>().HasMaxLength(20).IsRequired();
+
+        // O quadro: "o que esta aberto, o que vence primeiro". Status vem antes de due_on
+        // porque a coluna e o primeiro corte da consulta.
+        builder.HasIndex(w => new { w.TenantId, w.Status, w.DueOn });
+
+        // "O que e meu" — a consulta da pessoa, e a do painel Hoje.
+        builder.HasIndex(w => new { w.TenantId, w.AssigneeId, w.Status });
+
+        // Filtro por secao no quadro.
+        builder.HasIndex(w => new { w.TenantId, w.DepartmentId, w.Status });
+
+        // SetNull e nao Cascade: desligar alguem nao pode apagar a demanda dele. A demanda
+        // fica sem responsavel, que e exatamente o alerta que o gestor precisa ver.
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(w => w.AssigneeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<Department>()
+            .WithMany()
+            .HasForeignKey(w => w.DepartmentId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 
