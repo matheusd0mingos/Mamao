@@ -2,6 +2,16 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { ApiProblem, OccupancyKind, OccupancyResponse } from '../../core/http/api.types';
 import { AvailabilityApi } from './availability.api';
+import {
+  type Balde,
+  type Zoom,
+  ZOOMS,
+  baldes,
+  fimDoPeriodo,
+  inicioDoPeriodo,
+  moverPeriodo,
+  rotuloDoPeriodo,
+} from './calendar.zoom';
 
 const MOTIVOS: Record<OccupancyKind, string> = {
   Ferias: 'férias',
@@ -24,10 +34,16 @@ const SIGLAS: Record<OccupancyKind, string> = {
   Outro: '•',
 };
 
+/** O que cai numa celula: o motivo dominante e quantos dias ele cobre naquele balde. */
+interface Celula {
+  readonly kind: OccupancyKind;
+  readonly dias: number;
+}
+
 interface Linha {
   readonly employeeId: string;
   readonly nome: string;
-  readonly dias: ReadonlyArray<OccupancyKind | null>;
+  readonly celulas: ReadonlyArray<Celula | null>;
 }
 
 /**
@@ -47,7 +63,7 @@ interface Linha {
     <header class="head">
       <div>
         <h1>Calendário</h1>
-        <p class="muted">As ausências do mês inteiro, de relance.</p>
+        <p class="muted">Quem está fora, e quando, no período que você escolher.</p>
       </div>
     </header>
 
@@ -60,6 +76,19 @@ interface Linha {
         <button class="btn btn--ghost" type="button" (click)="mover(-1)">← Anterior</button>
         <strong class="mes">{{ rotuloDoMes() }}</strong>
         <button class="btn btn--ghost" type="button" (click)="mover(1)">Próximo →</button>
+
+        <span class="escalas">
+          @for (z of ZOOMS; track z.valor) {
+            <button
+              class="escala"
+              type="button"
+              [class.escala--ativa]="zoom() === z.valor"
+              (click)="trocarZoom(z.valor)"
+            >
+              {{ z.rotulo }}
+            </button>
+          }
+        </span>
 
         <span class="legenda">
           @for (item of legenda; track item.tipo) {
@@ -102,7 +131,7 @@ interface Linha {
       @if (coincidencias().length > 0) {
         <p class="aviso">
           <strong>{{ coincidencias().length }}</strong>
-          {{ coincidencias().length === 1 ? 'dia com sobreposição' : 'dias com sobreposição' }}:
+          {{ rotuloDeSobreposicao() }}:
           {{ coincidencias().join(', ') }}
           @if (secao() === '') { <span class="muted"> — filtre por seção para ver o que realmente conflita.</span> }
         </p>
@@ -124,8 +153,8 @@ interface Linha {
             <thead>
               <tr>
                 <th class="pessoa">Pessoa</th>
-                @for (dia of dias(); track dia) {
-                  <th [class.fds]="fimDeSemana(dia)">{{ dia }}</th>
+                @for (coluna of colunas(); track coluna.rotulo) {
+                  <th [class.fds]="coluna.fimDeSemana">{{ coluna.rotulo }}</th>
                 }
               </tr>
             </thead>
@@ -133,11 +162,20 @@ interface Linha {
               @for (linha of linhas(); track linha.employeeId) {
                 <tr>
                   <td class="pessoa">{{ linha.nome }}</td>
-                  @for (tipo of linha.dias; track $index) {
-                    <td [class.fds]="fimDeSemana($index + 1)">
-                      @if (tipo) {
-                        <span class="marca" [attr.data-tipo]="tipo" [title]="MOTIVOS[tipo]">
-                          {{ SIGLAS[tipo] }}
+                  @for (celula of linha.celulas; track $index) {
+                    <td [class.fds]="colunas()[$index].fimDeSemana">
+                      @if (celula) {
+                        <!--
+                          No mes cabe uma letra por dia. Fora dele a celula vira um balde de
+                          varios dias, e o numero de dias diz mais que a sigla: "8" num mes
+                          responde "quanto tempo", que e a pergunta de quem olha de longe.
+                        -->
+                        <span
+                          class="marca"
+                          [attr.data-tipo]="celula.kind"
+                          [title]="MOTIVOS[celula.kind] + ' · ' + celula.dias + (celula.dias === 1 ? ' dia' : ' dias')"
+                        >
+                          {{ colunas()[$index].unico ? SIGLAS[celula.kind] : celula.dias }}
                         </span>
                       }
                     </td>
@@ -147,9 +185,9 @@ interface Linha {
             </tbody>
             <tfoot>
               <tr>
-                <td class="pessoa">Fora no dia</td>
+                <td class="pessoa">Pessoas fora</td>
                 @for (total of totais(); track $index) {
-                  <td [class.fds]="fimDeSemana($index + 1)" [class.pico]="total >= 3">
+                  <td [class.fds]="colunas()[$index].fimDeSemana" [class.pico]="total >= 3">
                     {{ total || '' }}
                   </td>
                 }
@@ -159,8 +197,12 @@ interface Linha {
         </div>
 
         <p class="muted nota">
-          A última linha conta quantas pessoas estão fora em cada dia. Três ou mais no
-          mesmo dia aparece destacado — é onde a operação costuma apertar.
+          A última linha conta quantas pessoas estão fora em cada coluna. Três ou mais
+          aparece destacado — é onde a operação costuma apertar.
+          @if (zoom() !== 'mes') {
+            Fora do mês, cada célula mostra <strong>quantos dias</strong> a pessoa ficou
+            fora naquele período.
+          }
         </p>
       }
     </section>
@@ -168,6 +210,11 @@ interface Linha {
   styles: `
     .controles { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
     .mes { font-family: var(--font-serif, inherit); font-size: 18px; min-width: 12ch; text-align: center; }
+    .escalas { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+    .escala { background: var(--surface); border: 0; border-left: 1px solid var(--border); cursor: pointer; font: inherit; font-size: 13px; padding: 6px 12px; }
+    .escala:first-child { border-left: 0; }
+    .escala--ativa { background: var(--mamao-green-900); color: var(--text-inverse, #f7f3ea); font-weight: 600; }
+
     .legenda { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
 
     .chip { border-radius: 999px; font-size: 12px; padding: 2px 10px; }
@@ -208,7 +255,9 @@ export class CalendarPage implements OnInit {
     .filter((t) => t !== 'Outro')
     .map((tipo) => ({ tipo, sigla: SIGLAS[tipo], rotulo: MOTIVOS[tipo] }));
 
-  private readonly referencia = signal(primeiroDiaDoMes(new Date()));
+  protected readonly ZOOMS = ZOOMS;
+  protected readonly zoom = signal<Zoom>('mes');
+  private readonly referencia = signal(inicioDoPeriodo(new Date(), 'mes'));
 
   // Filtros como signal (e nao campo simples) porque tudo abaixo deriva deles: mudar a
   // secao recalcula linhas, totais e coincidencias sem nenhuma chamada ao servidor.
@@ -237,14 +286,9 @@ export class CalendarPage implements OnInit {
     ),
   );
 
-  protected readonly dias = computed(() => {
-    const total = diasNoMes(this.referencia());
-    return Array.from({ length: total }, (_, i) => i + 1);
-  });
+  protected readonly colunas = computed<Balde[]>(() => baldes(this.referencia(), this.zoom()));
 
-  protected readonly rotuloDoMes = computed(() =>
-    this.referencia().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
-  );
+  protected readonly rotuloDoMes = computed(() => rotuloDoPeriodo(this.referencia(), this.zoom()));
 
   /**
    * Uma linha por pessoa com ausencia, e cada dia recebe o motivo que o cobre. Quando dois
@@ -252,37 +296,48 @@ export class CalendarPage implements OnInit {
    * disponibilidade e quem mostra a lista completa daquele dia.
    */
   protected readonly linhas = computed<Linha[]>(() => {
-    const total = this.dias().length;
-    const ano = this.referencia().getFullYear();
-    const mes = this.referencia().getMonth();
-    const porPessoa = new Map<string, Linha>();
+    const colunas = this.colunas();
+    const porPessoa = new Map<string, { nome: string; celulas: (Celula | null)[] }>();
 
     for (const bloco of this.filtrados()) {
       let linha = porPessoa.get(bloco.employeeId);
       if (!linha) {
-        linha = { employeeId: bloco.employeeId, nome: bloco.employeeName, dias: Array(total).fill(null) };
+        linha = { nome: bloco.employeeName, celulas: Array(colunas.length).fill(null) };
         porPessoa.set(bloco.employeeId, linha);
       }
 
-      const inicio = new Date(bloco.startsOn + 'T00:00:00');
-      const fim = new Date(bloco.endsOn + 'T00:00:00');
+      const inicio = data(bloco.startsOn);
+      const fim = data(bloco.endsOn);
 
-      for (let d = 1; d <= total; d++) {
-        const dia = new Date(ano, mes, d);
-        if (dia >= inicio && dia <= fim && linha.dias[d - 1] === null) {
-          (linha.dias as (OccupancyKind | null)[])[d - 1] = bloco.kind;
-        }
-      }
+      colunas.forEach((balde, i) => {
+        // Quantos dias DESTE bloco caem DENTRO deste balde. Num mes o resultado e 0 ou 1;
+        // num balde de semana ou mes, e o tamanho da sobreposicao — que e exatamente o
+        // numero que a celula mostra quando nao cabe uma letra por dia.
+        const de = inicio > balde.inicio ? inicio : balde.inicio;
+        const ate = fim < balde.fim ? fim : balde.fim;
+        const dias = Math.floor((ate.getTime() - de.getTime()) / 86_400_000) + 1;
+        if (dias <= 0) return;
+
+        const atual = linha!.celulas[i];
+
+        // Motivo dominante: quem cobre mais dias fica com a celula. Empate mantem o
+        // primeiro, que e estavel porque a consulta vem ordenada por data.
+        if (atual === null || dias > atual.dias)
+          linha!.celulas[i] = { kind: bloco.kind, dias: dias + (atual?.dias ?? 0) };
+        else
+          linha!.celulas[i] = { kind: atual.kind, dias: atual.dias + dias };
+      });
     }
 
-    let linhas = [...porPessoa.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    let linhas: Linha[] = [...porPessoa.entries()]
+      .map(([employeeId, l]) => ({ employeeId, nome: l.nome, celulas: l.celulas }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
     // "So quem coincide": esconde quem esta fora sozinho. E o corte que responde
     // "as ferias de quem batem com as de quem" sem obrigar a varrer a grade com o olho.
     if (this.soCoincidencias()) {
-      const total = this.dias().length;
-      const contagem = Array.from({ length: total }, (_, i) => linhas.filter((l) => l.dias[i] !== null).length);
-      linhas = linhas.filter((l) => l.dias.some((d, i) => d !== null && contagem[i] > 1));
+      const contagem = colunas.map((_, i) => linhas.filter((l) => l.celulas[i] !== null).length);
+      linhas = linhas.filter((l) => l.celulas.some((c, i) => c !== null && contagem[i] > 1));
     }
 
     return linhas;
@@ -290,20 +345,36 @@ export class CalendarPage implements OnInit {
 
   /** Dias em que duas ou mais pessoas do recorte atual estao fora ao mesmo tempo. */
   protected readonly coincidencias = computed(() =>
-    this.dias().filter((_, i) => this.linhas().filter((l) => l.dias[i] !== null).length > 1),
+    this.colunas()
+      .filter((_, i) => this.linhas().filter((l) => l.celulas[i] !== null).length > 1)
+      .map((c) => c.rotulo),
   );
 
   protected readonly totais = computed(() =>
-    this.dias().map((_, i) => this.linhas().filter((l) => l.dias[i] !== null).length),
+    this.colunas().map((_, i) => this.linhas().filter((l) => l.celulas[i] !== null).length),
   );
 
   ngOnInit(): void {
     void this.carregar();
   }
 
-  protected mover(meses: number): void {
-    const atual = this.referencia();
-    this.referencia.set(new Date(atual.getFullYear(), atual.getMonth() + meses, 1));
+  /** "dias" so vale quando a coluna e um dia. Fora do mes, a coluna e semana ou mes. */
+  protected rotuloDeSobreposicao(): string {
+    const n = this.coincidencias().length;
+    const unidade = this.zoom() === 'mes' ? 'dia' : this.zoom() === 'ano' ? 'mês' : 'semana';
+    const plural = unidade === 'mês' ? 'meses' : `${unidade}s`;
+    return `${n === 1 ? unidade : plural} com sobreposição`;
+  }
+
+  protected mover(passos: number): void {
+    this.referencia.set(moverPeriodo(this.referencia(), this.zoom(), passos));
+    void this.carregar();
+  }
+
+  /** Trocar de escala mantem a data que voce estava vendo, ancorada no periodo novo. */
+  protected trocarZoom(valor: Zoom): void {
+    this.zoom.set(valor);
+    this.referencia.set(inicioDoPeriodo(this.referencia(), valor));
     void this.carregar();
   }
 
@@ -312,7 +383,7 @@ export class CalendarPage implements OnInit {
     this.erro.set(null);
 
     const inicio = this.referencia();
-    const fim = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0);
+    const fim = fimDoPeriodo(inicio, this.zoom());
 
     try {
       this.blocos.set(await this.api.occupancies(iso(inicio), iso(fim)));
@@ -323,10 +394,7 @@ export class CalendarPage implements OnInit {
     }
   }
 
-  protected fimDeSemana(dia: number): boolean {
-    const d = new Date(this.referencia().getFullYear(), this.referencia().getMonth(), dia).getDay();
-    return d === 0 || d === 6;
-  }
+
 }
 
 /** Valores distintos, sem vazios, em ordem — para popular um filtro. */
@@ -334,12 +402,9 @@ function distintos(valores: readonly (string | null | undefined)[]): string[] {
   return [...new Set(valores.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 
-function primeiroDiaDoMes(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-function diasNoMes(d: Date): number {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+/** Data do servidor (yyyy-MM-dd) como data LOCAL, sem passar por UTC. */
+function data(iso: string): Date {
+  return new Date(iso + 'T00:00:00');
 }
 
 /** Data local em ISO. `toISOString` converteria para UTC e no Brasil voltaria um dia. */
