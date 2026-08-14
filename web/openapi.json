@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:44369"
+      "url": "http://127.0.0.1:46799"
     }
   ],
   "paths": {
@@ -1186,10 +1186,484 @@
           }
         }
       }
+    },
+    "/api/v1/availability": {
+      "get": {
+        "tags": [
+          "Availability"
+        ],
+        "operationId": "listAvailability",
+        "parameters": [
+          {
+            "name": "on",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailabilityResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/availability/occupancies": {
+      "get": {
+        "tags": [
+          "Availability"
+        ],
+        "operationId": "listOccupancies",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "employeeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OccupancyResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Availability"
+        ],
+        "operationId": "createOccupancy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOccupancyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OccupancyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/availability/occupancies/{id}": {
+      "delete": {
+        "tags": [
+          "Availability"
+        ],
+        "operationId": "deleteOccupancy",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/absence-requests": {
+      "get": {
+        "tags": [
+          "AbsenceRequests"
+        ],
+        "operationId": "listAbsenceRequests",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/AbsenceRequestStatus"
+            }
+          },
+          {
+            "name": "employeeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AbsenceRequestResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "AbsenceRequests"
+        ],
+        "operationId": "createAbsenceRequest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAbsenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbsenceRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/absence-requests/{id}/approve": {
+      "post": {
+        "tags": [
+          "AbsenceRequests"
+        ],
+        "operationId": "approveAbsenceRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAbsenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbsenceRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/absence-requests/{id}/reject": {
+      "post": {
+        "tags": [
+          "AbsenceRequests"
+        ],
+        "operationId": "rejectAbsenceRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideAbsenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AbsenceRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/absence-requests/{id}/cancel": {
+      "post": {
+        "tags": [
+          "AbsenceRequests"
+        ],
+        "operationId": "cancelAbsenceRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AbsenceRequestId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "AbsenceRequestResponse": {
+        "required": [
+          "id",
+          "employeeId",
+          "employeeName",
+          "kind",
+          "startsOn",
+          "endsOn",
+          "startsAt",
+          "endsAt",
+          "days",
+          "reason",
+          "status",
+          "decidedByName",
+          "decidedAt",
+          "decisionNote",
+          "conflicts"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AbsenceRequestId"
+          },
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OccupancyKind"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "days": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/AbsenceRequestStatus"
+          },
+          "decidedByName": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "decisionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AbsenceRequestStatus": {
+        "enum": [
+          "Pendente",
+          "Aprovada",
+          "Recusada",
+          "Cancelada"
+        ]
+      },
       "AcceptInviteRequest": {
         "required": [
           "token",
@@ -1241,6 +1715,42 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "AvailabilityResponse": {
+        "required": [
+          "employeeId",
+          "employeeName",
+          "positionName",
+          "departmentName",
+          "available",
+          "busy"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "positionName": {
+            "type": "string",
+            "nullable": true
+          },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "busy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OccupancyKind"
             }
           }
         }
@@ -1304,6 +1814,48 @@
           },
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "CreateAbsenceRequest": {
+        "required": [
+          "employeeId",
+          "kind",
+          "startsOn",
+          "endsOn",
+          "startsAt",
+          "endsAt",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OccupancyKind"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -1403,6 +1955,48 @@
           }
         }
       },
+      "CreateOccupancyRequest": {
+        "required": [
+          "employeeId",
+          "kind",
+          "startsOn",
+          "endsOn",
+          "startsAt",
+          "endsAt",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OccupancyKind"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "CreatePositionRequest": {
         "required": [
           "name"
@@ -1411,6 +2005,18 @@
         "properties": {
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "DecideAbsenceRequest": {
+        "required": [
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -1954,6 +2560,82 @@
           }
         }
       },
+      "OccupancyId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "OccupancyKind": {
+        "enum": [
+          "Ferias",
+          "Folga",
+          "Falta",
+          "Afastamento",
+          "Servico",
+          "Missao",
+          "Outro"
+        ]
+      },
+      "OccupancyResponse": {
+        "required": [
+          "id",
+          "employeeId",
+          "employeeName",
+          "kind",
+          "source",
+          "startsOn",
+          "endsOn",
+          "startsAt",
+          "endsAt",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/OccupancyId"
+          },
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OccupancyKind"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OccupancySource"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "OccupancySource": {
+        "enum": [
+          "Manual",
+          "Solicitacao",
+          "Missao"
+        ]
+      },
       "PagedResultOfEmployeeListItem": {
         "required": [
           "items",
@@ -2230,6 +2912,12 @@
     },
     {
       "name": "Organization"
+    },
+    {
+      "name": "Availability"
+    },
+    {
+      "name": "AbsenceRequests"
     }
   ]
 }

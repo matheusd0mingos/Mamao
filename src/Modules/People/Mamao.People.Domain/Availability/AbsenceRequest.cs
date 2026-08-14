@@ -114,7 +114,7 @@ public sealed class AbsenceRequest : ITenantOwned
     /// Aprova e devolve a ocupação correspondente — que o chamador grava na MESMA transação.
     /// Aprovar sem bloquear a agenda deixaria a escala escalando quem está de férias.
     /// </summary>
-    public Result<Occupancy> Approve(Guid userId, string userName, DateTimeOffset now)
+    public Result<Occupancy> Approve(Guid? userId, string userName, DateTimeOffset now)
     {
         if (Status != AbsenceRequestStatus.Pendente)
             return Result.Failure<Occupancy>(JaDecidida());
@@ -132,7 +132,7 @@ public sealed class AbsenceRequest : ITenantOwned
         return ocupacao;
     }
 
-    public Result Reject(Guid userId, string userName, DateTimeOffset now, string? note)
+    public Result Reject(Guid? userId, string userName, DateTimeOffset now, string? note)
     {
         if (Status != AbsenceRequestStatus.Pendente)
             return Result.Failure(JaDecidida());
@@ -153,7 +153,7 @@ public sealed class AbsenceRequest : ITenantOwned
         return Result.Success();
     }
 
-    private void Decidir(Guid userId, string userName, DateTimeOffset now, string? note)
+    private void Decidir(Guid? userId, string userName, DateTimeOffset now, string? note)
     {
         DecidedByUserId = userId;
         DecidedByName = userName;

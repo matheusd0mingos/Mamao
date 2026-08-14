@@ -1,5 +1,6 @@
 using FluentValidation;
 using Mamao.People.Application;
+using Mamao.People.Application.Availability;
 using Mamao.People.Application.Employees;
 using Mamao.People.Application.Employees.Import;
 using Mamao.People.Application.Organization;
@@ -56,6 +57,8 @@ public static class PeopleModule
         services.AddScoped<EmployeeImportService>();
         services.AddScoped<DepartmentService>();
         services.AddScoped<PositionService>();
+        services.AddScoped<AvailabilityService>();
+        services.AddScoped<AbsenceRequestService>();
 
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestValidator>(includeInternalTypes: true);
 

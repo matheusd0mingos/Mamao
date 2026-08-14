@@ -1,3 +1,4 @@
+using Mamao.People.Domain.Availability;
 using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Organization;
 using Mamao.SharedKernel.Messaging;
@@ -17,6 +18,8 @@ public interface IPeopleDbContext
     DbSet<Department> Departments { get; }
     DbSet<Position> Positions { get; }
     DbSet<EmploymentContract> EmploymentContracts { get; }
+    DbSet<Occupancy> Occupancies { get; }
+    DbSet<AbsenceRequest> AbsenceRequests { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
 

@@ -1,5 +1,6 @@
 using Mamao.People.Application;
 using Mamao.People.Contracts;
+using Mamao.People.Domain.Availability;
 using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Organization;
 using Mamao.SharedKernel.Messaging;
@@ -23,6 +24,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
+    public DbSet<Occupancy> Occupancies => Set<Occupancy>();
+    public DbSet<AbsenceRequest> AbsenceRequests => Set<AbsenceRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +34,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
         modelBuilder.ApplyConfiguration(new PositionConfiguration());
         modelBuilder.ApplyConfiguration(new EmploymentContractConfiguration());
+        modelBuilder.ApplyConfiguration(new OccupancyConfiguration());
+        modelBuilder.ApplyConfiguration(new AbsenceRequestConfiguration());
 
         // Outbox e auditoria moram em schemas de outros donos (messaging e audit), que sao
         // quem gera as migrations delas. Aqui sao apenas MAPEADAS, para que o Enqueue e o
@@ -60,6 +65,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         configurationBuilder.Properties<EmployeeId>().HaveConversion<EmployeeIdConverter>();
         configurationBuilder.Properties<DepartmentId>().HaveConversion<DepartmentIdConverter>();
         configurationBuilder.Properties<PositionId>().HaveConversion<PositionIdConverter>();
+        configurationBuilder.Properties<OccupancyId>().HaveConversion<OccupancyIdConverter>();
+        configurationBuilder.Properties<AbsenceRequestId>().HaveConversion<AbsenceRequestIdConverter>();
         base.ConfigureConventions(configurationBuilder);
     }
 
@@ -195,3 +202,70 @@ public sealed class PositionIdConverter()
     : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<PositionId, Guid>(
         id => id.Value,
         value => new PositionId(value));
+
+public sealed class OccupancyIdConverter()
+    : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<OccupancyId, Guid>(
+        id => id.Value,
+        value => new OccupancyId(value));
+
+public sealed class AbsenceRequestIdConverter()
+    : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<AbsenceRequestId, Guid>(
+        id => id.Value,
+        value => new AbsenceRequestId(value));
+
+public sealed class OccupancyConfiguration : IEntityTypeConfiguration<Occupancy>
+{
+    public void Configure(EntityTypeBuilder<Occupancy> builder)
+    {
+        builder.ToTable("occupancies");
+        builder.HasKey(o => o.Id);
+
+        builder.Property(o => o.Kind).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(o => o.Source).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(o => o.Note).HasMaxLength(500);
+
+        // A consulta que este modulo mais vai fazer e "quem esta ocupado neste intervalo".
+        // Ela filtra por tenant e cruza datas, entao o indice segue essa ordem. Como toda
+        // consulta multi-tenant comeca pelo tenant, todo indice tambem comeca por ele —
+        // regra verificada por teste de arquitetura.
+        builder.HasIndex(o => new { o.TenantId, o.StartsOn, o.EndsOn });
+
+        // "Como esta o fulano?" — a tela da pessoa, do outro lado da mesma tabela.
+        builder.HasIndex(o => new { o.TenantId, o.EmployeeId, o.StartsOn });
+
+        // Achar o bloco que veio de uma solicitacao ou missao, para remove-lo quando a
+        // origem for desfeita. Sem este indice seria varredura na tabela inteira.
+        builder.HasIndex(o => new { o.TenantId, o.Source, o.SourceId });
+
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(o => o.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class AbsenceRequestConfiguration : IEntityTypeConfiguration<AbsenceRequest>
+{
+    public void Configure(EntityTypeBuilder<AbsenceRequest> builder)
+    {
+        builder.ToTable("absence_requests");
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.Kind).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(r => r.Reason).HasMaxLength(AbsenceRequest.MaxMotivo);
+        builder.Property(r => r.DecisionNote).HasMaxLength(AbsenceRequest.MaxMotivo);
+        builder.Property(r => r.DecidedByName).HasMaxLength(200);
+
+        // A caixa de entrada do chefe: "o que esta pendente, mais antigo primeiro".
+        builder.HasIndex(r => new { r.TenantId, r.Status, r.StartsOn });
+
+        // O historico da pessoa, na tela dela.
+        builder.HasIndex(r => new { r.TenantId, r.EmployeeId, r.StartsOn });
+
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(r => r.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

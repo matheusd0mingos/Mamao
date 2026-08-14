@@ -388,10 +388,149 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/occupancies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listOccupancies"];
+        put?: never;
+        post: operations["createOccupancy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/availability/occupancies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteOccupancy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absence-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAbsenceRequests"];
+        put?: never;
+        post: operations["createAbsenceRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absence-requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approveAbsenceRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absence-requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectAbsenceRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absence-requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelAbsenceRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Format: uuid */
+        AbsenceRequestId: string;
+        AbsenceRequestResponse: {
+            id: components["schemas"]["AbsenceRequestId"];
+            employeeId: components["schemas"]["EmployeeId"];
+            employeeName: string;
+            kind: components["schemas"]["OccupancyKind"];
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: time */
+            endsAt: string | null;
+            /** Format: int32 */
+            days: number;
+            reason: string | null;
+            status: components["schemas"]["AbsenceRequestStatus"];
+            decidedByName: string | null;
+            /** Format: date-time */
+            decidedAt: string | null;
+            decisionNote: string | null;
+            conflicts: string[];
+        };
+        /** @enum {unknown} */
+        AbsenceRequestStatus: "Pendente" | "Aprovada" | "Recusada" | "Cancelada";
         AcceptInviteRequest: {
             token: string;
             password: string;
@@ -406,6 +545,14 @@ export interface components {
             tenantName: string;
             role: string;
             permissions: string[];
+        };
+        AvailabilityResponse: {
+            employeeId: components["schemas"]["EmployeeId"];
+            employeeName: string;
+            positionName: string | null;
+            departmentName: string | null;
+            available: boolean;
+            busy: components["schemas"]["OccupancyKind"][];
         };
         ContractResponse: {
             employeeId: components["schemas"]["EmployeeId"];
@@ -423,6 +570,19 @@ export interface components {
         ContractWarning: {
             code: string;
             message: string;
+        };
+        CreateAbsenceRequest: {
+            employeeId: components["schemas"]["EmployeeId"];
+            kind: components["schemas"]["OccupancyKind"];
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: time */
+            endsAt: string | null;
+            reason: string | null;
         };
         CreateDepartmentRequest: {
             name: string;
@@ -445,8 +605,24 @@ export interface components {
             /** Format: uuid */
             employeeId: string | null;
         };
+        CreateOccupancyRequest: {
+            employeeId: components["schemas"]["EmployeeId"];
+            kind: components["schemas"]["OccupancyKind"];
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: time */
+            endsAt: string | null;
+            note: string | null;
+        };
         CreatePositionRequest: {
             name: string;
+        };
+        DecideAbsenceRequest: {
+            note: string | null;
         };
         /** Format: uuid */
         DepartmentId: string;
@@ -589,6 +765,28 @@ export interface components {
         MoveDepartmentRequest: {
             parentId: (string & components["schemas"]["DepartmentId"]) | null;
         };
+        /** Format: uuid */
+        OccupancyId: string;
+        /** @enum {unknown} */
+        OccupancyKind: "Ferias" | "Folga" | "Falta" | "Afastamento" | "Servico" | "Missao" | "Outro";
+        OccupancyResponse: {
+            id: components["schemas"]["OccupancyId"];
+            employeeId: components["schemas"]["EmployeeId"];
+            employeeName: string;
+            kind: components["schemas"]["OccupancyKind"];
+            source: components["schemas"]["OccupancySource"];
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: time */
+            endsAt: string | null;
+            note: string | null;
+        };
+        /** @enum {unknown} */
+        OccupancySource: "Manual" | "Solicitacao" | "Missao";
         PagedResultOfEmployeeListItem: {
             items: components["schemas"]["EmployeeListItem"][];
             /** Format: int32 */
@@ -1553,6 +1751,257 @@ export interface operations {
         };
     };
     deletePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listAvailability: {
+        parameters: {
+            query?: {
+                on?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityResponse"][];
+                };
+            };
+        };
+    };
+    listOccupancies: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                employeeId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccupancyResponse"][];
+                };
+            };
+        };
+    };
+    createOccupancy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOccupancyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccupancyResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteOccupancy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listAbsenceRequests: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AbsenceRequestStatus"];
+                employeeId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceRequestResponse"][];
+                };
+            };
+        };
+    };
+    createAbsenceRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAbsenceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceRequestResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    approveAbsenceRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideAbsenceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceRequestResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    rejectAbsenceRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideAbsenceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbsenceRequestResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    cancelAbsenceRequest: {
         parameters: {
             query?: never;
             header?: never;

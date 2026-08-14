@@ -84,6 +84,13 @@ public static class AuditActions
     public const string DepartmentDeleted = "department.deleted";
     public const string PositionDeleted = "position.deleted";
 
+    // Disponibilidade: quem tirou quem de circulacao, e quem autorizou. E a pergunta que
+    // aparece meses depois, quando falta gente na escala e ninguem lembra da decisao.
+    public const string OccupancyCreated = "availability.occupancy.created";
+    public const string OccupancyDeleted = "availability.occupancy.deleted";
+    public const string AbsenceApproved = "availability.absence.approved";
+    public const string AbsenceRejected = "availability.absence.rejected";
+
     public const string InviteCreated = "invite.created";
     public const string InviteAccepted = "invite.accepted";
     public const string InviteRevoked = "invite.revoked";
