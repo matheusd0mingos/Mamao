@@ -6,69 +6,73 @@ Decisões em [ADR-0011](../docs/adr/0011-aspire-e-deploy.md) e
 
 | Arquivo | Papel |
 |---|---|
-| `deploy.sh` | Executa o deploy a partir da sua máquina, por SSH |
+| `deploy.sh` | Provisiona o ambiente e executa o deploy, da sua máquina, por SSH |
 | `docker-compose.yml` | Topologia de produção |
 | `Caddyfile` | TLS, estáticos do Angular, proxy de `/api` |
 | `init-db.sql` | Cria o role `mamao_app` (sem `BYPASSRLS`) na primeira subida |
 | `backup.sh` | Dump + uploads, criptografado, enviado para fora do VPS |
-| `.env.example` | Config do **deploy** (fica na sua máquina) |
-| `.env.producao.example` | **Segredos** de produção (ficam só no servidor) |
+| `.env.example` | Referência da config do **deploy** — o script gera a sua |
+| `.env.producao.example` | Referência dos **segredos** — o script gera os seus, no servidor |
 
 Os dois `.env` são diferentes de propósito: a senha do banco e a chave do JWT nunca
 saem do servidor nem passam pela sua máquina no fluxo normal.
 
 ---
 
-## Provisionamento (uma vez)
+## Primeira configuração
 
-### 1. Usuário e Docker no servidor
+O `deploy.sh` faz o provisionamento. Rodar `./deploy/deploy.sh` numa máquina virgem
+pergunta o que falta, cria o que não existe e segue para o deploy. Se preferir separar
+as duas coisas, `--setup` só prepara o ambiente.
+
+**A única coisa que ele não faz é criar o usuário SSH** — precisa de root, e é a única
+etapa que você faz uma vez na vida do servidor:
 
 ```bash
 ssh root@vps
-
 adduser --disabled-password --gecos '' mamao
-mkdir -p /home/mamao/.ssh
-cp ~/.ssh/authorized_keys /home/mamao/.ssh/
+mkdir -p /home/mamao/.ssh && cp ~/.ssh/authorized_keys /home/mamao/.ssh/
 chown -R mamao:mamao /home/mamao/.ssh
 chmod 700 /home/mamao/.ssh && chmod 600 /home/mamao/.ssh/authorized_keys
-
-# Docker (Debian trixie)
-apt-get update && apt-get install -y ca-certificates curl
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-  https://download.docker.com/linux/debian trixie stable" > /etc/apt/sources.list.d/docker.list
-apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-usermod -aG docker mamao
-
-mkdir -p /opt/mamao && chown mamao:mamao /opt/mamao
+usermod -aG sudo mamao
 ```
 
-Feche o SSH por senha (`PasswordAuthentication no`) e o login de root antes de expor a
-máquina.
+Depois disso, feche o SSH por senha (`PasswordAuthentication no`) e o login de root
+antes de expor a máquina.
 
-### 2. Segredos no servidor
+A partir daí:
 
 ```bash
-scp deploy/.env.producao.example mamao@vps:/opt/mamao/.env
-ssh mamao@vps 'chmod 600 /opt/mamao/.env'
-ssh mamao@vps 'vi /opt/mamao/.env'     # gere as senhas com: openssl rand -base64 48
+docker login ghcr.io          # token com write:packages
+./deploy/deploy.sh --setup    # ou direto ./deploy/deploy.sh
 ```
 
-### 3. Config do deploy na sua máquina
+### O que o setup faz
 
-```bash
-cp deploy/.env.example deploy/.env     # já está no .gitignore
-vi deploy/.env
-docker login ghcr.io                   # token com write:packages
-```
+| Verifica | Se faltar |
+|---|---|
+| `deploy/.env` | Pergunta host, usuário, porta, diretório, registry e origem pública, e cria com modo 600 |
+| Conexão SSH | Falha explicando como criar o usuário |
+| Docker + plugin compose | Oferece instalar pelo repositório oficial (pede confirmação, usa sudo) |
+| `$REMOTE_DIR` e `web-dist/` | Cria; recorre a sudo se `/opt` exigir |
+| `$REMOTE_DIR/.env` | **Gera as senhas no próprio servidor** (`openssl`) e grava com modo 600 |
+| compose, Caddyfile, init-db, backup.sh | Envia (e reenvia a cada deploy, para não dessincronizar) |
 
-### 4. DNS
+Tudo idempotente. Rodar de novo não sobrescreve nada — em especial **nunca** o `.env`
+de produção: sobrescrever ali trocaria a senha do banco e derrubaria o acesso aos dados.
+
+As senhas são geradas **no servidor**, não na sua máquina, e nunca transitam pela rede.
+Guarde uma cópia do `BACKUP_PASSPHRASE` em outro lugar: sem ela o backup criptografado
+não pode ser restaurado.
+
+Em ambiente sem terminal (CI), use `--sim` para responder afirmativamente às
+confirmações. Sem terminal e sem `--sim`, o script para em vez de adivinhar.
+
+### DNS
 
 Aponte `app.mamao.tech` para o IP do VPS no Cloudflare. Deixe o proxy (nuvem laranja)
 **desligado no primeiro deploy**, para o Caddy conseguir emitir o certificado; ligue
-depois.
+depois. O script avisa se a borda não responder.
 
 ---
 
@@ -76,14 +80,16 @@ depois.
 
 ```bash
 ./deploy/deploy.sh              # testes → imagens → push → envio → subida → readiness
+./deploy/deploy.sh --setup      # só prepara o ambiente
 ./deploy/deploy.sh --status     # o que está no ar
 ./deploy/deploy.sh --rollback   # volta para a versão anterior
 ./deploy/deploy.sh --skip-tests # só quando você já rodou a suíte
+./deploy/deploy.sh --sim        # não pergunta nada (CI)
 ```
 
 O que o script faz, na ordem:
 
-1. Confere ferramentas, `.env` local e `.env` no servidor
+1. Confere ferramentas locais; prepara o ambiente se ainda não estiver pronto
 2. Avisa se há alteração não commitada (a imagem é marcada com o SHA do commit)
 3. Roda a suíte
 4. Constrói e publica `mamao-api` e `mamao-worker` marcadas com o SHA — **nunca `latest`**
