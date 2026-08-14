@@ -44,7 +44,7 @@ Legenda de status: **Firme** (mudar custa caro) · **Provisória** (revisitar na
 |---|---|---|---|
 | S1 | Multi-tenancy **shared schema** com `TenantId` em toda tabela tenant-owned | Firme | DB-por-tenant não escala operacionalmente em VPS único. [ADR-0003](adr/0003-multi-tenancy.md) |
 | S2 | Isolamento por EF global query filters **+ interceptor que carimba `TenantId` no SaveChanges** | Firme | [ADR-0003](adr/0003-multi-tenancy.md) |
-| S3 | **PostgreSQL RLS** como rede de segurança, antes do primeiro cliente pagante | Firme | Query filter é uma linha de defesa só; um `FromSql` esquecido vaza dado de RH de outra empresa. [ADR-0003](adr/0003-multi-tenancy.md) |
+| S3 | **PostgreSQL RLS** ligada e verificada contra banco real | Feito | Query filter é uma linha de defesa só; um `FromSql` esquecido vaza dado de RH de outra empresa. [ADR-0003](adr/0003-multi-tenancy.md) |
 | S4 | Teste de integração que falha o build se um tipo tenant-owned não tiver filtro, e teste de vazamento cross-tenant | Firme | O guard-rail vale mais que a regra escrita. |
 | S5 | Identidade: ASP.NET Core Identity + JWT emitido pela própria API. Sem Duende/Auth0 agora | Firme | Custo e complexidade sem retorno neste estágio. [ADR-0006](adr/0006-identidade.md) |
 | S6 | `User` é global por e-mail; `Membership(UserId, TenantId, Role)` permite a mesma pessoa em várias empresas | Firme | Contador/consultor atende várias empresas. Retrofit disso depois é doloroso. [ADR-0006](adr/0006-identidade.md) |

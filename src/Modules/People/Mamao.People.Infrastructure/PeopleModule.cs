@@ -7,6 +7,7 @@ using Mamao.SharedKernel.Messaging;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Mamao.People.Infrastructure;
 
@@ -30,6 +31,10 @@ public static class PeopleModule
             options.UseSnakeCaseNamingConvention();
 
             options.AddInterceptors(sp.GetRequiredService<TenantSaveChangesInterceptor>());
+
+            // Camada 3: define app.tenant_id na sessao para as policies do Postgres.
+            if (sp.GetRequiredService<IOptions<TenancyOptions>>().Value.EnableRls)
+                options.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>());
         });
 
         services.AddScoped<IPeopleDbContext>(sp => sp.GetRequiredService<PeopleDbContext>());

@@ -19,7 +19,7 @@ O objetivo não é código bonito. É fechar o circuito inteiro com o mínimo de
 - [ ] Solução .NET 10 com a estrutura de módulos ([visão geral](arquitetura/visao-geral.md))
 - [ ] `Mamao.AppHost` (Aspire) subindo Postgres + API + Worker + Angular
 - [ ] `Identity`: cadastro de empresa, primeiro usuário, login, JWT com `tenant_id`
-- [ ] `People`: `Employee` com 5 campos, CRUD, filtro de tenant, RLS
+- [x] `People`: `Employee` com 5 campos, CRUD, filtro de tenant, **RLS verificada**
 - [ ] Angular: shell, sidebar, login, lista e formulário de funcionário
 - [ ] OpenAPI → cliente TypeScript gerado
 - [ ] Outbox + `OutboxPublisher` publicando um evento de verdade (`EmployeeHired`)

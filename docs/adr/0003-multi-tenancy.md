@@ -59,7 +59,34 @@ consequência terminal.
 - Cliente que exigir banco dedicado no futuro é atendido pelo mesmo código, com
   outra connection string — decisão de roteamento, não de arquitetura.
 
-## Cronograma
+## Estado — implementado e verificado
 
-- V1 (desenvolvimento): camadas 1, 2 e 4.
-- **Antes do primeiro cliente pagante: camada 3 (RLS). Bloqueador de lançamento.**
+As quatro camadas estão no código e a camada 3 foi exercitada contra um PostgreSQL de
+verdade, com o mesmo role que a produção usa:
+
+| Situação | Resultado |
+|---|---|
+| Sessão sem tenant definido (o job que esquece de setar) | **0 linhas** — falha fechada |
+| Tenant da Alfa, consultando tudo por SQL cru | só as linhas da Alfa |
+| Tenant da Alfa, pedindo explicitamente `WHERE tenant_id = <Beta>` | **0 linhas** |
+| Tenant da Alfa, tentando `INSERT` para a Beta | recusado pelo Postgres |
+| Dono das tabelas (superusuário) | vê tudo — é por isso que a API **não** usa esse role |
+
+Três detalhes que só apareceram ao ligar de verdade:
+
+**`NULLIF` na policy.** Sem tenant, `current_setting` devolve string vazia e `''::uuid`
+**lança erro** em vez de negar. Com `NULLIF` vira `NULL`, a comparação dá falso e a
+tabela não devolve linha — que é o comportamento seguro.
+
+**O interceptor escreve sempre**, inclusive sem tenant resolvido. O Npgsql reusa
+conexões do pool: sair sem escrever deixaria o tenant da requisição anterior valendo
+para a próxima.
+
+**Duas conexões.** O Worker conecta como dono (aplica migrations, cria o role, concede
+acesso); a API conecta com `mamao_app`, sem `BYPASSRLS`. Apontar a API para o dono
+desliga a camada 3 em silêncio — e há um teste que reprova o role se ele for
+superusuário ou tiver `BYPASSRLS`.
+
+O role é criado pelo **Worker a cada startup**, não por script de init do Postgres:
+aquele roda uma vez só, na criação do volume, e trocar a senha depois exigiria recriar
+o banco.

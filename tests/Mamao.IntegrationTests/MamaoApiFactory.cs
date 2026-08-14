@@ -27,6 +27,10 @@ public sealed class MamaoApiFactory : WebApplicationFactory<Program>, IAsyncLife
 
     public string? SkipReason { get; private set; }
 
+    /// <summary>Conexao do DONO das tabelas. Os testes de RLS derivam dela o role sem BYPASSRLS.</summary>
+    public string ConnectionString =>
+        _postgres?.GetConnectionString() ?? "Host=localhost;Database=sem_docker";
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync()
@@ -64,8 +68,7 @@ public sealed class MamaoApiFactory : WebApplicationFactory<Program>, IAsyncLife
     {
         builder.UseEnvironment(Environments.Development);
 
-        builder.UseSetting("ConnectionStrings:mamao",
-            _postgres?.GetConnectionString() ?? "Host=localhost;Database=sem_docker");
+        builder.UseSetting("ConnectionStrings:mamao", ConnectionString);
         builder.UseSetting("Jwt:SigningKey", "chave-de-teste-com-mais-de-trinta-e-dois-bytes");
         builder.UseSetting("Jwt:Issuer", "mamao-tests");
         builder.UseSetting("Jwt:Audience", "mamao-tests");

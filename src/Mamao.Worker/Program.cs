@@ -15,8 +15,11 @@ builder.AddServiceDefaults();
 var connectionString = builder.Configuration.GetConnectionString("mamao")
     ?? throw new InvalidOperationException("ConnectionStrings:mamao nao configurada.");
 
+builder.Services.AddOptions<TenancyOptions>()
+    .Bind(builder.Configuration.GetSection(TenancyOptions.SectionName));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
+builder.Services.AddScoped<TenantRlsConnectionInterceptor>();
 
 builder.Services
     .AddMamaoIdentity(builder.Configuration, connectionString)

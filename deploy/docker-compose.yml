@@ -28,7 +28,10 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__mamao: ${DB_CONNECTION:?}
+      # A API conecta com o role SEM BYPASSRLS: e isso que faz a Row-Level Security
+      # valer. Apontar aqui para o dono das tabelas desliga a camada 3 em silencio.
+      ConnectionStrings__mamao: ${DB_CONNECTION_APP:?}
+      Tenancy__EnableRls: "true"
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?}
       Jwt__Issuer: mamao
       Jwt__Audience: mamao
@@ -67,7 +70,12 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__mamao: ${DB_CONNECTION:?}
+      # O Worker conecta como DONO: ele aplica migrations, cria o role da aplicacao e
+      # concede os acessos. Com FORCE ROW LEVEL SECURITY as policies valem para ele tambem.
+      ConnectionStrings__mamao: ${DB_CONNECTION_OWNER:?}
+      Tenancy__EnableRls: "true"
+      Tenancy__ApplicationRole: mamao_app
+      Tenancy__ApplicationRolePassword: ${APP_ROLE_PASSWORD:?}
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_ENDPOINT:-}
     volumes:

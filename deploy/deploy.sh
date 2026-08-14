@@ -289,6 +289,7 @@ set -Eeuo pipefail
 command -v openssl >/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q openssl; }
 
 PG_PASS="\$(openssl rand -hex 24)"
+APP_PASS="\$(openssl rand -hex 24)"
 JWT_KEY="\$(openssl rand -base64 48)"
 BACKUP_PASS="\$(openssl rand -base64 32)"
 
@@ -298,8 +299,12 @@ cat > '$REMOTE_DIR/.env' <<ENV
 
 POSTGRES_USER=mamao_owner
 POSTGRES_PASSWORD=\$PG_PASS
+APP_ROLE_PASSWORD=\$APP_PASS
 
-DB_CONNECTION=Host=postgres;Database=mamao;Username=mamao_owner;Password=\$PG_PASS
+# Duas conexoes: o Worker migra como dono, a API conecta com o role sem BYPASSRLS.
+# Apontar a API para o owner desliga a Row-Level Security em silencio.
+DB_CONNECTION_OWNER=Host=postgres;Database=mamao;Username=mamao_owner;Password=\$PG_PASS
+DB_CONNECTION_APP=Host=postgres;Database=mamao;Username=mamao_app;Password=\$APP_PASS
 
 JWT_SIGNING_KEY=\$JWT_KEY
 

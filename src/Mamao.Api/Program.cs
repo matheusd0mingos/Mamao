@@ -20,8 +20,11 @@ var connectionString = builder.Configuration.GetConnectionString("mamao")
     ?? throw new InvalidOperationException("ConnectionStrings:mamao nao configurada.");
 
 // Tenancy antes de tudo: nenhum modulo funciona sem tenant resolvido.
+builder.Services.AddOptions<TenancyOptions>()
+    .Bind(builder.Configuration.GetSection(TenancyOptions.SectionName));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
+builder.Services.AddScoped<TenantRlsConnectionInterceptor>();
 
 // As chaves do Data Protection assinam os tokens de recuperacao de senha do Identity.
 // Sem persistir, cada restart do container invalida os links ja enviados — e o usuario

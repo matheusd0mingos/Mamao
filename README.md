@@ -27,7 +27,7 @@ observabilidade, migrations e testes.
 | Solução .NET 10, modular monolith | ✅ 8 projetos + 3 de teste, compilando |
 | Aspire (Postgres + API + Worker) | ✅ `dotnet run --project src/Mamao.AppHost` |
 | Tenancy: contexto, filtro global, interceptor | ✅ coberto por teste de arquitetura |
-| RLS no PostgreSQL | ⏳ SQL e interceptor prontos, **desligados** — ver [ADR-0003](docs/adr/0003-multi-tenancy.md) |
+| RLS no PostgreSQL | ✅ ligada e provada contra banco real — ver [ADR-0003](docs/adr/0003-multi-tenancy.md) |
 | Identity: empresa, usuário, membership, JWT + refresh | ✅ |
 | Autorização por permissão | ✅ policies geradas de `Permissions.All` |
 | Módulo People (CRUD de funcionário) | ✅ |

@@ -2,6 +2,8 @@ using Mamao.Identity.Persistence;
 using Mamao.Messaging;
 using Mamao.People.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Mamao.SharedKernel.Tenancy;
+using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Mamao.Worker;
@@ -46,6 +48,8 @@ public sealed class DatabaseMigrator(
             await MigrateAsync(
                 scope.ServiceProvider.GetRequiredService<PeopleDbContext>(),
                 nameof(PeopleDbContext), cancellationToken);
+
+            await ConcederAcessoAoRoleDaAplicacaoAsync(scope.ServiceProvider, lockConnection, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -64,6 +68,50 @@ public sealed class DatabaseMigrator(
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <summary>
+    /// Concede acesso ao role da aplicacao depois das migrations.
+    ///
+    /// Tem que ser depois: os schemas sao criados pelas proprias migrations, entao nao ha
+    /// o que conceder antes. E tem que ser aqui e nao no init-db.sql porque aquele roda uma
+    /// vez so, na criacao do volume — um modulo novo, com schema novo, ficaria sem acesso.
+    /// </summary>
+    private async Task ConcederAcessoAoRoleDaAplicacaoAsync(
+        IServiceProvider services, NpgsqlConnection connection, CancellationToken ct)
+    {
+        var tenancy = services.GetRequiredService<IOptions<TenancyOptions>>().Value;
+        var role = tenancy.ApplicationRole;
+
+        if (string.IsNullOrWhiteSpace(tenancy.ApplicationRolePassword))
+        {
+            // Em desenvolvimento e comum conectar como dono e nao ter role separado.
+            // Avisar e seguir: bloquear aqui travaria o `dotnet run`.
+            logger.LogWarning(
+                "Tenancy:ApplicationRolePassword vazio: o role '{Role}' nao foi criado e a RLS " +
+                "nao tem efeito. Normal em desenvolvimento; em producao e o que protege os dados.",
+                role);
+            return;
+        }
+
+        await using (var criacao = connection.CreateCommand())
+        {
+            criacao.CommandText = TenantRls.EnsureRole(role, tenancy.ApplicationRolePassword);
+            await criacao.ExecuteNonQueryAsync(ct);
+        }
+
+        foreach (var schema in new[]
+                 {
+                     MamaoIdentityDbContext.Schema, MessagingDbContext.Schema, PeopleDbContext.Schema,
+                 })
+        {
+            await using var grant = connection.CreateCommand();
+            grant.CommandText = TenantRls.GrantSchemaTo(schema, role);
+            await grant.ExecuteNonQueryAsync(ct);
+        }
+
+        logger.LogInformation(
+            "Role '{Role}' garantido (sem superusuario, sem BYPASSRLS) e com acesso aos schemas.", role);
+    }
 
     private async Task MigrateAsync(DbContext context, string name, CancellationToken ct)
     {
