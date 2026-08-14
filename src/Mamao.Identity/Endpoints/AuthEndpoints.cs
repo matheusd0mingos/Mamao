@@ -78,22 +78,15 @@ public static class AuthEndpoints
                     nameof(request.Email)));
             }
 
-            user = new MamaoUser
-            {
-                Id = Guid.CreateVersion7(),
-                UserName = email,
-                Email = email,
-                FullName = request.FullName.Trim(),
-                CreatedAt = now,
-            };
-
-            var created = await userManager.CreateAsync(user, request.Password);
-            if (!created.Succeeded)
-            {
-                var first = created.Errors.First();
-                return HttpResultsExtensions.Problem(new Error(
-                    $"auth.{first.Code}", first.Description, nameof(request.Password)));
-            }
+            // A EMPRESA NASCE PRIMEIRO. O usuario pertence a ela (ADR-0020), e tenant_id e
+            // obrigatorio com chave estrangeira: criar o usuario antes so funcionaria com um
+            // tenant_id que ainda nao existe, e o banco recusa.
+            //
+            // A ordem inversa (usuario primeiro, para o Identity validar e-mail e senha antes
+            // de gravar qualquer coisa) e o que havia aqui, e vem de quando o usuario era
+            // global. A transacao devolve essa garantia: se a senha for recusada, o rollback
+            // leva a empresa junto e nao sobra empresa orfa.
+            await using var transacao = await dbContext.Database.BeginTransactionAsync(ct);
 
             var tenant = new Tenant
             {
@@ -105,11 +98,28 @@ public static class AuthEndpoints
             dbContext.Tenants.Add(tenant);
             await dbContext.SaveChangesAsync(ct);
 
-            // A empresa nasce depois do usuario porque o Identity valida o e-mail primeiro;
-            // por isso o vinculo e gravado num segundo passo, na mesma requisicao.
-            user.TenantId = tenant.Id;
-            user.Role = Roles.Owner;
-            await dbContext.SaveChangesAsync(ct);
+            user = new MamaoUser
+            {
+                Id = Guid.CreateVersion7(),
+                UserName = email,
+                Email = email,
+                FullName = request.FullName.Trim(),
+                CreatedAt = now,
+                TenantId = tenant.Id,
+                Role = Roles.Owner,
+            };
+
+            var created = await userManager.CreateAsync(user, request.Password);
+            if (!created.Succeeded)
+            {
+                await transacao.RollbackAsync(ct);
+
+                var first = created.Errors.First();
+                return HttpResultsExtensions.Problem(new Error(
+                    $"auth.{first.Code}", first.Description, nameof(request.Password)));
+            }
+
+            await transacao.CommitAsync(ct);
 
             var pair = await tokens.IssueAsync(user, ct);
             return TypedResults.Ok(ToResponse(pair, tenant, user.Role));

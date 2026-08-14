@@ -45,6 +45,18 @@ public sealed class MamaoApiFactory : WebApplicationFactory<Program>, IAsyncLife
         }
         catch (Exception ex)
         {
+            // Pular sem Docker e conveniente na maquina de desenvolvimento e PERIGOSO em
+            // qualquer lugar que decida por esta suite: "Skipped: 10, Failed: 0" se le como
+            // verde, e a rede de seguranca desaparece sem ninguem perceber. Foi assim que um
+            // cadastro quebrado chegou em producao — o teste que o pegaria estava aqui,
+            // escrito, e nao rodou uma unica vez.
+            if (Environment.GetEnvironmentVariable("CI") is not null)
+            {
+                throw new InvalidOperationException(
+                    "Docker indisponivel no CI. Os testes de integracao nao podem ser pulados aqui: " +
+                    "sem eles a suite passa a aprovar qualquer coisa.", ex);
+            }
+
             SkipReason = $"Docker indisponivel neste ambiente: {ex.Message}";
             _postgres = null;
             return;
