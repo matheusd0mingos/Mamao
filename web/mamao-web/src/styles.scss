@@ -20,6 +20,7 @@
   --mamao-yellow-500: #f2b233;
   --mamao-cream-50: #f7f3ea;
   --mamao-gray-200: #e6e6e1;
+  --mamao-gray-300: #c9c9c2;
   --mamao-sage-200: #cde6d5;
 
   /* Superficies e texto */
@@ -192,14 +193,112 @@ a {
   font-weight: 500;
 }
 
-.field input,
-.field select {
+/* Controles de formulario, em qualquer lugar.
+ *
+ * Antes o estilo so valia dentro de `.field`, entao toda tela que escrevesse um
+ * `<label><input></label>` simples caia no visual cru do navegador — data e hora com a
+ * moldura cinza do sistema, checkbox quadrado dos anos 2000. Estilo de controle e do
+ * sistema de design, nao de cada pagina. */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  color: var(--text-primary);
   font: inherit;
   padding: var(--space-2) var(--space-3);
+  transition: border-color .15s ease, box-shadow .15s ease;
   width: 100%;
+}
+
+input:hover:not([type='checkbox']):not([type='radio']):not(:disabled),
+select:hover:not(:disabled) {
+  border-color: var(--mamao-gray-300);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--mamao-green-900);
+  box-shadow: 0 0 0 3px rgb(17 54 45 / 12%);
+  outline: none;
+}
+
+/* A seta do select vem desenhada aqui: a nativa muda de forma em cada sistema, e num
+ * formulario com data, hora e select lado a lado a diferenca fica evidente. */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%2355605b' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right var(--space-3) center;
+  background-repeat: no-repeat;
+  padding-right: calc(var(--space-3) * 2 + 12px);
+}
+
+/* O icone de calendario e de relogio do Chrome e cinza-azulado e destoa da paleta.
+ * O filtro tinge para o verde da marca sem precisar esconder o controle nativo — que
+ * continua sendo o melhor seletor de data em celular. */
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(19%) sepia(24%) saturate(1093%) hue-rotate(118deg) brightness(94%) contrast(90%);
+  opacity: .55;
+  transition: opacity .15s ease;
+}
+
+input[type='date']:hover::-webkit-calendar-picker-indicator,
+input[type='time']:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+/* Checkbox proprio: o nativo nao aceita cor de marca e fica quadrado e azul. */
+input[type='checkbox'] {
+  appearance: none;
+  background: var(--surface);
+  border: 1.5px solid var(--mamao-gray-300);
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 18px;
+  margin: 0;
+  position: relative;
+  transition: background .15s ease, border-color .15s ease;
+  width: 18px;
+}
+
+input[type='checkbox']:hover:not(:disabled) {
+  border-color: var(--mamao-green-900);
+}
+
+input[type='checkbox']:checked {
+  background: var(--mamao-green-900);
+  border-color: var(--mamao-green-900);
+}
+
+/* O "certo" e desenhado com duas bordas giradas: sem imagem, sem fonte de icones, e
+ * acompanha o tamanho do controle se ele mudar. */
+input[type='checkbox']:checked::after {
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  content: '';
+  height: 9px;
+  left: 5px;
+  position: absolute;
+  top: 2px;
+  transform: rotate(45deg);
+  width: 5px;
+}
+
+input[type='checkbox']:focus-visible {
+  box-shadow: 0 0 0 3px rgb(17 54 45 / 15%);
+  outline: none;
+}
+
+input:disabled,
+select:disabled {
+  background: var(--surface-sunken);
+  cursor: not-allowed;
 }
 
 .field--invalid input {

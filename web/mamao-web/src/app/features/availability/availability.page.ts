@@ -139,7 +139,7 @@ const MOTIVOS: Record<OccupancyKind, string> = {
             "enviar para aprovacao" e um pedido. Esconder essa diferenca faria o chefe
             aprovar sem perceber que aprovou.
           -->
-          <button class="btn" type="submit" [disabled]="salvando()">
+          <button class="btn btn--primary" type="submit" [disabled]="salvando()">
             Enviar para aprovação
           </button>
           <button
