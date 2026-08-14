@@ -261,10 +261,10 @@ const MOTIVOS: Record<OccupancyKind, string> = {
     .painel h2 { font-size: 18px; margin-bottom: var(--space-2); }
 
     .lista { list-style: none; margin: 0; padding: 0; }
-    .lista li { display: flex; justify-content: space-between; gap: var(--space-2); padding: 8px 0; border-top: 1px solid var(--border); }
+    .lista li { display: flex; justify-content: space-between; gap: var(--space-2); padding: 8px 0; border-top: 1px solid var(--border); min-width: 0; }
     .lista li:first-child { border-top: 0; }
-    .lista__nome { font-weight: 500; }
-    .motivo { color: var(--danger, #a32020); font-size: 14px; }
+    .lista__nome { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .motivo { color: var(--status-danger-fg); font-size: 14px; white-space: nowrap; }
 
     .form { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; }
     .form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }

@@ -64,3 +64,8 @@ export type OccupancyKind = Schemas['OccupancyKind'];
 export type AbsenceRequestResponse = Schemas['AbsenceRequestResponse'];
 export type CreateAbsenceRequest = Schemas['CreateAbsenceRequest'];
 export type AbsenceRequestStatus = Schemas['AbsenceRequestStatus'];
+
+export type MissionResponse = Schemas['MissionResponse'];
+export type CreateMissionRequest = Schemas['CreateMissionRequest'];
+export type MissionSuggestion = Schemas['MissionSuggestion'];
+export type SuggestedPerson = Schemas['SuggestedPerson'];

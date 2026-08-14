@@ -17,7 +17,7 @@ import { SessionService } from '../core/auth/session.service';
           <span class="brand__mark">ã</span>
           <span class="brand__text">
             mamão
-            <small>gestão sem complicação</small>
+            <small>pessoas, atividades e disponibilidade</small>
           </span>
         </div>
 
@@ -25,6 +25,7 @@ import { SessionService } from '../core/auth/session.service';
           <a routerLink="/inicio" routerLinkActive="active">Visão geral</a>
           <a routerLink="/pessoas" routerLinkActive="active">Pessoas</a>
           <a routerLink="/disponibilidade" routerLinkActive="active">Disponibilidade</a>
+          <a routerLink="/escala" routerLinkActive="active">Escala</a>
         </nav>
 
         <div class="sidebar__foot">

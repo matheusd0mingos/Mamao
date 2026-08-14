@@ -59,6 +59,12 @@ export const routes: Routes = [
           import('./features/availability/availability.page').then((m) => m.AvailabilityPage),
       },
       {
+        path: 'escala',
+        canMatch: [permissionGuard('schedule.read')],
+        loadComponent: () =>
+          import('./features/missions/missions.page').then((m) => m.MissionsPage),
+      },
+      {
         path: 'acessos',
         canMatch: [permissionGuard('users.invite')],
         loadComponent: () =>

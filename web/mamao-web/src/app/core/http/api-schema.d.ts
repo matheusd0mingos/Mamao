@@ -500,6 +500,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/missions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMissions"];
+        put?: never;
+        post: operations["createMission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions/{id}/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["suggestMission"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions/{id}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["assignMission"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmMission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/missions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelMission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -535,6 +615,9 @@ export interface components {
             token: string;
             password: string;
         };
+        AssignMissionRequest: {
+            employeeIds: string[];
+        };
         AuthResponse: {
             accessToken: string;
             /** Format: date-time */
@@ -553,6 +636,11 @@ export interface components {
             departmentName: string | null;
             available: boolean;
             busy: components["schemas"]["OccupancyKind"][];
+        };
+        BlockedPerson: {
+            employeeId: components["schemas"]["EmployeeId"];
+            name: string;
+            reason: components["schemas"]["OccupancyKind"];
         };
         ContractResponse: {
             employeeId: components["schemas"]["EmployeeId"];
@@ -604,6 +692,20 @@ export interface components {
             role: string;
             /** Format: uuid */
             employeeId: string | null;
+        };
+        CreateMissionRequest: {
+            name: string;
+            /** Format: date */
+            on: string;
+            /** Format: int32 */
+            requiredPeople: number;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: time */
+            endsAt: string | null;
+            /** Format: uuid */
+            departmentId: string | null;
+            notes: string | null;
         };
         CreateOccupancyRequest: {
             employeeId: components["schemas"]["EmployeeId"];
@@ -762,6 +864,36 @@ export interface components {
             role: string;
             permissions: string[];
         };
+        /** Format: uuid */
+        MissionId: string;
+        MissionResponse: {
+            id: components["schemas"]["MissionId"];
+            name: string;
+            /** Format: date */
+            on: string;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: time */
+            endsAt: string | null;
+            /** Format: int32 */
+            requiredPeople: number;
+            /** Format: int32 */
+            assignedCount: number;
+            status: components["schemas"]["MissionStatus"];
+            notes: string | null;
+            assignedIds: unknown[];
+        };
+        /** @enum {unknown} */
+        MissionStatus: "Rascunho" | "Confirmada" | "Cancelada";
+        MissionSuggestion: {
+            missionId: components["schemas"]["MissionId"];
+            /** Format: int32 */
+            requiredPeople: number;
+            /** Format: int32 */
+            totalConsidered: number;
+            eligible: components["schemas"]["SuggestedPerson"][];
+            blocked: components["schemas"]["BlockedPerson"][];
+        };
         MoveDepartmentRequest: {
             parentId: (string & components["schemas"]["DepartmentId"]) | null;
         };
@@ -836,6 +968,17 @@ export interface components {
             /** Format: date */
             compensationAgreementOn: string | null;
             notes: string | null;
+        };
+        SuggestedPerson: {
+            employeeId: components["schemas"]["EmployeeId"];
+            name: string;
+            departmentName: string | null;
+            /** Format: int32 */
+            participations: number;
+            /** Format: date */
+            lastParticipation: string | null;
+            reason: string;
+            suggested: boolean;
         };
         TerminateEmployeeRequest: {
             /** Format: date */
@@ -2002,6 +2145,180 @@ export interface operations {
         };
     };
     cancelAbsenceRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listMissions: {
+        parameters: {
+            query?: {
+                from?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"][];
+                };
+            };
+        };
+    };
+    createMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMissionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    suggestMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionSuggestion"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    assignMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignMissionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    confirmMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    cancelMission: {
         parameters: {
             query?: never;
             header?: never;

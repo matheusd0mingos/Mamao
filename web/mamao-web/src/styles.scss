@@ -122,6 +122,14 @@ a {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+}
+
+/* Duas caixas seguidas precisam respirar. Sem isto elas encostam e parecem uma so. */
+.card + .card,
+.card + .colunas,
+.colunas + .card {
+  margin-top: var(--space-4);
 }
 
 .btn {

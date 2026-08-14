@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:46799"
+      "url": "http://127.0.0.1:44785"
     }
   ],
   "paths": {
@@ -1566,6 +1566,241 @@
           }
         }
       }
+    },
+    "/api/v1/missions": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "listMissions",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MissionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "createMission",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/missions/{id}/suggestion": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "suggestMission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionSuggestion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/missions/{id}/assignments": {
+      "put": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "assignMission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignMissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/missions/{id}/confirm": {
+      "post": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "confirmMission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/missions/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "cancelMission",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1679,6 +1914,21 @@
           }
         }
       },
+      "AssignMissionRequest": {
+        "required": [
+          "employeeIds"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "AuthResponse": {
         "required": [
           "accessToken",
@@ -1752,6 +2002,25 @@
             "items": {
               "$ref": "#/components/schemas/OccupancyKind"
             }
+          }
+        }
+      },
+      "BlockedPerson": {
+        "required": [
+          "employeeId",
+          "name",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/OccupancyKind"
           }
         }
       },
@@ -1951,6 +2220,50 @@
           "employeeId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "CreateMissionRequest": {
+        "required": [
+          "name",
+          "on",
+          "requiredPeople",
+          "startsAt",
+          "endsAt",
+          "departmentId",
+          "notes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "on": {
+            "type": "string",
+            "format": "date"
+          },
+          "requiredPeople": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
             "nullable": true
           }
         }
@@ -2543,6 +2856,107 @@
           }
         }
       },
+      "MissionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "MissionResponse": {
+        "required": [
+          "id",
+          "name",
+          "on",
+          "startsAt",
+          "endsAt",
+          "requiredPeople",
+          "assignedCount",
+          "status",
+          "notes",
+          "assignedIds"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/MissionId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "on": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "requiredPeople": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assignedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MissionStatus"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "assignedIds": {
+            "type": "array"
+          }
+        }
+      },
+      "MissionStatus": {
+        "enum": [
+          "Rascunho",
+          "Confirmada",
+          "Cancelada"
+        ]
+      },
+      "MissionSuggestion": {
+        "required": [
+          "missionId",
+          "requiredPeople",
+          "totalConsidered",
+          "eligible",
+          "blocked"
+        ],
+        "type": "object",
+        "properties": {
+          "missionId": {
+            "$ref": "#/components/schemas/MissionId"
+          },
+          "requiredPeople": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalConsidered": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "eligible": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedPerson"
+            }
+          },
+          "blocked": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlockedPerson"
+            }
+          }
+        }
+      },
       "MoveDepartmentRequest": {
         "required": [
           "parentId"
@@ -2804,6 +3218,45 @@
           }
         }
       },
+      "SuggestedPerson": {
+        "required": [
+          "employeeId",
+          "name",
+          "departmentName",
+          "participations",
+          "lastParticipation",
+          "reason",
+          "suggested"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "participations": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "lastParticipation": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string"
+          },
+          "suggested": {
+            "type": "boolean"
+          }
+        }
+      },
       "TerminateEmployeeRequest": {
         "required": [
           "terminatedOn"
@@ -2918,6 +3371,9 @@
     },
     {
       "name": "AbsenceRequests"
+    },
+    {
+      "name": "Missions"
     }
   ]
 }
