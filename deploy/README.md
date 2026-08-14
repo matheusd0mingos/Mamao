@@ -25,6 +25,11 @@ O `deploy.sh` faz o provisionamento. Rodar `./deploy/deploy.sh` numa máquina vi
 pergunta o que falta, cria o que não existe e segue para o deploy. Se preferir separar
 as duas coisas, `--setup` só prepara o ambiente.
 
+> **O repositório não vai para o servidor.** O script roda da sua máquina e conduz o
+> servidor por SSH; o que chega lá são as imagens (pelo registry), o `dist` do Angular
+> e os arquivos desta pasta. Não é preciso `git clone` nem `gh` no VPS — o servidor
+> nunca precisa de acesso ao GitHub.
+
 **A única coisa que ele não faz é criar o usuário SSH** — precisa de root, e é a única
 etapa que você faz uma vez na vida do servidor:
 
@@ -34,8 +39,17 @@ adduser --disabled-password --gecos '' mamao
 mkdir -p /home/mamao/.ssh && cp ~/.ssh/authorized_keys /home/mamao/.ssh/
 chown -R mamao:mamao /home/mamao/.ssh
 chmod 700 /home/mamao/.ssh && chmod 600 /home/mamao/.ssh/authorized_keys
-usermod -aG sudo mamao
+
+# sudo SEM senha: o deploy roda sem terminal do outro lado, então um sudo que
+# pergunta a senha não tem onde perguntar — morre no meio da instalação.
+echo 'mamao ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/mamao
+chmod 440 /etc/sudoers.d/mamao
 ```
+
+O `NOPASSWD` incomoda de início, mas o usuário só entra por chave e a alternativa real
+seria guardar a senha do sudo em algum lugar para o script usar — pior. Quando o
+servidor estiver estável, dá para reduzir o escopo para os comandos que o script
+realmente usa (`apt-get`, `mkdir`, `chown`, `usermod`).
 
 Depois disso, feche o SSH por senha (`PasswordAuthentication no`) e o login de root
 antes de expor a máquina.

@@ -195,6 +195,20 @@ verificar_conexao() {
     existe "Conexao com $SSH_USER@$SSH_HOST:$SSH_PORT"
 }
 
+# O `sudo` do outro lado roda SEM terminal: o script manda o comando por SSH e, nos
+# trechos maiores, o proprio script vai pelo stdin. Se o sudo pedir senha, nao ha onde
+# perguntar — ele morre com "no tty present and no askpass program", no meio de uma
+# instalacao. Por isso o usuario de deploy precisa de sudo sem senha, e por isso
+# conferimos ANTES de tentar em vez de descobrir na metade.
+sudo_remoto_disponivel() { remoto "sudo -n true" >/dev/null 2>&1; }
+
+explicar_sudo_remoto() {
+    erro "$SSH_USER nao tem sudo sem senha em $SSH_HOST, e o deploy roda sem terminal no servidor."
+    info "Como root, uma vez na vida do servidor:"
+    info "  echo '$SSH_USER ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$SSH_USER"
+    info "  chmod 440 /etc/sudoers.d/$SSH_USER"
+}
+
 garantir_docker_remoto() {
     passo "Conferindo o Docker no servidor"
 
@@ -214,6 +228,11 @@ garantir_docker_remoto() {
     if ! confirmar "Instalar o Docker agora? (usa sudo no servidor)"; then
         info "Sem problema. Instale manualmente e rode de novo:"
         info "  https://docs.docker.com/engine/install/debian/"
+        return 1
+    fi
+
+    if ! sudo_remoto_disponivel; then
+        explicar_sudo_remoto
         return 1
     fi
 
@@ -260,6 +279,11 @@ garantir_diretorio_remoto() {
         if remoto "mkdir -p '$REMOTE_DIR' 2>/dev/null"; then
             criou "$REMOTE_DIR"
         elif confirmar "Criar $REMOTE_DIR com sudo?" S; then
+            if ! sudo_remoto_disponivel; then
+                explicar_sudo_remoto
+                info "Ou crie o diretorio como root: mkdir -p '$REMOTE_DIR' && chown $SSH_USER:$SSH_USER '$REMOTE_DIR'"
+                return 1
+            fi
             remoto "sudo mkdir -p '$REMOTE_DIR' && sudo chown '$SSH_USER':'$SSH_USER' '$REMOTE_DIR'"
             criou "$REMOTE_DIR (com sudo)"
         else
@@ -286,7 +310,7 @@ garantir_segredos_remotos() {
     remoto "bash -s" <<REMOTO
 set -Eeuo pipefail
 
-command -v openssl >/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q openssl; }
+command -v openssl >/dev/null || { sudo -n apt-get update -q && sudo -n apt-get install -y -q openssl; }
 
 PG_PASS="\$(openssl rand -hex 24)"
 APP_PASS="\$(openssl rand -hex 24)"
