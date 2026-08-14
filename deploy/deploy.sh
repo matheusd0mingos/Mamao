@@ -269,6 +269,57 @@ REMOTO
     fi
 }
 
+# ══════════════════════════════════════════════════════════════════════════════
+# Acesso do servidor ao registry
+#
+# As imagens no ghcr nascem PRIVADAS. Sem credencial no servidor, o `docker compose
+# pull` morre com "denied" — e o erro nao diz que falta login, diz que o repositorio
+# nao existe. O servidor so precisa BAIXAR: um token com `read:packages` e nada mais.
+# Quem publica e esta maquina (ou o CI), com um token separado.
+# ══════════════════════════════════════════════════════════════════════════════
+garantir_login_registry() {
+    passo "Acesso do servidor ao registry"
+
+    local host="${REGISTRY%%/*}"
+
+    if remoto "grep -q '\"$host\"' ~/.docker/config.json 2>/dev/null"; then
+        existe "Servidor autenticado em $host"
+        return 0
+    fi
+
+    local usuario="${REGISTRY_USER:-${REGISTRY#*/}}"
+    local token="${REGISTRY_TOKEN:-}"
+
+    if [[ -z "$token" ]]; then
+        if [[ ! -t 0 ]]; then
+            erro "O servidor nao esta autenticado em $host e nao ha terminal para perguntar."
+            info "Defina REGISTRY_TOKEN no ambiente (no CI, um secret) com escopo read:packages."
+            return 1
+        fi
+
+        info "O servidor precisa de um token SO DE LEITURA para baixar as imagens."
+        info "Crie em https://github.com/settings/tokens marcando APENAS read:packages."
+        info "Um token com escopo repo aqui daria acesso ao seu codigo a quem entrar no servidor."
+        # -s: nao ecoa. O token nao aparece na tela nem no historico do shell.
+        read -rs -p "  Token read:packages de $usuario: " token
+        printf '\n'
+    fi
+
+    [[ -n "$token" ]] || { erro "Token vazio."; return 1; }
+
+    # --password-stdin: o token vai pelo stdin do ssh, nunca como argumento — argumento
+    # apareceria no `ps` de qualquer processo do servidor enquanto o comando roda.
+    if ! printf '%s' "$token" | remoto "docker login '$host' -u '$usuario' --password-stdin" >/dev/null 2>&1; then
+        erro "O servidor nao conseguiu autenticar em $host como $usuario."
+        info "Confira se o token tem read:packages e se o usuario esta certo."
+        return 1
+    fi
+
+    criou "Servidor autenticado em $host"
+    aviso "A credencial fica em ~/.docker/config.json do servidor, codificada em base64 (nao"
+    aviso "criptografada). E por isso que ela e so de leitura de pacotes."
+}
+
 garantir_diretorio_remoto() {
     passo "Preparando $REMOTE_DIR no servidor"
 
@@ -382,13 +433,17 @@ enviar_configuracao() {
     existe "compose, Caddyfile, init-db.sql, backup.sh"
 }
 
+# Inclui a credencial do registry: sem ela o `pull` falha na subida, com o ambiente
+# aparentemente pronto. Melhor tratar como "falta preparar" — preparar e idempotente.
 ambiente_pronto() {
-    remoto "test -d '$REMOTE_DIR' && test -f '$REMOTE_DIR/.env' && command -v docker >/dev/null" 2>/dev/null
+    remoto "test -d '$REMOTE_DIR' && test -f '$REMOTE_DIR/.env' && command -v docker >/dev/null \
+        && grep -q '\"${REGISTRY%%/*}\"' ~/.docker/config.json 2>/dev/null" 2>/dev/null
 }
 
 preparar_ambiente() {
     verificar_conexao
     garantir_docker_remoto
+    garantir_login_registry
     garantir_diretorio_remoto
     garantir_segredos_remotos
     enviar_configuracao
@@ -530,8 +585,10 @@ fi
 # ── build ─────────────────────────────────────────────────────────────────────
 passo "Construindo as imagens ($TAG)"
 
-docker build -f src/Mamao.Api/Dockerfile    -t "$REGISTRY/mamao-api:$TAG"    -t "$REGISTRY/mamao-api:latest"    .
-docker build -f src/Mamao.Worker/Dockerfile -t "$REGISTRY/mamao-worker:$TAG" -t "$REGISTRY/mamao-worker:latest" .
+# Sem `latest`: a tag e o SHA do commit, e so. `latest` num servidor faz "o que esta no
+# ar" virar uma pergunta sem resposta — e rollback vira adivinhacao.
+docker build -f src/Mamao.Api/Dockerfile    -t "$REGISTRY/mamao-api:$TAG"    .
+docker build -f src/Mamao.Worker/Dockerfile -t "$REGISTRY/mamao-worker:$TAG" .
 
 passo "Publicando no registry"
 if ! docker push "$REGISTRY/mamao-api:$TAG"; then

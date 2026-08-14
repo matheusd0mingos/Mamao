@@ -61,6 +61,23 @@ docker login ghcr.io          # token com write:packages
 ./deploy/deploy.sh --setup    # ou direto ./deploy/deploy.sh
 ```
 
+### Duas credenciais de registry, de propósito
+
+As imagens no ghcr nascem **privadas**, então o servidor precisa de credencial para
+baixar. São duas, e diferentes:
+
+| Quem | Para quê | Escopo | Onde fica |
+|---|---|---|---|
+| Sua máquina (ou o CI) | Publicar | `write:packages` | `docker login` local; no CI, o `GITHUB_TOKEN` do job |
+| O servidor | Baixar | `read:packages` **e nada mais** | `~/.docker/config.json` no servidor |
+
+O script pergunta o token de leitura na primeira vez e faz o `docker login` no servidor
+por você. Um token de publicação guardado no servidor deixaria quem entrasse nele
+**substituir a imagem da sua própria aplicação** — por isso o de lá só lê.
+
+Essa credencial fica em base64 no `~/.docker/config.json`, que é como o Docker guarda
+(não é criptografia). É o motivo de ela ser a mais fraca possível.
+
 ### O que o setup faz
 
 | Verifica | Se faltar |
@@ -68,6 +85,7 @@ docker login ghcr.io          # token com write:packages
 | `deploy/.env` | Pergunta host, usuário, porta, diretório, registry e origem pública, e cria com modo 600 |
 | Conexão SSH | Falha explicando como criar o usuário |
 | Docker + plugin compose | Oferece instalar pelo repositório oficial (pede confirmação, usa sudo) |
+| Login do servidor no registry | Pede um token `read:packages` e autentica lá (sem ele o `pull` falha) |
 | `$REMOTE_DIR` e `web-dist/` | Cria; recorre a sudo se `/opt` exigir |
 | `$REMOTE_DIR/.env` | **Gera as senhas no próprio servidor** (`openssl`) e grava com modo 600 |
 | compose, Caddyfile, init-db, backup.sh | Envia (e reenvia a cada deploy, para não dessincronizar) |
@@ -101,7 +119,43 @@ depois. O script avisa se a borda não responder.
 ./deploy/deploy.sh --sim        # não pergunta nada (CI)
 ```
 
-O que o script faz, na ordem:
+### Pelo CI (recomendado)
+
+`.github/workflows/deploy.yml`, em **Actions → Deploy → Run workflow**. Ele chama o
+mesmo `deploy.sh` — a lógica não está duplicada em YAML, porque duas implementações do
+mesmo deploy divergem em silêncio e a diferença aparece no pior momento.
+
+Vantagem sobre rodar da sua máquina: a imagem sai sempre do mesmo lugar, nenhuma
+máquina de trabalho precisa do toolchain completo, e não existe a pergunta "de onde
+saiu a versão que está no ar".
+
+Configure uma vez, em **Settings → Secrets and variables → Actions**:
+
+| Secret | O que é |
+|---|---|
+| `DEPLOY_SSH_KEY` | Chave privada do usuário `mamao` (gere um par só para o CI) |
+| `DEPLOY_SSH_HOST` | IP ou domínio do VPS |
+| `GHCR_READ_TOKEN` | PAT com **apenas** `read:packages` — é o que o servidor usa para baixar |
+
+| Variable (opcional) | Padrão |
+|---|---|
+| `DEPLOY_SSH_USER` | `mamao` |
+| `DEPLOY_SSH_PORT` | `22` |
+| `DEPLOY_REMOTE_DIR` | `/opt/mamao` |
+| `PUBLIC_ORIGIN` | `https://app.mamao.tech` |
+
+O par de chaves do CI, na sua máquina:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/mamao_ci -C 'deploy-ci' -N ''
+cat ~/.ssh/mamao_ci.pub    # adicione em /home/mamao/.ssh/authorized_keys no servidor
+cat ~/.ssh/mamao_ci        # cole inteiro no secret DEPLOY_SSH_KEY
+```
+
+O workflow usa o environment `producao`: configure-o no GitHub se quiser exigir
+aprovação manual antes de cada deploy.
+
+### O que o script faz, na ordem:
 
 1. Confere ferramentas locais; prepara o ambiente se ainda não estiver pronto
 2. Avisa se há alteração não commitada (a imagem é marcada com o SHA do commit)

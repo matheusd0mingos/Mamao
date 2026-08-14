@@ -1,0 +1,98 @@
+# Deploy de producao.
+#
+# Quem constroi e publica e o CI, nao uma maquina de trabalho. Isso e o que faz o
+# "que versao esta no ar" ter uma resposta: a imagem sai sempre do mesmo lugar,
+# marcada com o SHA do commit, e nenhuma maquina precisa ter o toolchain completo.
+#
+# O servidor continua sem o codigo-fonte e sem credencial do GitHub: ele so baixa
+# imagem do ghcr com um token read:packages. Ver deploy/README.md.
+#
+# A logica do deploy NAO esta duplicada aqui — este arquivo prepara o ambiente e
+# chama deploy/deploy.sh, o mesmo que roda da sua maquina. Duas implementacoes do
+# mesmo deploy divergem em silencio, e a diferenca so aparece no pior momento.
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      pular_testes:
+        description: 'Pular a suite (marque se ela ja rodou no CI deste commit)'
+        type: boolean
+        default: false
+
+concurrency:
+  # Dois deploys ao mesmo tempo no mesmo no unico se atropelam. Sem cancelar o que ja
+  # esta rodando: interromper no meio da subida deixa o servidor em estado misto.
+  group: deploy-producao
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  deploy:
+    name: Producao
+    runs-on: ubuntu-latest
+    environment: producao   # da para exigir aprovacao manual configurando o environment
+
+    permissions:
+      contents: read
+      packages: write       # publicar as imagens no ghcr deste repositorio
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/mamao-web/package-lock.json
+
+      # Publicar usa o GITHUB_TOKEN do proprio job: vale enquanto o job roda e expira
+      # depois. Nao ha token de publicacao guardado em lugar nenhum.
+      - name: Autenticar no ghcr (publicacao)
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u "$ATOR" --password-stdin
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATOR: ${{ github.actor }}
+
+      - name: Chave SSH do deploy
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$CHAVE" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+        env:
+          CHAVE: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      # O script le daqui. Nao contem segredo de producao: a senha do banco e a chave do
+      # JWT sao geradas no servidor e nunca passam pelo runner.
+      - name: Configuracao do deploy
+        run: |
+          umask 077
+          cat > deploy/.env <<EOF
+          SSH_HOST=${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER=${{ vars.DEPLOY_SSH_USER || 'mamao' }}
+          SSH_PORT=${{ vars.DEPLOY_SSH_PORT || '22' }}
+          SSH_KEY=$HOME/.ssh/deploy
+          REMOTE_DIR=${{ vars.DEPLOY_REMOTE_DIR || '/opt/mamao' }}
+          REGISTRY=ghcr.io/${{ github.repository_owner }}
+          REGISTRY_USER=${{ github.repository_owner }}
+          PUBLIC_ORIGIN=${{ vars.PUBLIC_ORIGIN || 'https://app.mamao.tech' }}
+          EOF
+
+      - name: Deploy
+        run: ./deploy/deploy.sh --sim ${{ inputs.pular_testes && '--skip-tests' || '' }}
+        env:
+          # Este e o token que o SERVIDOR usa para baixar. Precisa durar, entao e um
+          # secret de verdade — e por isso mesmo tem que ter read:packages e nada mais.
+          REGISTRY_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+
+      - name: Estado final
+        if: always()
+        run: ./deploy/deploy.sh --status
