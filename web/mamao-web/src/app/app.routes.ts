@@ -53,6 +53,12 @@ export const routes: Routes = [
           import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),
       },
       {
+        path: 'disponibilidade',
+        canMatch: [permissionGuard('people.read')],
+        loadComponent: () =>
+          import('./features/availability/availability.page').then((m) => m.AvailabilityPage),
+      },
+      {
         path: 'acessos',
         canMatch: [permissionGuard('users.invite')],
         loadComponent: () =>

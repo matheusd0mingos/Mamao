@@ -24,6 +24,7 @@ import { SessionService } from '../core/auth/session.service';
         <nav>
           <a routerLink="/inicio" routerLinkActive="active">Visão geral</a>
           <a routerLink="/pessoas" routerLinkActive="active">Pessoas</a>
+          <a routerLink="/disponibilidade" routerLinkActive="active">Disponibilidade</a>
         </nav>
 
         <div class="sidebar__foot">

@@ -55,3 +55,12 @@ export interface ApiProblem {
   traceId?: string;
   fieldErrors?: Record<string, string[]>;
 }
+
+export type AvailabilityResponse = Schemas['AvailabilityResponse'];
+export type OccupancyResponse = Schemas['OccupancyResponse'];
+export type CreateOccupancyRequest = Schemas['CreateOccupancyRequest'];
+export type OccupancyKind = Schemas['OccupancyKind'];
+
+export type AbsenceRequestResponse = Schemas['AbsenceRequestResponse'];
+export type CreateAbsenceRequest = Schemas['CreateAbsenceRequest'];
+export type AbsenceRequestStatus = Schemas['AbsenceRequestStatus'];
