@@ -163,7 +163,6 @@ interface LinhaDeAcesso {
       font-size: 14px; margin-left: var(--space-3); padding: 0; text-decoration: underline;
     }
     .link--perigo { color: var(--status-danger-fg); }
-    .alert--sucesso { background: var(--status-success-bg); color: var(--status-success-fg); }
     .volta { margin-top: var(--space-5); }
     .volta a { color: var(--text-secondary); text-decoration: none; }
   `,

@@ -140,10 +140,6 @@ import { OrganizationApi } from './organization.api';
     }
     .arvore__nome { font-weight: 500; }
     .arvore__contagem { font-size: 13px; margin-left: auto; white-space: nowrap; }
-    .link-perigo {
-      background: none; border: 0; color: var(--status-danger-fg); cursor: pointer;
-      font: inherit; font-size: 13px; padding: 0;
-    }
     .novo { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     .novo input, .novo select {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);

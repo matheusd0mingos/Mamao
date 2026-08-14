@@ -243,6 +243,22 @@ a {
 }
 
 /* Atencao, nao falha: o arquivo foi lido, mas tem algo que o usuario precisa conferir. */
+/* Acao destrutiva discreta dentro de uma lista, onde um botao inteiro pesaria demais. */
+.link-perigo {
+  background: none;
+  border: 0;
+  color: var(--status-danger-fg);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+}
+
+.alert--sucesso {
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
 .alert--warning {
   background: var(--status-warning-bg);
   color: var(--status-warning-fg);
