@@ -81,6 +81,11 @@ no código.
 Com três empresas dispostas a usar em troca de feedback, o roadmap deixa de ser
 chute informado. Para isso valer, o piloto precisa de método.
 
+> **Confirmado pelo autor:** o caso do **rodízio de serviço** ("20 pessoas para a
+> marcha") é de um dos três pilotos — não é hipótese nem caso do próprio autor. É o
+> que sustenta a [ADR-0019](../adr/0019-escala-por-rodizio.md) ter feito do rodízio o
+> motor primário do Marco 4, e não do ciclo fixo de turno.
+
 ### Antes de escrever mais código
 
 Uma conversa de 45 minutos com cada uma, sem demo, só perguntas:
@@ -90,6 +95,12 @@ Uma conversa de 45 minutos com cada uma, sem demo, só perguntas:
    todos ali.
 2. Quantas pessoas, quantos turnos, qual o padrão (12×36? 5×2? 6×1?), quem monta,
    quanto tempo leva por mês.
+
+   **No piloto do rodízio, esta pergunta muda:** quais serviços recorrem (marcha,
+   guarda, ronda, evento), quantas pessoas cada um exige, se exige composição por
+   posto ("1 sargento e 4 soldados"), com que antecedência sai a escala, e **como é
+   decidido hoje de quem é a vez** — essa última é a especificação do
+   `RotationLedger`.
 3. O que acontece quando alguém falta às 5h da manhã? Quem descobre, quem resolve,
    por onde?
 4. Quais documentos vencem, quem controla, e alguma vez venceu sem ninguém ver?
