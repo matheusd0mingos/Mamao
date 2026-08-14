@@ -46,6 +46,27 @@ Notas de implementação:
 - Contratos que não são CLT (PJ, estágio, intermitente) precisam de tratamento
   distinto ou de desativação das regras. Modele `EmploymentContract.Type` desde já.
 
+## <a name="depois-da-aprovação"></a>Depois da aprovação: quem fica sabendo, e com que prazo
+
+Aprovar não encerra o caso — abre dois relógios, e os dois têm consequência em dinheiro:
+
+| Obrigação | Prazo | Dono | Se estourar |
+|---|---|---|---|
+| Comunicar o empregado por escrito | 30 dias antes do início (art. 135) | gestor | Férias contestáveis; infração administrativa |
+| Pagar remuneração + 1/3 | até 2 dias antes do início (art. 145) | RH / financeiro | Jurisprudência majoritária manda pagar **em dobro** |
+
+**Decisão: isso vira pendência com dono e prazo, não notificação.** A diferença é
+prática — uma notificação é lida uma vez e some; uma pendência fica na fila até alguém
+resolver, e envelhece visivelmente. Como o custo de esquecer é pagamento em dobro, o
+sistema não pode se contentar em ter avisado.
+
+Consequência de projeto: o papel `Hr` já existe em `Permissions` e é o dono padrão da
+pendência de pagamento. Quando o tenant não tem ninguém com esse papel, o dono é o
+Owner — nunca ninguém.
+
+**O que o Mamão não faz aqui:** não calcula o valor, não emite recibo, não paga. Ele
+sabe a data-limite e cobra. Essa fronteira é a mesma da seção abaixo.
+
 ## O que o sistema faz e o que não faz
 
 **Faz:** calcula saldo, avisa vencimento do período concessivo, valida

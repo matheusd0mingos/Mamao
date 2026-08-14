@@ -115,14 +115,21 @@ planilha, e o sistema aponta uma violação de interjornada que a planilha não 
 
 - [ ] `VacationEntitlement` com regras CLT ([ADR-0014](adr/0014-regras-clt-de-ferias.md))
 - [ ] Solicitação com fracionamento e abono; validação das regras
+- [ ] **`VacationRequest.RequestedBy` desde o primeiro commit** — o gestor lança pelo
+      funcionário na V1, o próprio funcionário propõe na V1.5, **pelo mesmo fluxo**
+      ([P1](produto/mvp-e-posicionamento.md#p1))
 - [ ] **Conflito e cobertura por turno**, não por dia
 - [ ] Aprovação/recusa com histórico e evento
 - [ ] Timeline reutilizando o `TimeGrid` do Marco 4
 - [ ] Alerta de período concessivo vencendo
 - [ ] Job de geração de períodos aquisitivos
+- [ ] **Aprovar gera duas pendências com prazo, não um aviso**: comunicar ao
+      funcionário (30 dias, art. 135) e pagar (2 dias antes do início, art. 145).
+      O RH é dono da segunda ([ADR-0014](adr/0014-regras-clt-de-ferias.md#depois-da-aprovação))
 
 **Pronto quando:** o gestor vê que aprovar as férias do Carlos deixa o turno noturno
-com uma pessoa — **antes** de aprovar.
+com uma pessoa — **antes** de aprovar; e o RH vê a data-limite de pagamento sem
+ninguém ter mandado mensagem para ninguém.
 
 ---
 

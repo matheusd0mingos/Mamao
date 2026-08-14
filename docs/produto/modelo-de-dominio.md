@@ -98,6 +98,7 @@ direto para resolver.
 ```
 Pendência = {
   tipo:      DocumentExpiring | DocumentPending | VacationApproval |
+             VacationNoticeDue | VacationPaymentDue |
              AbsenceApproval | TaskOverdue | ScheduleGap | OnboardingStep
   assunto:   referência ao objeto (documento, férias, tarefa…)
   dono:      quem resolve (usuário ou papel)
@@ -168,13 +169,25 @@ Notas:
 VacationEntitlement (raiz)   período aquisitivo: início, fim, dias de direito,
                              dias gozados, dias vendidos, dias em solicitação,
                              fim do período concessivo
-VacationRequest (raiz)       períodos solicitados, status, aprovador,
-                             abono pecuniário, adiantamento 13º, histórico
+VacationRequest (raiz)       períodos solicitados, status, quem solicitou,
+                             em nome de quem, aprovador, abono pecuniário,
+                             adiantamento 13º, histórico
 Absence (raiz)               tipo, intervalo, justificativa, anexo, aprovação
 AbsenceType (raiz)           catálogo configurável: conta como ausência?
                              precisa aprovação? precisa documento? afeta férias?
 Holiday (raiz)               nacional / estadual / municipal / da empresa
 ```
+
+`VacationRequest` guarda **quem solicitou** separado de **em nome de quem**. Não é
+burocracia: é o que permite o mesmo fluxo servir a V1 e a V1.5 sem reescrita. Na V1 o
+gestor lança pelo funcionário (`RequestedBy = gestor`), porque
+[P1](mvp-e-posicionamento.md#p1) exige que tudo funcione com uma pessoa logada. Na V1.5
+o funcionário propõe (`RequestedBy = ele mesmo`) e **nada mais muda** — mesma máquina de
+estados, mesma validação, mesma aprovação, mesmo evento. O que é adiado é o canal de
+acesso do funcionário (convite, login, PWA), nunca o conceito de proposta.
+
+Modelar isso desde o início custa uma coluna. Descobrir depois que "solicitante" e
+"funcionário" eram sempre a mesma pessoa custa migração de dados e reescrita da tela.
 
 `AbsenceType` configurável é importante: cada empresa tem tipos próprios
 ("banco de horas", "doação de sangue", "licença nojo"). Enum fechado gera pedido de
@@ -337,9 +350,17 @@ VacationRequest.Approve()
               │                      compatível, utilização < 70%
               ├─ Scheduling     → marca buracos na escala do período
               ├─ Notifications  → avisa João, o gestor e quem herdar tarefa
+              │                    → e abre DUAS pendências com prazo:
+              │                       comunicar João (art. 135, 30 dias)
+              │                       pagar (art. 145, 2 dias antes) — dono: RH
               └─ Documents      → documento vencendo durante as férias?
                                    antecipa a cobrança
 ```
+
+O RH não recebe "uma mensagem". Mensagem se lê e se esquece; as duas obrigações acima
+têm **data** e consequência em dinheiro se estourarem. Por isso viram pendência com
+dono e prazo — a mesma estrutura do resto do produto — e aparecem na fila de
+aprovações do Marco 7, não numa caixa de entrada paralela.
 
 Nenhum desses consumidores lê a tabela de férias. Cada um reage ao evento e
 resolve dentro do seu próprio contexto. É isso que mantém a extração futura
