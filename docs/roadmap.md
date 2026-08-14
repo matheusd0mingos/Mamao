@@ -65,7 +65,9 @@ não no mês 4, quando vira um projeto próprio.
 - [x] **Importação CSV** com mapeamento de coluna, pré-visualização e erro por linha
       (XLSX fica para depois: exige biblioteca nova e o Excel exporta CSV em dois cliques —
       a tela ensina como)
-- [ ] Perfil do funcionário
+- [x] **Perfil do funcionário**: dados, contrato com alertas, situação de acesso e
+      desligamento numa página só. É onde os Marcos 2 a 5 penduram documentos, ausências,
+      escala e férias — todos são "desta pessoa"
 - [x] Papéis e permissões ([ADR-0007](adr/0007-autorizacao.md)) — antecipado no Marco 0:
       `Owner`/`Hr`/`Manager`/`Employee`, policies geradas de `Permissions.All`.
       Falta a **tela** de gerenciar quem tem qual papel

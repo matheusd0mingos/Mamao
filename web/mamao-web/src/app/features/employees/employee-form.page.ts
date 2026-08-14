@@ -22,7 +22,13 @@ import { EmployeesStore } from './employees.store';
   selector: 'mamao-employee-form',
   imports: [ReactiveFormsModule, RouterLink],
   template: `
-    <nav class="volta"><a routerLink="/pessoas">← Pessoas</a></nav>
+    <nav class="volta">
+      @if (id(); as identificador) {
+        <a [routerLink]="['/pessoas', identificador]">← Voltar ao perfil</a>
+      } @else {
+        <a routerLink="/pessoas">← Pessoas</a>
+      }
+    </nav>
 
     <h1>{{ id() ? 'Editar funcionário' : 'Cadastrar funcionário' }}</h1>
 
@@ -141,7 +147,7 @@ import { EmployeesStore } from './employees.store';
           <button type="submit" class="btn btn--primary" [disabled]="salvando()">
             {{ salvando() ? 'Salvando…' : 'Salvar' }}
           </button>
-          <a class="btn btn--ghost" routerLink="/pessoas">Cancelar</a>
+          <a class="btn btn--ghost" [routerLink]="id() ? ['/pessoas', id()] : ['/pessoas']">Cancelar</a>
         </div>
       </form>
     </div>
@@ -462,7 +468,7 @@ export class EmployeeFormPage implements OnInit {
       }
 
       await this.store.load();
-      await this.router.navigate(['/pessoas']);
+      await this.router.navigate(id ? ['/pessoas', id] : ['/pessoas']);
     } catch (problema) {
       this.erro.set(problema as ApiProblem);
     } finally {

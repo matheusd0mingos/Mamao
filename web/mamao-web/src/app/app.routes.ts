@@ -72,8 +72,16 @@ export const routes: Routes = [
           import('./features/employees/employee-import.page').then((m) => m.EmployeeImportPage),
       },
       {
+        // Ver e a operacao comum; editar e a rara. Antes o nome levava direto ao
+        // formulario, e formulario aberto por engano e formulario salvo por engano.
         path: 'pessoas/:id',
         canMatch: [permissionGuard('people.read')],
+        loadComponent: () =>
+          import('./features/employees/employee-profile.page').then((m) => m.EmployeeProfilePage),
+      },
+      {
+        path: 'pessoas/:id/editar',
+        canMatch: [permissionGuard('people.write')],
         loadComponent: () =>
           import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),
       },

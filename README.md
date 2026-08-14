@@ -39,7 +39,8 @@ observabilidade, migrations e testes.
 | Setores em árvore e cargos, com filtro por subárvore | ✅ Marco 1 em andamento |
 | Convite de acesso (token com prazo, uso único, aceite público) | ✅ |
 | Contrato de trabalho com regime de vínculo e alertas por regime | ✅ |
-| Testes | ✅ 87 unitários + 9 de arquitetura + 10 de integração |
+| Perfil do funcionário, com desligamento | ✅ |
+| Testes | ✅ 92 unitários + 9 de arquitetura + 10 de integração |
 | CI (GitHub Actions) | ✅ |
 | Deploy (`deploy.sh` com provisionamento + Compose + Caddy + backup) | ✅ escrito e lintado, ainda não executado contra um servidor |
 
