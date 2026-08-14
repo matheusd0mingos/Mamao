@@ -158,10 +158,22 @@ cp -r "$REPO_DIR/web/landing/." "$DESTINO/landing/"
 info "site pronto"
 
 # ── subida ────────────────────────────────────────────────────────────────────
+# TAG e as imagens vao para dentro do .env, e nao como variavel de um comando so.
+# O compose precisa delas em TODA invocacao — inclusive nos `docker compose ps`,
+# `logs` e `restart` que voce der na mao depois, quando o script ja terminou.
+definir_no_env() {
+    local chave="$1" valor="$2"
+    sed -i "/^$chave=/d" "$DESTINO/.env"
+    printf '%s=%s\n' "$chave" "$valor" >> "$DESTINO/.env"
+}
+
+definir_no_env TAG "$TAG"
+definir_no_env IMAGE_API mamao-api
+definir_no_env IMAGE_WORKER mamao-worker
+
 passo "Subindo"
 cd "$DESTINO"
-TAG="$TAG" IMAGE_API=mamao-api IMAGE_WORKER=mamao-worker \
-    docker compose --env-file .env up -d --remove-orphans
+docker compose --env-file .env up -d --remove-orphans
 
 # /healthz/ready so responde 200 quando o banco esta acessivel E as migrations foram
 # aplicadas pelo Worker. E o unico sinal confiavel de que subiu de verdade.
@@ -176,5 +188,6 @@ for i in $(seq 1 60); do
     sleep 3
 done
 
+docker compose ps || true
 docker compose logs --tail 60 api worker || true
-morrer "Nao ficou pronto em 3 minutos. Log acima."
+morrer "Nao ficou pronto em 3 minutos. Estado e log acima."
