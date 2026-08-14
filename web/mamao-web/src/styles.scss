@@ -212,6 +212,19 @@ textarea {
   width: 100%;
 }
 
+/* Campo numerico curto — ordem, quantidade, dias.
+ *
+ * Repete os :not() do seletor acima de proposito: sem isso a classe (0,1,0) perde para a
+ * regra global (0,2,1) e o campo estica para a linha inteira. Vale como regra do sistema
+ * de design e nao de uma pagina, porque o problema volta em toda tela que precisar de um
+ * campo curto. */
+input.estreito:not([type='checkbox']):not([type='radio']) {
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+  text-align: center;
+  width: 74px;
+}
+
 input:hover:not([type='checkbox']):not([type='radio']):not(:disabled),
 select:hover:not(:disabled) {
   border-color: var(--mamao-gray-300);

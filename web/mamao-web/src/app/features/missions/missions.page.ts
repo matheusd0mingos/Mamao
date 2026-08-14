@@ -4,11 +4,40 @@ import type {
   ApiProblem,
   MissionResponse,
   MissionSuggestion,
+  RotationPolicyResponse,
+  RotationTiebreak,
 } from '../../core/http/api.types';
 import { HasPermissionDirective } from '../../core/auth/has-permission.directive';
 import { MissionsApi } from './missions.api';
 
 /** Mesmo rotulo humano da tela de disponibilidade — o enum vem como texto do servidor. */
+/**
+ * Os desempates, com o nome que a pessoa da secao usa. O texto de apoio importa tanto
+ * quanto a opcao: quem configura isso decide quem vai pegar servico no sabado.
+ */
+const DESEMPATES: ReadonlyArray<{ valor: RotationTiebreak; rotulo: string; ajuda: string }> = [
+  {
+    valor: 'Antiguidade',
+    rotulo: 'Antiguidade',
+    ajuda: 'Mais antigo primeiro: a ordem do cargo e, dentro dela, o tempo de casa.',
+  },
+  {
+    valor: 'Modernidade',
+    rotulo: 'Modernidade',
+    ajuda: 'Mais moderno primeiro. É o costume da escala de serviço em unidade militar.',
+  },
+  {
+    valor: 'Sorteio',
+    rotulo: 'Sorteio',
+    ajuda: 'Sorteia uma vez por missão. Não muda se você recarregar a tela.',
+  },
+  {
+    valor: 'Alfabetica',
+    rotulo: 'Ordem alfabética',
+    ajuda: 'Previsível — e por isso injusta a longo prazo com quem tem nome no começo.',
+  },
+];
+
 const MOTIVOS: Record<string, string> = {
   Ferias: 'férias',
   Folga: 'folga',
@@ -43,6 +72,57 @@ const MOTIVOS: Record<string, string> = {
 
     @if (erro(); as problema) {
       <div class="alert alert--danger">{{ problema.detail }}</div>
+    }
+
+    @if (politica(); as p) {
+      <section class="card">
+        <h2>Como o Mamão desempata</h2>
+        <p class="muted dica">
+          A ordem principal é sempre quem participou menos. Isto aqui decide o que acontece
+          <strong>no empate</strong> — e é a regra que você explica para quem ficou de fora.
+        </p>
+
+        <form class="politica" (ngSubmit)="salvarPolitica()">
+          <label>
+            <span>No empate, entra primeiro</span>
+            <select [(ngModel)]="desempate" name="desempate">
+              @for (d of DESEMPATES; track d.valor) {
+                <option [value]="d.valor">{{ d.rotulo }}</option>
+              }
+            </select>
+            <small class="muted">{{ ajudaDoDesempate() }}</small>
+          </label>
+
+          <label>
+            <span>Descanso depois do serviço</span>
+            <input type="number" [(ngModel)]="descanso" name="descanso" min="0" max="60" />
+            <small class="muted">Em dias. Zero desliga a regra.</small>
+          </label>
+
+          <label>
+            <span>Quando não descansou</span>
+            <select [(ngModel)]="descansoImpede" name="descansoImpede" [disabled]="descanso === 0">
+              <option [ngValue]="false">Evitar — vai para o fim da fila</option>
+              <option [ngValue]="true">Impedir — sai da lista</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Janela do histórico</span>
+            <input type="number" [(ngModel)]="janela" name="janela" min="7" max="730" />
+            <small class="muted">Em dias. Quantas participações contam para o rodízio.</small>
+          </label>
+
+          <div class="politica__acoes" *mamaoHasPermission="'settings.write'">
+            <button class="btn btn--primary" type="submit" [disabled]="salvando()">
+              Salvar política
+            </button>
+            @if (politicaSalva()) {
+              <span class="salvo">Salvo.</span>
+            }
+          </div>
+        </form>
+      </section>
     }
 
     <section class="card" *mamaoHasPermission="'schedule.write'">
@@ -139,7 +219,9 @@ const MOTIVOS: Record<string, string> = {
                   <td>—</td>
                   <td>{{ bloqueado.name }}</td>
                   <td class="num"></td>
-                  <td class="motivo">{{ MOTIVOS[bloqueado.reason] ?? bloqueado.reason }}</td>
+                  <td class="motivo">
+                    {{ bloqueado.restriction ?? MOTIVOS[bloqueado.reason ?? ''] ?? bloqueado.reason }}
+                  </td>
                 </tr>
               }
             </tbody>
@@ -187,12 +269,20 @@ const MOTIVOS: Record<string, string> = {
     .tabela .motivo { color: var(--status-danger-fg); }
 
     .acoes { align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
+
+    .dica { margin-bottom: var(--space-3); }
+    .politica { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); align-items: start; }
+    .politica label { display: flex; flex-direction: column; font-size: 14px; gap: 4px; }
+    .politica small { line-height: 1.35; }
+    .politica__acoes { align-items: center; display: flex; gap: var(--space-3); grid-column: 1 / -1; }
+    .salvo { color: var(--status-success-fg); font-size: 13px; }
   `,
 })
 export class MissionsPage implements OnInit {
   private readonly api = inject(MissionsApi);
 
   protected readonly MOTIVOS = MOTIVOS;
+  protected readonly DESEMPATES = DESEMPATES;
 
   protected readonly missoes = signal<MissionResponse[]>([]);
   protected readonly selecionada = signal<MissionResponse | null>(null);
@@ -200,6 +290,13 @@ export class MissionsPage implements OnInit {
   protected readonly escolhidos = signal<Set<string>>(new Set());
   protected readonly salvando = signal(false);
   protected readonly erro = signal<ApiProblem | null>(null);
+  protected readonly politica = signal<RotationPolicyResponse | null>(null);
+  protected readonly politicaSalva = signal(false);
+
+  protected desempate: RotationTiebreak = 'Antiguidade';
+  protected descanso = 0;
+  protected descansoImpede = false;
+  protected janela = 90;
 
   protected nome = '';
   protected quando = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
@@ -209,6 +306,52 @@ export class MissionsPage implements OnInit {
 
   ngOnInit(): void {
     void this.carregar();
+    void this.carregarPolitica();
+  }
+
+  private async carregarPolitica(): Promise<void> {
+    try {
+      const p = await this.api.policy();
+      this.politica.set(p);
+      this.desempate = p.tiebreak;
+      this.descanso = p.minRestDays;
+      this.descansoImpede = p.restBlocks;
+      this.janela = p.windowDays;
+    } catch {
+      // Sem a política a tela continua servindo: a sugestão usa o padrão do servidor.
+      this.politica.set(null);
+    }
+  }
+
+  protected ajudaDoDesempate(): string {
+    return DESEMPATES.find((d) => d.valor === this.desempate)?.ajuda ?? '';
+  }
+
+  protected async salvarPolitica(): Promise<void> {
+    this.salvando.set(true);
+    this.erro.set(null);
+    this.politicaSalva.set(false);
+
+    try {
+      this.politica.set(
+        await this.api.savePolicy({
+          tiebreak: this.desempate,
+          minRestDays: Number(this.descanso),
+          restBlocks: this.descansoImpede,
+          windowDays: Number(this.janela),
+        }),
+      );
+      this.politicaSalva.set(true);
+
+      // Se havia uma missão aberta, a sugestão dela acabou de mudar de ordem — remontar é
+      // o que torna o efeito da configuração visível na hora.
+      const aberta = this.selecionada();
+      if (aberta) await this.montar(aberta);
+    } catch (e) {
+      this.erro.set(e as ApiProblem);
+    } finally {
+      this.salvando.set(false);
+    }
   }
 
   private async carregar(): Promise<void> {

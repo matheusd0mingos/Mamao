@@ -5,6 +5,8 @@ import type {
   CreateMissionRequest,
   MissionResponse,
   MissionSuggestion,
+  RotationPolicyRequest,
+  RotationPolicyResponse,
 } from '../../core/http/api.types';
 
 /** Missoes e montagem de escala. Ver docs/adr/0019-escala-por-rodizio.md. */
@@ -34,6 +36,15 @@ export class MissionsApi {
 
   confirm(id: string): Promise<MissionResponse> {
     return firstValueFrom(this.http.post<MissionResponse>(`${this.base}/${id}/confirm`, {}));
+  }
+
+  /** A politica de rodizio da empresa. E ela que explica a ordem da sugestao. */
+  policy(): Promise<RotationPolicyResponse> {
+    return firstValueFrom(this.http.get<RotationPolicyResponse>(`${this.base}/policy`));
+  }
+
+  savePolicy(request: RotationPolicyRequest): Promise<RotationPolicyResponse> {
+    return firstValueFrom(this.http.put<RotationPolicyResponse>(`${this.base}/policy`, request));
   }
 
   cancel(id: string): Promise<void> {

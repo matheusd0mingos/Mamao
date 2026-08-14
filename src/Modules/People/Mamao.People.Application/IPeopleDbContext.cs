@@ -25,6 +25,8 @@ public interface IPeopleDbContext
     DbSet<Mission> Missions { get; }
     DbSet<MissionAssignment> MissionAssignments { get; }
     DbSet<WorkItem> WorkItems { get; }
+    DbSet<RotationPolicy> RotationPolicies { get; }
+    DbSet<EmployeeRestriction> EmployeeRestrictions { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
 

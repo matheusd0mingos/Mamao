@@ -7,10 +7,12 @@ import type {
   ContractResponse,
   EmployeeResponse,
   InviteResponse,
+  RestrictionResponse,
 } from '../../core/http/api.types';
 import { HasPermissionDirective } from '../../core/auth/has-permission.directive';
 import { SessionService } from '../../core/auth/session.service';
 import { InvitesApi } from '../access/invites.api';
+import { RestrictionsApi } from './restrictions.api';
 import { EmployeesApi } from './employees.api';
 
 /**
@@ -132,6 +134,77 @@ import { EmployeesApi } from './employees.api';
           }
         </section>
 
+        <section class="card bloco">
+          <h2>Restrições de escala</h2>
+          <p class="muted ajuda">
+            Atividades das quais esta pessoa fica de fora — restrição médica, de função ou
+            decisão da chefia. A escala respeita sozinha: quem tem restrição não aparece
+            entre os elegíveis, e o motivo fica visível para quem monta.
+          </p>
+
+          @if (restricoes().length === 0) {
+            <p class="muted">Nenhuma restrição.</p>
+          } @else {
+            <ul class="restricoes">
+              @for (r of restricoes(); track r.id) {
+                <li [class.vencida]="!r.vigente">
+                  <div>
+                    <strong>{{ r.activityName ?? 'Toda escala' }}</strong>
+                    <span class="muted"> · {{ periodo(r) }}</span>
+                    @if (r.reason) {
+                      <div class="muted motivo">{{ r.reason }}</div>
+                    }
+                  </div>
+                  <button
+                    *mamaoHasPermission="'people.write'"
+                    class="link-perigo"
+                    type="button"
+                    (click)="removerRestricao(r)"
+                  >
+                    Remover
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <form *mamaoHasPermission="'people.write'" class="nova-restricao" (ngSubmit)="criarRestricao()">
+            <label>
+              <span>Atividade</span>
+              <input
+                [(ngModel)]="atividade"
+                name="atividade"
+                placeholder="Toda escala"
+                maxlength="160"
+              />
+            </label>
+            <label>
+              <span>De</span>
+              <input type="date" [(ngModel)]="restricaoDe" name="restricaoDe" required />
+            </label>
+            <label>
+              <span>Até (opcional)</span>
+              <input type="date" [(ngModel)]="restricaoAte" name="restricaoAte" />
+            </label>
+            <label class="larga">
+              <span>Motivo (opcional)</span>
+              <input
+                [(ngModel)]="motivoDaRestricao"
+                name="motivoDaRestricao"
+                maxlength="300"
+                placeholder="Deixe em branco se preferir não registrar"
+              />
+              <!-- Opcional de proposito: motivo medico e dado de saude, e quem monta escala
+                   precisa saber que a pessoa nao entra — nao qual e a doenca. -->
+            </label>
+            <div class="larga">
+              <button class="btn btn--ghost" type="submit" [disabled]="salvando()">
+                Adicionar restrição
+              </button>
+            </div>
+          </form>
+        </section>
+
         @if (p.isActive) {
           <section class="card bloco" *mamaoHasPermission="'people.write'">
             <h2>Desligamento</h2>
@@ -183,12 +256,26 @@ import { EmployeesApi } from './employees.api';
       font: inherit; padding: var(--space-2) var(--space-3);
     }
     .btn--perigo { background: var(--status-danger-fg); color: #fff; }
+
+    .ajuda { font-size: 13px; line-height: 1.45; margin-bottom: var(--space-3); }
+    .restricoes { list-style: none; margin: 0 0 var(--space-3); padding: 0; }
+    .restricoes li {
+      align-items: center; border-top: 1px solid var(--border); display: flex;
+      gap: var(--space-3); justify-content: space-between; padding: 8px 0;
+    }
+    .restricoes li:first-child { border-top: 0; }
+    .restricoes .vencida { opacity: 0.55; }
+    .restricoes .motivo { font-size: 13px; }
+    .nova-restricao { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+    .nova-restricao label { display: flex; flex-direction: column; font-size: 13px; gap: 4px; }
+    .nova-restricao .larga { grid-column: 1 / -1; }
     @media (max-width: 900px) { .colunas { grid-template-columns: 1fr; } }
   `,
 })
 export class EmployeeProfilePage implements OnInit {
   private readonly api = inject(EmployeesApi);
   private readonly invites = inject(InvitesApi);
+  private readonly restrictions = inject(RestrictionsApi);
   private readonly route = inject(ActivatedRoute);
   private readonly session = inject(SessionService);
 
@@ -198,6 +285,12 @@ export class EmployeeProfilePage implements OnInit {
   readonly erro = signal<ApiProblem | null>(null);
   readonly desligando = signal(false);
   readonly salvando = signal(false);
+  readonly restricoes = signal<RestrictionResponse[]>([]);
+
+  atividade = '';
+  motivoDaRestricao = '';
+  restricaoDe = new Date().toISOString().slice(0, 10);
+  restricaoAte = '';
 
   dataDeDesligamento = new Date().toISOString().slice(0, 10);
 
@@ -206,6 +299,59 @@ export class EmployeeProfilePage implements OnInit {
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
     void this.carregar();
+  }
+
+  private async carregarRestricoes(): Promise<void> {
+    try {
+      this.restricoes.set(await this.restrictions.list(this.id));
+    } catch {
+      this.restricoes.set([]);
+    }
+  }
+
+  /** "de 01/08/2026" ou "de 01/08/2026 até 30/09/2026". Sem fim é o caso permanente. */
+  periodo(r: RestrictionResponse): string {
+    const de = this.dia(r.startsOn);
+    return r.endsOn ? `de ${de} até ${this.dia(r.endsOn)}` : `desde ${de}, sem prazo`;
+  }
+
+  private dia(iso: string): string {
+    const [a, m, d] = iso.split('-');
+    return `${d}/${m}/${a}`;
+  }
+
+  async criarRestricao(): Promise<void> {
+    this.salvando.set(true);
+    this.erro.set(null);
+
+    try {
+      await this.restrictions.create({
+        employeeId: this.id,
+        activityName: this.atividade.trim() || null,
+        reason: this.motivoDaRestricao.trim() || null,
+        startsOn: this.restricaoDe,
+        endsOn: this.restricaoAte || null,
+      });
+
+      this.atividade = '';
+      this.motivoDaRestricao = '';
+      this.restricaoAte = '';
+      await this.carregarRestricoes();
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    } finally {
+      this.salvando.set(false);
+    }
+  }
+
+  async removerRestricao(r: RestrictionResponse): Promise<void> {
+    this.erro.set(null);
+    try {
+      await this.restrictions.remove(r.id as string);
+      await this.carregarRestricoes();
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    }
   }
 
   rotuloDoRegime(regime: ContractResponse['regime']): string {
@@ -268,6 +414,8 @@ export class EmployeeProfilePage implements OnInit {
       (c) => this.contrato.set(c),
       () => this.contrato.set(null),
     );
+
+    void this.carregarRestricoes();
 
     if (this.session.has('users.invite')) {
       const email = this.pessoa()?.email?.toLowerCase();

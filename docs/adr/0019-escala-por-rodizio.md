@@ -113,3 +113,53 @@ substituição; o resto é do comando.
 Quando um piloto tiver mais de ~200 pessoas num mesmo pool, ou quando as restrições
 passarem de "N pessoas com M de tal posto" para combinações que a ordenação não
 expressa. Aí, e só aí, se discute solver.
+
+---
+
+## Emenda 2026-08-14 — a regra é da unidade, não nossa
+
+Esta ADR fixou uma regra: primeiro quem participou menos, e **desempate estável, nunca
+aleatório**. Levamos as quatro perguntas para a unidade que vai usar o sistema. As
+respostas foram:
+
+> — Quem entra na próxima escala? *"Pode ter antiguidade / graduação."*
+> — Existe descanso mínimo depois do serviço? *"Depende da política da empresa."*
+> — Alguém fica permanentemente fora de certas escalas? *"Pode ter restrição médica."*
+> — Quem decide no empate? *"Random ou antiguidade."*
+
+Nenhuma resposta é uma regra. As quatro são **variações**, e é isso que decide o desenho:
+a política passa a ser **dado da empresa** (`RotationPolicy`), não constante no código.
+Fixar um padrão e escondê-lo faria a sugestão parecer arbitrária na primeira escala em
+que contrariasse o costume da casa — que é exatamente o abandono que esta ADR queria
+evitar.
+
+O que mudou:
+
+- **Desempate configurável**: antiguidade, modernidade, sorteio ou alfabética. O núcleo
+  não muda — quem participou menos continua vindo primeiro, e o desempate só age no
+  empate.
+- **Antiguidade ganhou base**: `Position.PrecedenceOrder` (menor é mais antigo) e, dentro
+  da mesma graduação, a data de admissão. Sem isso "antiguidade" só poderia significar
+  tempo de casa, o que está errado em qualquer casa onde graduação pesa mais.
+- **Modernidade existe** porque é o costume real da escala de serviço em unidade militar:
+  o serviço cai no mais moderno.
+- **Descanso mínimo** depois de serviço ou missão, em dias, com duas posturas: *evitar*
+  (vai para o fim da fila) ou *impedir* (sai da lista). As duas casas existem.
+- **Restrição** (`EmployeeRestriction`) é impedimento permanente por atividade, separado
+  de ausência: ausência tem fim, restrição vale enquanto valer. O motivo é **opcional** —
+  restrição médica pode revelar dado de saúde, e quem monta escala precisa saber que a
+  pessoa não entra, não qual é a doença.
+
+### Sobre o "nunca aleatório"
+
+O sorteio contraria o texto acima, e a objeção original continua de pé: sorteio não
+responde *"por que ele e não eu"* com mais do que "deu ele". Ele entra porque a unidade
+pediu, e com duas defesas:
+
+1. **Não é o padrão.** O padrão continua sendo antiguidade.
+2. **É estável por missão.** Sorteia uma vez, a partir do id da missão — recarregar a
+   tela não muda a ordem. Sorteio que muda entre dois cliques seria pior que aleatório:
+   seria o sistema parecendo instável.
+
+Quem sabe qual regra é justa naquela seção é a seção. O nosso trabalho é fazer a regra
+escolhida ser aplicada sempre igual, e mostrar o motivo de cada posição na tela.

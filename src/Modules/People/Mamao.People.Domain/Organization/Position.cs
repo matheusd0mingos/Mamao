@@ -27,6 +27,16 @@ public sealed class Position : ITenantOwned
     /// <summary>Chave de comparacao. Nunca exibida.</summary>
     public string NormalizedName { get; private set; } = null!;
 
+    /// <summary>
+    /// Ordem de precedencia entre cargos: MENOR e mais antigo/superior. Nulo quando a
+    /// empresa nao ordena cargos.
+    ///
+    /// E o que da sentido a "antiguidade" como desempate do rodizio. Sem isso, antiguidade
+    /// so poderia significar data de admissao — o que esta errado em qualquer casa onde
+    /// graduacao pesa mais que tempo de casa.
+    /// </summary>
+    public int? PrecedenceOrder { get; private set; }
+
     public static Result<Position> Create(string? name)
     {
         name = name?.Trim() ?? string.Empty;
@@ -41,6 +51,21 @@ public sealed class Position : ITenantOwned
             Name = name,
             NormalizedName = Normalize(name),
         });
+    }
+
+    /// <summary>Define a ordem de precedencia. Nulo tira o cargo da ordenacao.</summary>
+    public Result SetPrecedence(int? order)
+    {
+        if (order is < 0 or > 999)
+        {
+            return Result.Failure(
+                "position.invalid_precedence",
+                "A ordem precisa estar entre 0 e 999.",
+                nameof(PrecedenceOrder));
+        }
+
+        PrecedenceOrder = order;
+        return Result.Success();
     }
 
     public Result Rename(string? name)

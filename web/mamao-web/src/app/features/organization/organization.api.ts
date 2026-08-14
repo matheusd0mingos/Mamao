@@ -6,6 +6,7 @@ import type {
   CreatePositionRequest,
   DepartmentNode,
   PositionResponse,
+  UpdatePositionRequest,
   UpdateDepartmentRequest,
 } from '../../core/http/api.types';
 
@@ -36,6 +37,10 @@ export class OrganizationApi {
 
   createPosition(request: CreatePositionRequest): Promise<PositionResponse> {
     return firstValueFrom(this.http.post<PositionResponse>('/api/v1/positions', request));
+  }
+
+  updatePosition(id: string, request: UpdatePositionRequest): Promise<PositionResponse> {
+    return firstValueFrom(this.http.put<PositionResponse>(`/api/v1/positions/${id}`, request));
   }
 
   deletePosition(id: string): Promise<void> {

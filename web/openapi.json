@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:36225"
+      "url": "http://127.0.0.1:35431"
     }
   ],
   "paths": {
@@ -1802,6 +1802,166 @@
         }
       }
     },
+    "/api/v1/missions/policy": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "rotationPolicy",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RotationPolicyResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Missions"
+        ],
+        "operationId": "saveRotationPolicy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotationPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RotationPolicyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/restrictions": {
+      "get": {
+        "tags": [
+          "Restrictions"
+        ],
+        "operationId": "listRestrictions",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestrictionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Restrictions"
+        ],
+        "operationId": "createRestriction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRestrictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestrictionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/restrictions/{id}": {
+      "delete": {
+        "tags": [
+          "Restrictions"
+        ],
+        "operationId": "deleteRestriction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/work": {
       "get": {
         "tags": [
@@ -2234,7 +2394,16 @@
             "type": "string"
           },
           "reason": {
-            "$ref": "#/components/schemas/OccupancyKind"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OccupancyKind"
+              }
+            ],
+            "nullable": true
+          },
+          "restriction": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -2532,6 +2701,44 @@
         "properties": {
           "name": {
             "type": "string"
+          },
+          "precedenceOrder": {
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          }
+        }
+      },
+      "CreateRestrictionRequest": {
+        "required": [
+          "employeeId",
+          "activityName",
+          "reason",
+          "startsOn",
+          "endsOn"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activityName": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
           }
         }
       },
@@ -3360,7 +3567,8 @@
         "required": [
           "id",
           "name",
-          "employeeCount"
+          "employeeCount",
+          "precedenceOrder"
         ],
         "type": "object",
         "properties": {
@@ -3372,6 +3580,11 @@
           },
           "employeeCount": {
             "format": "int32",
+            "type": "integer"
+          },
+          "precedenceOrder": {
+            "format": "int32",
+            "nullable": true,
             "type": "integer"
           }
         }
@@ -3454,6 +3667,116 @@
             "type": "string"
           }
         }
+      },
+      "RestrictionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "RestrictionResponse": {
+        "required": [
+          "id",
+          "employeeId",
+          "employeeName",
+          "activityName",
+          "reason",
+          "startsOn",
+          "endsOn",
+          "vigente",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RestrictionId"
+          },
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "activityName": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "vigente": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "RotationPolicyRequest": {
+        "required": [
+          "tiebreak",
+          "minRestDays",
+          "restBlocks",
+          "windowDays"
+        ],
+        "type": "object",
+        "properties": {
+          "tiebreak": {
+            "$ref": "#/components/schemas/RotationTiebreak"
+          },
+          "minRestDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "restBlocks": {
+            "type": "boolean"
+          },
+          "windowDays": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "RotationPolicyResponse": {
+        "required": [
+          "tiebreak",
+          "minRestDays",
+          "restBlocks",
+          "windowDays"
+        ],
+        "type": "object",
+        "properties": {
+          "tiebreak": {
+            "$ref": "#/components/schemas/RotationTiebreak"
+          },
+          "minRestDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "restBlocks": {
+            "type": "boolean"
+          },
+          "windowDays": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "RotationTiebreak": {
+        "enum": [
+          "Antiguidade",
+          "Modernidade",
+          "Alfabetica",
+          "Sorteio"
+        ]
       },
       "SaveContractRequest": {
         "required": [
@@ -3611,6 +3934,11 @@
         "properties": {
           "name": {
             "type": "string"
+          },
+          "precedenceOrder": {
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
           }
         }
       },
@@ -3841,6 +4169,9 @@
     },
     {
       "name": "Missions"
+    },
+    {
+      "name": "Restrictions"
     },
     {
       "name": "Work"

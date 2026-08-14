@@ -1,6 +1,7 @@
 using Mamao.People.Domain.Organization;
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Availability;
+using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Missions;
 using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Results;
@@ -50,7 +51,16 @@ public sealed record SuggestedPerson(
     string Reason,
     bool Suggested);
 
-public sealed record BlockedPerson(EmployeeId EmployeeId, string Name, OccupancyKind Reason);
+/// <param name="Reason">Motivo de ausencia, quando o impedimento vem da agenda.</param>
+/// <param name="Restriction">
+/// Texto da restricao, quando o impedimento vem dela. Os dois nunca vem juntos: basta um
+/// para a pessoa nao entrar, e mostrar dois motivos sugeriria que resolver um resolveria.
+/// </param>
+public sealed record BlockedPerson(
+    EmployeeId EmployeeId,
+    string Name,
+    OccupancyKind? Reason,
+    string? Restriction = null);
 
 /// <summary>
 /// Missões e a montagem da escala.
@@ -119,9 +129,15 @@ public sealed class MissionService(IPeopleDbContext dbContext, IAuditLog audit, 
             {
                 e.Id,
                 e.FullName,
+                e.HiredOn,
+                PrecedenceOrder = dbContext.Positions.Where(p => p.Id == e.PositionId)
+                    .Select(p => p.PrecedenceOrder).FirstOrDefault(),
                 DepartmentName = dbContext.Departments.Where(d => d.Id == e.DepartmentId).Select(d => d.Name).FirstOrDefault(),
             })
             .ToListAsync(ct);
+
+        var politica = await PoliticaAsync(ct);
+        var chave = Position.Normalize(missao.Name);
 
         // ── 1. quem não pode ─────────────────────────────────────────────────────
         // A ocupação gerada por ESTA missão não conta: senão, pedir a sugestão de novo
@@ -136,9 +152,20 @@ public sealed class MissionService(IPeopleDbContext dbContext, IAuditLog audit, 
             .GroupBy(o => o.EmployeeId)
             .ToDictionary(g => g.Key, g => g.First().Kind);
 
+        // Restrição é impedimento permanente, e por isso vem separada da agenda: quem não
+        // faz serviço armado não passa a fazer porque o dia está livre.
+        var restricoes = await dbContext.EmployeeRestrictions.AsNoTracking()
+            .Where(r => r.StartsOn <= missao.On && (r.EndsOn == null || r.EndsOn >= missao.On))
+            .Where(r => r.ActivityKey == null || r.ActivityKey == chave)
+            .ToListAsync(ct);
+
+        var restritos = restricoes
+            .Where(r => r.Impede(chave, missao.On))
+            .GroupBy(r => r.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.First().Rotulo());
+
         // ── 2. histórico dos que sobraram ────────────────────────────────────────
-        var desde = missao.On.AddDays(-RotationRanking.JanelaPadraoEmDias);
-        var chave = Position.Normalize(missao.Name);
+        var desde = missao.On.AddDays(-politica.WindowDays);
 
         // Conta participações em missões com o MESMO NOME. Rodízio de formatura não é o
         // mesmo de inspeção, e misturar os dois faria a sugestão parecer arbitrária.
@@ -155,16 +182,56 @@ public sealed class MissionService(IPeopleDbContext dbContext, IAuditLog audit, 
             .GroupBy(h => h.EmployeeId)
             .ToDictionary(g => g.Key, g => (Vezes: g.Count(), Ultima: g.Max(x => x.On)));
 
-        // ── 3. ordena ────────────────────────────────────────────────────────────
-        var elegiveis = pessoas.Where(p => !impedidos.ContainsKey(p.Id)).ToList();
+        // Fim do último serviço ou missão de QUALQUER tipo, para o descanso mínimo. Só
+        // busca quando a política pede — é uma consulta a mais que a maioria não precisa.
+        var ultimoServico = politica.MinRestDays > 0
+            ? await UltimoServicoAsync(missao.On, politica.MinRestDays, ct)
+            : [];
 
-        var ranking = RotationRanking.Rank(
-            elegiveis.Select(p =>
+        // ── 3. ordena ────────────────────────────────────────────────────────────
+        var elegiveis = pessoas
+            .Where(p => !impedidos.ContainsKey(p.Id) && !restritos.ContainsKey(p.Id))
+            .ToList();
+
+        var paraOrdenar = elegiveis.Select(p =>
+        {
+            var h = doMesmoTipo.TryGetValue(p.Id, out var v) ? v : (Vezes: 0, Ultima: (DateOnly?)null);
+            return new RotationCandidate(
+                p.Id, p.FullName, h.Vezes, h.Ultima,
+                p.PrecedenceOrder, p.HiredOn,
+                ultimoServico.TryGetValue(p.Id, out var fim) ? fim : null);
+        });
+
+        // "Impedir" tira de circulação; "evitar" só empurra para o fim da fila. A política
+        // da empresa decide, porque as duas casas existem e as duas têm razão.
+        //
+        // Quem é impedido vai para a lista de bloqueados, NÃO some: uma pessoa que
+        // desaparece da tela sem motivo é a forma mais rápida de o gestor deixar de
+        // confiar na sugestão — e o funil deixaria de fechar a conta.
+        var descansando = new Dictionary<EmployeeId, string>();
+
+        if (politica.RestBlocks && politica.MinRestDays > 0)
+        {
+            var todos = paraOrdenar.ToList();
+
+            foreach (var c in todos.Where(c =>
+                RotationRanking.Descansando(c, missao.On, politica.MinRestDays)))
             {
-                var h = doMesmoTipo.TryGetValue(p.Id, out var v) ? v : (Vezes: 0, Ultima: (DateOnly?)null);
-                return new RotationCandidate(p.Id, p.FullName, h.Vezes, h.Ultima);
-            }),
-            missao.On);
+                var dias = missao.On.DayNumber - c.LastDutyEnd!.Value.DayNumber;
+                var quando = dias switch
+                {
+                    <= 0 => "sai de serviço hoje",
+                    1 => "saiu de serviço ontem",
+                    _ => $"saiu de serviço há {dias} dias",
+                };
+
+                descansando[c.EmployeeId] = $"descanso de {politica.MinRestDays} dias · {quando}";
+            }
+
+            paraOrdenar = todos.Where(c => !descansando.ContainsKey(c.EmployeeId));
+        }
+
+        var ranking = RotationRanking.Rank(paraOrdenar, missao.On, politica, missao.Id.Value);
 
         var setorPorPessoa = pessoas.ToDictionary(p => p.Id, p => p.DepartmentName);
 
@@ -180,8 +247,15 @@ public sealed class MissionService(IPeopleDbContext dbContext, IAuditLog audit, 
                 r.Candidate.LastParticipation,
                 r.Reason,
                 r.Position <= missao.RequiredPeople))],
-            [.. pessoas.Where(p => impedidos.ContainsKey(p.Id))
-                .Select(p => new BlockedPerson(p.Id, p.FullName, impedidos[p.Id]))
+            [.. pessoas
+                .Where(p => impedidos.ContainsKey(p.Id)
+                    || restritos.ContainsKey(p.Id)
+                    || descansando.ContainsKey(p.Id))
+                .Select(p => impedidos.TryGetValue(p.Id, out var motivo)
+                    ? new BlockedPerson(p.Id, p.FullName, motivo)
+                    : new BlockedPerson(
+                        p.Id, p.FullName, null,
+                        restritos.TryGetValue(p.Id, out var restricao) ? restricao : descansando[p.Id]))
                 .OrderBy(b => b.Name)]));
     }
 
@@ -248,6 +322,65 @@ public sealed class MissionService(IPeopleDbContext dbContext, IAuditLog audit, 
 
         await dbContext.SaveChangesAsync(ct);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// A política da empresa, criada na primeira vez que alguém pede uma sugestão.
+    ///
+    /// Criada aqui e não no cadastro da empresa porque o cadastro não sabe que a política
+    /// existe — e uma empresa que nunca montou escala não precisa de linha nenhuma.
+    /// </summary>
+    public async Task<RotationPolicy> PoliticaAsync(CancellationToken ct)
+    {
+        var politica = await dbContext.RotationPolicies.FirstOrDefaultAsync(ct);
+        if (politica is not null)
+            return politica;
+
+        politica = RotationPolicy.Padrao();
+        dbContext.RotationPolicies.Add(politica);
+        await dbContext.SaveChangesAsync(ct);
+
+        return politica;
+    }
+
+    public async Task<Result<RotationPolicy>> SalvarPoliticaAsync(
+        RotationTiebreak tiebreak, int minRestDays, bool restBlocks, int windowDays, CancellationToken ct)
+    {
+        var politica = await PoliticaAsync(ct);
+
+        var alteracao = politica.Update(tiebreak, minRestDays, restBlocks, windowDays);
+        if (alteracao.IsFailure)
+            return Result.Failure<RotationPolicy>(alteracao.Error!);
+
+        audit.Record(
+            AuditActions.RotationPolicyChanged, nameof(RotationPolicy), politica.Id.ToString(),
+            "Política de rodízio",
+            new { Desempate = tiebreak.ToString(), minRestDays, restBlocks, windowDays });
+
+        await dbContext.SaveChangesAsync(ct);
+        return Result.Success(politica);
+    }
+
+    /// <summary>
+    /// Quando cada pessoa saiu do último serviço ou missão antes da data de referência.
+    ///
+    /// Só olha para trás o suficiente para o descanso: quem saiu de serviço há dois meses
+    /// não descansa mais, e carregar esse histórico seria varrer a tabela à toa.
+    /// </summary>
+    private async Task<Dictionary<EmployeeId, DateOnly>> UltimoServicoAsync(
+        DateOnly referencia, int descansoMinimo, CancellationToken ct)
+    {
+        var desde = referencia.AddDays(-descansoMinimo - 1);
+
+        var blocos = await dbContext.Occupancies.AsNoTracking()
+            .Where(o => o.Kind == OccupancyKind.Servico || o.Kind == OccupancyKind.Missao)
+            .Where(o => o.EndsOn >= desde && o.EndsOn < referencia)
+            .Select(o => new { o.EmployeeId, o.EndsOn })
+            .ToListAsync(ct);
+
+        return blocos
+            .GroupBy(o => o.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.Max(x => x.EndsOn));
     }
 
     private static MissionResponse ToResponse(Mission m) => new(

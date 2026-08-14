@@ -31,6 +31,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
     public DbSet<Mission> Missions => Set<Mission>();
     public DbSet<MissionAssignment> MissionAssignments => Set<MissionAssignment>();
     public DbSet<WorkItem> WorkItems => Set<WorkItem>();
+    public DbSet<RotationPolicy> RotationPolicies => Set<RotationPolicy>();
+    public DbSet<EmployeeRestriction> EmployeeRestrictions => Set<EmployeeRestriction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +46,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new MissionConfiguration());
         modelBuilder.ApplyConfiguration(new MissionAssignmentConfiguration());
         modelBuilder.ApplyConfiguration(new WorkItemConfiguration());
+        modelBuilder.ApplyConfiguration(new RotationPolicyConfiguration());
+        modelBuilder.ApplyConfiguration(new EmployeeRestrictionConfiguration());
 
         // Outbox e auditoria moram em schemas de outros donos (messaging e audit), que sao
         // quem gera as migrations delas. Aqui sao apenas MAPEADAS, para que o Enqueue e o
@@ -77,6 +81,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         configurationBuilder.Properties<AbsenceRequestId>().HaveConversion<AbsenceRequestIdConverter>();
         configurationBuilder.Properties<MissionId>().HaveConversion<MissionIdConverter>();
         configurationBuilder.Properties<WorkItemId>().HaveConversion<WorkItemIdConverter>();
+        configurationBuilder.Properties<RestrictionId>().HaveConversion<RestrictionIdConverter>();
         base.ConfigureConventions(configurationBuilder);
     }
 
@@ -306,6 +311,53 @@ public sealed class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(m => m.Assignments).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+public sealed class RestrictionIdConverter()
+    : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<RestrictionId, Guid>(
+        id => id.Value,
+        value => new RestrictionId(value));
+
+/// <summary>
+/// Uma linha por empresa. A unicidade e do banco e nao do servico: duas politicas para o
+/// mesmo tenant fariam a sugestao mudar conforme qual linha o EF lesse primeiro.
+/// </summary>
+public sealed class RotationPolicyConfiguration : IEntityTypeConfiguration<RotationPolicy>
+{
+    public void Configure(EntityTypeBuilder<RotationPolicy> builder)
+    {
+        builder.ToTable("rotation_policies");
+        builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.Tiebreak).HasConversion<string>().HasMaxLength(20).IsRequired();
+
+        builder.HasIndex(p => p.TenantId).IsUnique();
+    }
+}
+
+public sealed class EmployeeRestrictionConfiguration : IEntityTypeConfiguration<EmployeeRestriction>
+{
+    public void Configure(EntityTypeBuilder<EmployeeRestriction> builder)
+    {
+        builder.ToTable("employee_restrictions");
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.ActivityKey).HasMaxLength(EmployeeRestriction.MaxAtividade);
+        builder.Property(r => r.ActivityName).HasMaxLength(EmployeeRestriction.MaxAtividade);
+        builder.Property(r => r.Reason).HasMaxLength(EmployeeRestriction.MaxMotivo);
+        builder.Property(r => r.CreatedByName).HasMaxLength(200).IsRequired();
+
+        // A consulta da escala: "quem tem restricao valendo nesta data".
+        builder.HasIndex(r => new { r.TenantId, r.StartsOn });
+
+        // A tela da pessoa.
+        builder.HasIndex(r => new { r.TenantId, r.EmployeeId });
+
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(r => r.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

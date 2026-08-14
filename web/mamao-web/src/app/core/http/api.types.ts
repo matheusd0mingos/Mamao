@@ -78,3 +78,11 @@ export type WorkAlert = Schemas['WorkAlert'];
 export type WorkAlertKind = Schemas['WorkAlertKind'];
 export type CreateWorkItemRequest = Schemas['CreateWorkItemRequest'];
 export type UpdateWorkItemRequest = Schemas['UpdateWorkItemRequest'];
+
+export type UpdatePositionRequest = Schemas['UpdatePositionRequest'];
+
+export type RotationPolicyRequest = Schemas['RotationPolicyRequest'];
+export type RotationPolicyResponse = Schemas['RotationPolicyResponse'];
+export type RotationTiebreak = Schemas['RotationTiebreak'];
+export type RestrictionResponse = Schemas['RestrictionResponse'];
+export type CreateRestrictionRequest = Schemas['CreateRestrictionRequest'];

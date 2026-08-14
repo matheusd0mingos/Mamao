@@ -85,7 +85,8 @@ import { OrganizationApi } from './organization.api';
         <h2>Cargos</h2>
         <p class="muted dica">
           A importação de planilha cria os cargos que encontrar. Aqui você corrige e
-          completa.
+          completa. A <strong>ordem</strong> é a precedência: menor é mais antigo, e é
+          por ela que a escala desempata quando a política é por antiguidade.
         </p>
 
         @if (carregando()) {
@@ -96,6 +97,18 @@ import { OrganizationApi } from './organization.api';
           <ul class="lista">
             @for (cargo of cargos(); track cargo.id) {
               <li>
+                <input
+                  *mamaoHasPermission="'people.write'"
+                  class="ordem estreito"
+                  type="number"
+                  min="0"
+                  max="999"
+                  [value]="cargo.precedenceOrder ?? ''"
+                  placeholder="—"
+                  title="Ordem de precedência: menor é mais antigo"
+                  aria-label="Ordem de precedência de {{ cargo.name }}"
+                  (change)="salvarOrdem(cargo, $any($event.target).value)"
+                />
                 <span>{{ cargo.name }}</span>
                 <span class="muted arvore__contagem">{{ rotuloDeOcupantes(cargo) }}</span>
                 <button
@@ -112,6 +125,16 @@ import { OrganizationApi } from './organization.api';
         }
 
         <form *mamaoHasPermission="'people.write'" class="novo" (ngSubmit)="criarCargo()">
+          <input
+            [(ngModel)]="ordemDoCargo"
+            name="ordemDoCargo"
+            class="ordem estreito"
+            type="number"
+            min="0"
+            max="999"
+            placeholder="ordem"
+            aria-label="Ordem de precedência"
+          />
           <input
             [(ngModel)]="nomeDoCargo"
             name="nomeDoCargo"
@@ -140,6 +163,8 @@ import { OrganizationApi } from './organization.api';
     }
     .arvore__nome { font-weight: 500; }
     .arvore__contagem { font-size: 13px; margin-left: auto; white-space: nowrap; }
+    .ordem { flex: none; }
+
     .novo { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     .novo input, .novo select {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -162,6 +187,7 @@ export class OrganizationPage implements OnInit {
   nomeDoSetor = '';
   paiDoSetor: string | null = null;
   nomeDoCargo = '';
+  ordemDoCargo: number | '' = '';
 
   ngOnInit(): void {
     void this.carregar();
@@ -193,13 +219,30 @@ export class OrganizationPage implements OnInit {
     if (!this.nomeDoCargo.trim()) return;
 
     await this.executar(async () => {
-      await this.api.createPosition({ name: this.nomeDoCargo.trim() });
+      await this.api.createPosition({
+        name: this.nomeDoCargo.trim(),
+        precedenceOrder: this.ordemDoCargo === '' ? null : Number(this.ordemDoCargo),
+      });
+      this.ordemDoCargo = '';
       this.nomeDoCargo = '';
     });
   }
 
   async excluirSetor(setor: DepartmentNode): Promise<void> {
     await this.executar(() => this.api.deleteDepartment(setor.id));
+  }
+
+  /**
+   * Salva a ordem no `change` e nao a cada tecla: o gestor digita "12" e nao quer que o
+   * sistema grave "1" no caminho.
+   */
+  async salvarOrdem(cargo: PositionResponse, valor: string): Promise<void> {
+    const ordem = valor.trim() === '' ? null : Number(valor);
+    if (ordem === (cargo.precedenceOrder ?? null)) return;
+
+    await this.executar(() =>
+      this.api.updatePosition(cargo.id, { name: cargo.name, precedenceOrder: ordem }),
+    );
   }
 
   async excluirCargo(cargo: PositionResponse): Promise<void> {

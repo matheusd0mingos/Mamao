@@ -63,6 +63,7 @@ public static class PeopleModule
         services.AddScoped<AbsenceRequestService>();
         services.AddScoped<MissionService>();
         services.AddScoped<WorkItemService>();
+        services.AddScoped<RestrictionService>();
 
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestValidator>(includeInternalTypes: true);
 

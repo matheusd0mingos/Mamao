@@ -20,9 +20,13 @@ public sealed record DepartmentNode(
     int EmployeeCount,
     int SubtreeEmployeeCount);
 
-public sealed record CreatePositionRequest(string Name);
+/// <param name="PrecedenceOrder">
+/// Ordem de precedencia: MENOR e mais antigo/superior. Nulo deixa o cargo fora da
+/// ordenacao — e o que o desempate por antiguidade do rodizio le.
+/// </param>
+public sealed record CreatePositionRequest(string Name, int? PrecedenceOrder = null);
 
-public sealed record UpdatePositionRequest(string Name);
+public sealed record UpdatePositionRequest(string Name, int? PrecedenceOrder = null);
 
 /// <param name="EmployeeCount">Quantas pessoas ocupam o cargo. A tela usa para não deixar excluir o que está em uso.</param>
-public sealed record PositionResponse(PositionId Id, string Name, int EmployeeCount);
+public sealed record PositionResponse(PositionId Id, string Name, int EmployeeCount, int? PrecedenceOrder);

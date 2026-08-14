@@ -580,6 +580,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/missions/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["rotationPolicy"];
+        put: operations["saveRotationPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/restrictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listRestrictions"];
+        put?: never;
+        post: operations["createRestriction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/restrictions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteRestriction"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/work": {
         parameters: {
             query?: never;
@@ -688,7 +736,8 @@ export interface components {
         BlockedPerson: {
             employeeId: components["schemas"]["EmployeeId"];
             name: string;
-            reason: components["schemas"]["OccupancyKind"];
+            reason: components["schemas"]["OccupancyKind"] | null;
+            restriction?: string | null;
         };
         ContractResponse: {
             employeeId: components["schemas"]["EmployeeId"];
@@ -770,6 +819,18 @@ export interface components {
         };
         CreatePositionRequest: {
             name: string;
+            /** Format: int32 */
+            precedenceOrder?: number | null;
+        };
+        CreateRestrictionRequest: {
+            /** Format: uuid */
+            employeeId: string;
+            activityName: string | null;
+            reason: string | null;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string | null;
         };
         CreateWorkItemRequest: {
             title: string;
@@ -999,6 +1060,8 @@ export interface components {
             name: string;
             /** Format: int32 */
             employeeCount: number;
+            /** Format: int32 */
+            precedenceOrder: number | null;
         };
         ProblemDetails: {
             type?: string | null;
@@ -1022,6 +1085,39 @@ export interface components {
             token: string;
             newPassword: string;
         };
+        /** Format: uuid */
+        RestrictionId: string;
+        RestrictionResponse: {
+            id: components["schemas"]["RestrictionId"];
+            employeeId: components["schemas"]["EmployeeId"];
+            employeeName: string;
+            activityName: string | null;
+            reason: string | null;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string | null;
+            vigente: boolean;
+            label: string;
+        };
+        RotationPolicyRequest: {
+            tiebreak: components["schemas"]["RotationTiebreak"];
+            /** Format: int32 */
+            minRestDays: number;
+            restBlocks: boolean;
+            /** Format: int32 */
+            windowDays: number;
+        };
+        RotationPolicyResponse: {
+            tiebreak: components["schemas"]["RotationTiebreak"];
+            /** Format: int32 */
+            minRestDays: number;
+            restBlocks: boolean;
+            /** Format: int32 */
+            windowDays: number;
+        };
+        /** @enum {unknown} */
+        RotationTiebreak: "Antiguidade" | "Modernidade" | "Alfabetica" | "Sorteio";
         SaveContractRequest: {
             regime: components["schemas"]["EmploymentRegime"];
             scheduleType: components["schemas"]["WorkScheduleType"];
@@ -1061,6 +1157,8 @@ export interface components {
         };
         UpdatePositionRequest: {
             name: string;
+            /** Format: int32 */
+            precedenceOrder?: number | null;
         };
         UpdateWorkItemRequest: {
             title: string;
@@ -2435,6 +2533,136 @@ export interface operations {
         };
     };
     cancelMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    rotationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RotationPolicyResponse"];
+                };
+            };
+        };
+    };
+    saveRotationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RotationPolicyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RotationPolicyResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listRestrictions: {
+        parameters: {
+            query?: {
+                employeeId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestrictionResponse"][];
+                };
+            };
+        };
+    };
+    createRestriction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRestrictionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestrictionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteRestriction: {
         parameters: {
             query?: never;
             header?: never;

@@ -101,6 +101,9 @@ public static class AuditActions
     public const string AbsenceRejected = "availability.absence.rejected";
 
     public const string MissionConfirmed = "mission.confirmed";
+    public const string RotationPolicyChanged = "rotation.policy.changed";
+    public const string RestrictionCreated = "restriction.created";
+    public const string RestrictionRemoved = "restriction.removed";
     public const string MissionCancelled = "mission.cancelled";
 
     // Demandas. O "moved" existe porque a pergunta que sobra depois e "quem deu isso por

@@ -19,11 +19,15 @@ public sealed class PositionService(IPeopleDbContext dbContext, IAuditLog audit)
         // resolve com o indice (tenant_id, position_id) de employees.
         return await dbContext.Positions
             .AsNoTracking()
-            .OrderBy(p => p.Name)
+            // Ordena pela precedencia quando ela existe: numa casa que ordena cargos, a
+            // lista alfabetica esconde a hierarquia que a pessoa acabou de configurar.
+            .OrderBy(p => p.PrecedenceOrder ?? int.MaxValue)
+            .ThenBy(p => p.Name)
             .Select(p => new PositionResponse(
                 p.Id,
                 p.Name,
-                dbContext.Employees.Count(e => e.PositionId == p.Id && e.TerminatedOn == null)))
+                dbContext.Employees.Count(e => e.PositionId == p.Id && e.TerminatedOn == null),
+                p.PrecedenceOrder))
             .ToListAsync(ct);
     }
 
@@ -41,10 +45,14 @@ public sealed class PositionService(IPeopleDbContext dbContext, IAuditLog audit)
                 "position.duplicate", $"Já existe o cargo \"{cargo.Name}\".", nameof(CreatePositionRequest.Name)));
         }
 
+        var precedencia = cargo.SetPrecedence(request.PrecedenceOrder);
+        if (precedencia.IsFailure)
+            return Result.Failure<PositionResponse>(precedencia.Error!);
+
         dbContext.Positions.Add(cargo);
         await dbContext.SaveChangesAsync(ct);
 
-        return Result.Success(new PositionResponse(cargo.Id, cargo.Name, 0));
+        return Result.Success(new PositionResponse(cargo.Id, cargo.Name, 0, cargo.PrecedenceOrder));
     }
 
     public async Task<Result<PositionResponse>> RenameAsync(
@@ -66,10 +74,14 @@ public sealed class PositionService(IPeopleDbContext dbContext, IAuditLog audit)
         if (renomear.IsFailure)
             return Result.Failure<PositionResponse>(renomear.Error!);
 
+        var precedencia = cargo.SetPrecedence(request.PrecedenceOrder);
+        if (precedencia.IsFailure)
+            return Result.Failure<PositionResponse>(precedencia.Error!);
+
         await dbContext.SaveChangesAsync(ct);
 
         var emUso = await dbContext.Employees.CountAsync(e => e.PositionId == id && e.TerminatedOn == null, ct);
-        return Result.Success(new PositionResponse(cargo.Id, cargo.Name, emUso));
+        return Result.Success(new PositionResponse(cargo.Id, cargo.Name, emUso, cargo.PrecedenceOrder));
     }
 
     public async Task<Result> DeleteAsync(PositionId id, CancellationToken ct)
