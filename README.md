@@ -40,6 +40,7 @@ observabilidade, migrations e testes.
 | Convite de acesso (token com prazo, uso único, aceite público) | ✅ |
 | Contrato de trabalho com regime de vínculo e alertas por regime | ✅ |
 | Perfil do funcionário, com desligamento | ✅ |
+| Auditoria append-only, provada contra o banco | ✅ |
 | Testes | ✅ 92 unitários + 9 de arquitetura + 10 de integração |
 | CI (GitHub Actions) | ✅ |
 | Deploy (`deploy.sh` com provisionamento + Compose + Caddy + backup) | ✅ escrito e lintado, ainda não executado contra um servidor |

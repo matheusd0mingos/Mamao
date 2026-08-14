@@ -1,5 +1,6 @@
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Employees;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +29,7 @@ public sealed record ContractResponse(
 /// Contrato do funcionário. Um por pessoa, criado ou atualizado pelo mesmo caminho —
 /// a tela não deveria precisar saber se é a primeira vez.
 /// </summary>
-public sealed class ContractService(IPeopleDbContext dbContext, TimeProvider timeProvider)
+public sealed class ContractService(IPeopleDbContext dbContext, IAuditLog audit, TimeProvider timeProvider)
 {
     public async Task<ContractResponse?> GetAsync(EmployeeId employeeId, CancellationToken ct)
     {
@@ -96,6 +97,13 @@ public sealed class ContractService(IPeopleDbContext dbContext, TimeProvider tim
             if (alteracao.IsFailure)
                 return Result.Failure<ContractResponse>(alteracao.Error!);
         }
+
+        // Mudar o regime muda QUAL LEI se aplica a ferias e jornada da pessoa. E das
+        // alteracoes com maior consequencia no sistema, e a mais silenciosa.
+        audit.Record(
+            AuditActions.ContractSaved, nameof(EmploymentContract), employeeId.ToString(),
+            funcionario.FullName,
+            new { contrato.Regime, contrato.ScheduleType, contrato.WeeklyHours, contrato.CompensationAgreementOn });
 
         await dbContext.SaveChangesAsync(ct);
         return Result.Success(ToResponse(contrato));

@@ -3,6 +3,8 @@ using Mamao.Messaging;
 using Mamao.People.Contracts.Events;
 using Mamao.People.Infrastructure;
 using Mamao.ServiceDefaults;
+using Mamao.Audit;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Tenancy;
 using Mamao.Worker;
 using Mamao.Worker.Handlers;
@@ -18,12 +20,17 @@ var connectionString = builder.Configuration.GetConnectionString("mamao")
 builder.Services.AddOptions<TenancyOptions>()
     .Bind(builder.Configuration.GetSection(TenancyOptions.SectionName));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
+
+// No Worker nao ha requisicao nem usuario: o ator e o proprio processo. Registrar isso
+// explicitamente evita que uma acao de background grave auditoria sem autor.
+builder.Services.AddSingleton<ICurrentActor, SystemActor>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
 builder.Services.AddScoped<TenantRlsConnectionInterceptor>();
 
 builder.Services
     .AddMamaoIdentity(builder.Configuration, connectionString)
-    .AddPeopleModule(connectionString);
+    .AddPeopleModule(connectionString)
+    .AddAudit(connectionString);
 
 // A ORDEM IMPORTA: servicos hospedados sobem na ordem de registro, e o DatabaseMigrator
 // bloqueia no StartAsync ate as migrations terminarem. Registrar o publisher antes dele
@@ -51,3 +58,13 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 app.Run();
+
+
+/// <summary>Ator dos processos de background: nao ha usuario, e o autor e o Worker.</summary>
+internal sealed class SystemActor : ICurrentActor
+{
+    public Guid? UserId => null;
+    public string Name => "Mamão (processo automático)";
+    public string? IpAddress => null;
+    public string? CorrelationId => System.Diagnostics.Activity.Current?.TraceId.ToString();
+}

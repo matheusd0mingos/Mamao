@@ -1,6 +1,7 @@
 using Mamao.People.Contracts;
 using Mamao.People.Contracts.Events;
 using Mamao.People.Domain.Employees;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Results;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public sealed class EmployeeService(
     IPeopleDbContext dbContext,
     IPeopleOutbox outbox,
     ITenantContext tenantContext,
+    IAuditLog audit,
     TimeProvider timeProvider)
 {
     public async Task<PagedResult<EmployeeListItem>> ListAsync(
@@ -149,6 +151,11 @@ public sealed class EmployeeService(
 
         dbContext.Employees.Add(employee);
 
+        // Auditoria na mesma transacao do fato, como o evento.
+        audit.Record(
+            AuditActions.EmployeeCreated, nameof(Employee), employee.Id.ToString(),
+            Rotulo(employee), new { employee.Code, employee.HiredOn });
+
         // Evento e dado de negocio na MESMA transacao. E dai que vem a garantia — nao do
         // broker. Ver docs/adr/0005-outbox-e-mensageria.md.
         outbox.Enqueue(new EmployeeHired(
@@ -214,6 +221,10 @@ public sealed class EmployeeService(
 
         employee.MoveToDepartment(request.DepartmentId);
 
+        audit.Record(
+            AuditActions.EmployeeUpdated, nameof(Employee), id.ToString(), Rotulo(employee),
+            new { request.FullName, request.PositionId, request.DepartmentId, request.ManagerId });
+
         await dbContext.SaveChangesAsync(ct);
         return Result.Success((await ProjectAsync(
             dbContext.Employees.AsNoTracking().Where(e => e.Id == id), ct))!);
@@ -229,6 +240,12 @@ public sealed class EmployeeService(
         var termination = employee.Terminate(request.TerminatedOn);
         if (termination.IsFailure)
             return Result.Failure<EmployeeResponse>(termination.Error!);
+
+        // Desligamento e das acoes com consequencia: sai das listas, da escala e da
+        // cobertura. Quem fez e quando precisa ficar registrado.
+        audit.Record(
+            AuditActions.EmployeeTerminated, nameof(Employee), id.ToString(), Rotulo(employee),
+            new { request.TerminatedOn });
 
         await dbContext.SaveChangesAsync(ct);
         return Result.Success((await ProjectAsync(
@@ -309,6 +326,10 @@ public sealed class EmployeeService(
         return await dbContext.Employees.AnyAsync(
             e => e.Email == normalized && (excluding == null || e.Id != excluding.Value), ct);
     }
+
+    /// <summary>Rotulo legivel sem join, para a auditoria sobreviver a exclusao do funcionario.</summary>
+    private static string Rotulo(Employee e) =>
+        e.Code is null ? e.FullName : $"{e.FullName} ({e.Code})";
 
     private static Error NotFound(EmployeeId id) =>
         new("employee.not_found", $"Funcionario {id} nao encontrado.");

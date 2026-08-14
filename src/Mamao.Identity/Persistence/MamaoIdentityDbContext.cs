@@ -60,6 +60,17 @@ public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbConte
             b.Property(t => t.TimeZoneId).HasMaxLength(60).IsRequired();
         });
 
+        // Mesma tabela de auditoria dos outros modulos, mapeada aqui para que o registro
+        // do convite entre na mesma transacao do convite.
+        builder.Entity<Mamao.SharedKernel.Auditing.AuditEntry>(b =>
+        {
+            new Mamao.SharedKernel.Auditing.AuditEntryConfiguration().Configure(b);
+            b.ToTable(
+                Mamao.SharedKernel.Auditing.AuditEntry.Table,
+                Mamao.SharedKernel.Auditing.AuditEntry.Schema,
+                t => t.ExcludeFromMigrations());
+        });
+
         builder.Entity<Invite>(b =>
         {
             b.ToTable("invites");

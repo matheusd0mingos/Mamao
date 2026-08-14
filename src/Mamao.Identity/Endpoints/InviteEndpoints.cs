@@ -4,11 +4,13 @@ using Mamao.Identity.Persistence;
 using Mamao.Identity.Tokens;
 using Mamao.Notifications.Email;
 using Mamao.Notifications;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Authorization;
 using Mamao.SharedKernel.Results;
 using Mamao.SharedKernel.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
@@ -80,6 +82,7 @@ public static class InviteEndpoints
             EmailTemplates templates,
             TimeProvider timeProvider,
             ILogger<Invite> logger,
+            [FromKeyedServices("identity")] IAuditLog audit,
             CancellationToken ct) =>
         {
             var tenantId = TenantOf(principal);
@@ -117,6 +120,12 @@ public static class InviteEndpoints
             {
                 dbContext.Invites.Add(convite);
             }
+
+            // Dar acesso ao sistema e das acoes com mais consequencia que existem: quem
+            // convidou, quem foi convidado e com qual papel.
+            audit.Record(
+                AuditActions.InviteCreated, nameof(Invite), convite.Id.ToString(),
+                $"{convite.FullName} <{convite.Email}>", new { convite.Role, Reenvio = pendente is not null });
 
             await dbContext.SaveChangesAsync(ct);
             await EnviarAsync(convite, token, dbContext, emails, templates, principal, logger, ct);
@@ -164,6 +173,7 @@ public static class InviteEndpoints
             ClaimsPrincipal principal,
             MamaoIdentityDbContext dbContext,
             TimeProvider timeProvider,
+            [FromKeyedServices("identity")] IAuditLog audit,
             CancellationToken ct) =>
         {
             var convite = await dbContext.Invites.FirstOrDefaultAsync(
@@ -175,6 +185,10 @@ public static class InviteEndpoints
             var revogado = convite.Revoke(timeProvider.GetUtcNow());
             if (revogado.IsFailure)
                 return HttpResultsExtensions.Problem(revogado.Error!);
+
+            audit.Record(
+                AuditActions.InviteRevoked, nameof(Invite), convite.Id.ToString(),
+                $"{convite.FullName} <{convite.Email}>");
 
             await dbContext.SaveChangesAsync(ct);
             return TypedResults.NoContent();

@@ -10,7 +10,10 @@ using Mamao.People.Contracts.Events;
 using Mamao.People.Infrastructure;
 using Mamao.People.Infrastructure.Endpoints;
 using Mamao.ServiceDefaults;
+using Mamao.Audit;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Tenancy;
+using Mamao.SharedKernel.Web;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +27,11 @@ var connectionString = builder.Configuration.GetConnectionString("mamao")
 builder.Services.AddOptions<TenancyOptions>()
     .Bind(builder.Configuration.GetSection(TenancyOptions.SectionName));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
+
+// Auditoria: o ator vem do token; a escrita vive no DbContext de cada modulo, para entrar
+// na MESMA transacao do fato. Ver docs/arquitetura/multi-tenancy-e-seguranca.md#auditoria.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentActor, HttpCurrentActor>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
 builder.Services.AddScoped<TenantRlsConnectionInterceptor>();
 
@@ -40,6 +48,7 @@ builder.Services
     .AddNotifications(builder.Configuration, builder.Environment)
     .AddMamaoIdentity(builder.Configuration, connectionString)
     .AddPeopleModule(connectionString)
+    .AddAudit(connectionString)
     .AddOutbox(
         builder.Configuration,
         connectionString,

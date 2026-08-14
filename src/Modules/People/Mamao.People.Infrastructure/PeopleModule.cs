@@ -5,6 +5,7 @@ using Mamao.People.Application.Employees.Import;
 using Mamao.People.Application.Organization;
 using Mamao.People.Contracts;
 using Mamao.People.Infrastructure.Persistence;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Messaging;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,14 @@ public static class PeopleModule
         });
 
         services.AddScoped<IPeopleDbContext>(sp => sp.GetRequiredService<PeopleDbContext>());
+
+        // Auditoria ligada ao DbContext DESTE modulo: e o que faz o registro entrar na
+        // mesma transacao do dado de negocio.
+        services.AddScoped<IAuditLog>(sp => new AuditLogWriter(
+            sp.GetRequiredService<PeopleDbContext>(),
+            sp.GetRequiredService<ITenantContext>(),
+            sp.GetRequiredService<ICurrentActor>(),
+            sp.GetRequiredService<TimeProvider>()));
         services.AddScoped<IPeopleOutbox>(sp => new PeopleOutbox(sp.GetRequiredService<PeopleDbContext>()));
         services.AddScoped<IEmployeeDirectory, EmployeeDirectory>();
         services.AddScoped<EmployeeService>();

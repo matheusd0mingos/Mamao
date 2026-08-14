@@ -1,5 +1,6 @@
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Organization;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,7 @@ namespace Mamao.People.Application.Organization;
 /// descendentes precisa ser reescrito. Essa e a troca consciente — no produto se lê
 /// "quem está abaixo de Operações?" o tempo todo e se move setor quase nunca.
 /// </summary>
-public sealed class DepartmentService(IPeopleDbContext dbContext)
+public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audit)
 {
     public async Task<IReadOnlyList<DepartmentNode>> ListAsync(CancellationToken ct)
     {
@@ -189,6 +190,8 @@ public sealed class DepartmentService(IPeopleDbContext dbContext)
                     ? "1 pessoa está neste setor. Mova-a antes de excluir."
                     : $"{pessoas} pessoas estão neste setor. Mova-as antes de excluir.");
         }
+
+        audit.Record(AuditActions.DepartmentDeleted, nameof(Department), id.ToString(), setor.Name);
 
         dbContext.Departments.Remove(setor);
         await dbContext.SaveChangesAsync(ct);

@@ -2,6 +2,8 @@ using Mamao.Identity.Persistence;
 using Mamao.Messaging;
 using Mamao.People.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Mamao.Audit.Persistence;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -27,6 +29,7 @@ public sealed class DatabaseMigrator(
         await using var scope = scopeFactory.CreateAsyncScope();
 
         var identity = scope.ServiceProvider.GetRequiredService<MamaoIdentityDbContext>();
+        var audit = scope.ServiceProvider.GetRequiredService<AuditDbContext>();
         var connectionString = identity.Database.GetConnectionString()!;
 
         await using var lockConnection = new NpgsqlConnection(connectionString);
@@ -42,6 +45,7 @@ public sealed class DatabaseMigrator(
         try
         {
             await MigrateAsync(identity, nameof(MamaoIdentityDbContext), cancellationToken);
+            await MigrateAsync(audit, nameof(AuditDbContext), cancellationToken);
             await MigrateAsync(
                 scope.ServiceProvider.GetRequiredService<MessagingDbContext>(),
                 nameof(MessagingDbContext), cancellationToken);
@@ -109,8 +113,18 @@ public sealed class DatabaseMigrator(
             await grant.ExecuteNonQueryAsync(ct);
         }
 
+        // Auditoria NAO entra no laco acima: ela recebe insert e select, e tem update e
+        // delete revogados. Auditoria que a aplicacao consegue reescrever nao serve de prova.
+        await using (var auditoria = connection.CreateCommand())
+        {
+            auditoria.CommandText = TenantRls.GrantAppendOnlyTo(
+                AuditEntry.Schema, AuditEntry.Table, role);
+            await auditoria.ExecuteNonQueryAsync(ct);
+        }
+
         logger.LogInformation(
-            "Role '{Role}' garantido (sem superusuario, sem BYPASSRLS) e com acesso aos schemas.", role);
+            "Role '{Role}' garantido (sem superusuario, sem BYPASSRLS), com acesso aos schemas " +
+            "e com auditoria em modo append-only.", role);
     }
 
     private async Task MigrateAsync(DbContext context, string name, CancellationToken ct)

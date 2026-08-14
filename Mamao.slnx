@@ -3,6 +3,7 @@
     <Project Path="src/Mamao.Api/Mamao.Api.csproj" />
     <Project Path="src/Mamao.AppHost/Mamao.AppHost.csproj" />
     <Project Path="src/Mamao.Identity/Mamao.Identity.csproj" />
+    <Project Path="src/Mamao.Audit/Mamao.Audit.csproj" />
     <Project Path="src/Mamao.Messaging/Mamao.Messaging.csproj" />
     <Project Path="src/Mamao.Notifications/Mamao.Notifications.csproj" />
     <Project Path="src/Mamao.ServiceDefaults/Mamao.ServiceDefaults.csproj" />

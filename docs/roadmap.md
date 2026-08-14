@@ -71,7 +71,9 @@ não no mês 4, quando vira um projeto próprio.
 - [x] Papéis e permissões ([ADR-0007](adr/0007-autorizacao.md)) — antecipado no Marco 0:
       `Owner`/`Hr`/`Manager`/`Employee`, policies geradas de `Permissions.All`.
       Falta a **tela** de gerenciar quem tem qual papel
-- [ ] Auditoria gravando
+- [x] **Auditoria gravando**: append-only garantido pelo banco (`REVOKE UPDATE, DELETE`),
+      RLS por tenant, na mesma transação do fato. Registra o que tem consequência —
+      admissão, desligamento, contrato, convite, exclusão — e não leitura de tela
 - [x] **`User` pertence à empresa** ([ADR-0020](adr/0020-usuario-pertence-a-empresa.md)):
       `Membership` removida, tela de escolher empresa removida
 - [x] **Convite de acesso**: RH importa a planilha e convida as **pessoas-chave**

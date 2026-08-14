@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Mamao.SharedKernel.Auditing;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,11 +30,19 @@ public static class IdentityModule
                 "Jwt:SigningKey ausente ou com menos de 32 bytes.")
             .ValidateOnStart();
 
-        services.AddDbContext<MamaoIdentityDbContext>(options =>
+        services.AddDbContext<MamaoIdentityDbContext>((sp, options) =>
         {
             options.UseNpgsql(connectionString, npgsql =>
                 npgsql.MigrationsHistoryTable("__EFMigrationsHistory", MamaoIdentityDbContext.Schema));
             options.UseSnakeCaseNamingConvention();
+
+            // O contexto do Identity nao filtra por tenant (o login acontece antes de
+            // existir tenant), mas ELE ESCREVE na auditoria, que tem RLS. O interceptor so
+            // define app.tenant_id na sessao; tabelas sem policy — users, tenants, invites —
+            // ignoram o valor. Sem isto, todo convite quebrava com 42501 ao gravar o
+            // registro de auditoria.
+            if (sp.GetRequiredService<IOptions<TenancyOptions>>().Value.EnableRls)
+                options.AddInterceptors(sp.GetRequiredService<TenantRlsConnectionInterceptor>());
         });
 
         services.AddIdentityCore<MamaoUser>(options =>
@@ -89,6 +99,15 @@ public static class IdentityModule
                 .RequireClaim(TokenService.TenantClaim)
                 .RequireClaim(Permissions.ClaimType, permission));
         }
+
+        // Auditoria ligada ao DbContext do Identity, pelo mesmo motivo do People: o
+        // registro do convite entra na mesma transacao do convite.
+        services.AddKeyedScoped<IAuditLog>("identity", (sp, _) => new AuditLogWriter(
+            sp.GetRequiredService<Persistence.MamaoIdentityDbContext>(),
+            sp.GetRequiredService<ITenantContext>(),
+            sp.GetRequiredService<ICurrentActor>(),
+            sp.GetRequiredService<TimeProvider>()));
+
 
         return services;
     }

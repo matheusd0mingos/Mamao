@@ -1,5 +1,6 @@
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Organization;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace Mamao.People.Application.Organization;
 /// <see cref="ResolveOrCreateAsync"/>, chamada pela importacao de planilha para transformar
 /// a coluna "Cargo" em cargo de verdade sem obrigar o cliente a cadastrar antes.
 /// </summary>
-public sealed class PositionService(IPeopleDbContext dbContext)
+public sealed class PositionService(IPeopleDbContext dbContext, IAuditLog audit)
 {
     public async Task<IReadOnlyList<PositionResponse>> ListAsync(CancellationToken ct)
     {
@@ -88,6 +89,9 @@ public sealed class PositionService(IPeopleDbContext dbContext)
                     ? "1 pessoa ocupa este cargo. Mude o cargo dela antes de excluir."
                     : $"{emUso} pessoas ocupam este cargo. Mude o cargo delas antes de excluir.");
         }
+
+        // Exclusao de qualquer coisa e auditavel: e o que nao da para reconstruir depois.
+        audit.Record(AuditActions.PositionDeleted, nameof(Position), id.ToString(), cargo.Name);
 
         dbContext.Positions.Remove(cargo);
         await dbContext.SaveChangesAsync(ct);

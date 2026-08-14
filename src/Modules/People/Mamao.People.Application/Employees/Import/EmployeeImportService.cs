@@ -1,6 +1,7 @@
 using Mamao.People.Contracts.Events;
 using Mamao.People.Application.Organization;
 using Mamao.People.Domain.Employees;
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,7 @@ public sealed class EmployeeImportService(
     IPeopleOutbox outbox,
     ITenantContext tenantContext,
     PositionService positions,
+    IAuditLog audit,
     TimeProvider timeProvider)
 {
     private readonly EmployeeCsvParser _parser = new();
@@ -101,6 +103,14 @@ public sealed class EmployeeImportService(
 
             importadas++;
         }
+
+        // Um registro para o LOTE, nao um por linha: 200 entradas iguais afogariam a
+        // auditoria e esconderiam o que importa. O que interessa e "quem importou, quantos
+        // entraram, quantos ficaram de fora".
+        audit.Record(
+            AuditActions.EmployeeImported, "EmployeeImport", Guid.CreateVersion7().ToString(),
+            $"{importadas} funcionário(s) importado(s)",
+            new { Imported = importadas, Skipped = previa.Rows.Count - importadas, Total = previa.Rows.Count });
 
         // Uma transacao para o lote inteiro: ou entram todas as linhas validas, ou nenhuma.
         await dbContext.SaveChangesAsync(ct);

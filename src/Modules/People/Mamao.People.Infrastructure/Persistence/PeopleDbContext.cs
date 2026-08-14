@@ -32,9 +32,19 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new PositionConfiguration());
         modelBuilder.ApplyConfiguration(new EmploymentContractConfiguration());
 
-        // A outbox mora no schema "messaging" e pertence ao MessagingDbContext, que e quem
-        // gera a migration dela. Aqui ela e apenas mapeada para que o Enqueue participe da
-        // MESMA transacao do dado de negocio.
+        // Outbox e auditoria moram em schemas de outros donos (messaging e audit), que sao
+        // quem gera as migrations delas. Aqui sao apenas MAPEADAS, para que o Enqueue e o
+        // Record participem da MESMA transacao do dado de negocio. Auditoria em transacao
+        // separada e auditoria que pode faltar no caso que importa.
+        modelBuilder.Entity<Mamao.SharedKernel.Auditing.AuditEntry>(b =>
+        {
+            new Mamao.SharedKernel.Auditing.AuditEntryConfiguration().Configure(b);
+            b.ToTable(
+                Mamao.SharedKernel.Auditing.AuditEntry.Table,
+                Mamao.SharedKernel.Auditing.AuditEntry.Schema,
+                t => t.ExcludeFromMigrations());
+        });
+
         modelBuilder.Entity<OutboxMessage>(b =>
         {
             new OutboxMessageConfiguration().Configure(b);

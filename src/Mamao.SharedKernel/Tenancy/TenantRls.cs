@@ -85,6 +85,20 @@ public static class TenantRls
         $$;
         """;
 
+    /// <summary>
+    /// Acesso APPEND-ONLY: insere e le, nunca altera nem apaga.
+    ///
+    /// Fica aqui e nao na migration porque o grant e reaplicado a cada startup do Worker —
+    /// se o REVOKE morasse so na migration, o proximo <see cref="GrantSchemaTo"/> devolveria
+    /// UPDATE e DELETE em silencio, e ninguem perceberia ate precisar da auditoria como
+    /// prova. Ver docs/arquitetura/multi-tenancy-e-seguranca.md#auditoria.
+    /// </summary>
+    public static string GrantAppendOnlyTo(string schema, string table, string role) => $"""
+        GRANT USAGE ON SCHEMA "{schema}" TO "{role}";
+        GRANT SELECT, INSERT ON "{schema}"."{table}" TO "{role}";
+        REVOKE UPDATE, DELETE, TRUNCATE ON "{schema}"."{table}" FROM "{role}";
+        """;
+
     public static string GrantSchemaTo(string schema, string role) => $"""
         GRANT USAGE ON SCHEMA "{schema}" TO "{role}";
         GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA "{schema}" TO "{role}";

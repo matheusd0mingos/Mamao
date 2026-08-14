@@ -17,4 +17,7 @@
     <ProjectReference Include="../Mamao.Messaging/Mamao.Messaging.csproj" />
     <ProjectReference Include="../Modules/People/Mamao.People.Infrastructure/Mamao.People.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Mamao.Audit/Mamao.Audit.csproj" />
+  </ItemGroup>
 </Project>
