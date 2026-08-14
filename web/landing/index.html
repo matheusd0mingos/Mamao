@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mamão — gestão sem complicação</title>
-<meta name="description" content="Escala, férias, documentos e equipe num lugar só. Feito para quem opera com plantão e turno: manutenção, segurança, saúde e campo.">
+<title>Mamão — a operação da sua equipe em um lugar só</title>
+<meta name="description" content="Quem está disponível, quem está ausente, quem já participou. Monte uma escala em minutos e acompanhe as demandas da equipe. Para equipes de 5 a 60 pessoas.">
 <link rel="canonical" href="https://mamao.tech/">
 
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:site_name" content="Mamão">
-<meta property="og:title" content="Mamão — gestão sem complicação">
-<meta property="og:description" content="A escala numa planilha que só uma pessoa entende. A NR que venceu sem ninguém ver. O Mamão resolve os dois.">
+<meta property="og:title" content="Mamão — a operação da sua equipe em um lugar só">
+<meta property="og:description" content="Preciso de 20 pessoas amanhã. O Mamão diz quem pode, quem não pode e quem já foi da última vez.">
 <meta property="og:url" content="https://mamao.tech/">
 <meta name="theme-color" content="#11362d">
 
@@ -107,7 +107,7 @@
   .heroi__para strong { display: block; }
   .heroi__para span { color: var(--texto-2); font-size: 15px; }
 
-  /* ── dores ──────────────────────────────────────────────────────────────── */
+  /* ── perguntas do dia a dia ─────────────────────────────────────────────── */
   .dores { display: grid; gap: 1px; background: var(--borda); border: 1px solid var(--borda); border-radius: 12px; overflow: hidden; }
   .dor { background: var(--branco); display: grid; gap: 4px 24px; grid-template-columns: 1.1fr 1fr; padding: 20px 24px; }
   .dor__o-que { font-weight: 600; }
@@ -123,26 +123,34 @@
   .secao--escura .cartao p { color: rgb(247 243 234 / 72%); }
   .cartao__marca { color: var(--amarelo); font-size: 13px; font-weight: 600; letter-spacing: .08em; margin-bottom: 12px; text-transform: uppercase; }
 
-  /* ── cobertura ──────────────────────────────────────────────────────────── */
-  .cobertura { background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; margin-top: 36px; overflow-x: auto; padding: 24px; }
-  .cobertura table { border-collapse: collapse; font-size: 14px; min-width: 560px; width: 100%; }
-  .cobertura th { color: var(--texto-2); font-weight: 500; padding: 6px 8px; text-align: center; }
-  .cobertura th:first-child, .cobertura td:first-child { min-width: 150px; text-align: left; }
-  .cobertura td { padding: 7px 8px; text-align: center; }
-  .turno { background: var(--verde); border-radius: 5px; color: var(--texto-claro); display: inline-block; font-size: 12px; font-weight: 600; min-width: 26px; padding: 3px 0; }
-  .turno--b { background: var(--verde-claro); }
-  .ferias { background: #fdf1d8; border-radius: 5px; color: #8a5a08; display: inline-block; font-size: 12px; min-width: 26px; padding: 3px 0; }
-  .cobertura tr.soma td { border-top: 1px solid var(--borda); color: var(--texto-2); font-size: 13px; padding-top: 12px; }
-  .cobertura tr.soma td.furo { color: #a32020; font-weight: 700; }
-  .cobertura__legenda { color: var(--texto-2); font-size: 14px; margin-top: 16px; }
-  .cobertura__legenda strong { color: #a32020; }
+  /* ── montagem da escala ─────────────────────────────────────────────────── */
+  .escala { background: var(--branco); border: 1px solid var(--borda); border-radius: 14px; margin-top: 36px; overflow: hidden; }
+  .escala__pedido { align-items: baseline; border-bottom: 1px solid var(--borda); display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 20px 24px; }
+  .escala__pedido strong { font-family: var(--serif); font-size: 22px; font-weight: 400; }
+  .escala__pedido span { color: var(--texto-2); font-size: 15px; }
 
-  /* ── preço ──────────────────────────────────────────────────────────────── */
-  .preco { align-items: center; background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; display: grid; gap: 32px; grid-template-columns: 1fr auto; margin-top: 36px; padding: 32px; }
-  .preco__valor { font-family: var(--serif); font-size: 44px; line-height: 1; }
-  .preco__valor small { color: var(--texto-2); font-family: var(--ui); font-size: 15px; }
-  .preco ul { color: var(--texto-2); font-size: 15px; margin: 16px 0 0; padding-left: 20px; }
-  .preco li { margin-bottom: 6px; }
+  .funil { border-bottom: 1px solid var(--borda); display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .funil div { border-left: 1px solid var(--borda); padding: 16px 24px; }
+  .funil div:first-child { border-left: 0; }
+  .funil b { display: block; font-family: var(--serif); font-size: 28px; font-weight: 400; line-height: 1.2; }
+  .funil small { color: var(--texto-2); font-size: 14px; }
+  .funil .fora b { color: #a32020; }
+
+  .escala__tabela { overflow-x: auto; padding: 8px 12px 0; }
+  .escala table { border-collapse: collapse; font-size: 14px; min-width: 520px; width: 100%; }
+  .escala th { color: var(--texto-2); font-weight: 500; padding: 10px 12px; text-align: left; }
+  .escala th.num, .escala td.num { text-align: right; }
+  .escala td { border-top: 1px solid var(--borda); padding: 10px 12px; }
+  .escala tr.dentro td:first-child::before { color: var(--verde-claro); content: '✓ '; font-weight: 700; }
+  .escala tr.fora { color: var(--texto-2); }
+  .escala tr.fora td:first-child::before { content: '— '; }
+  .motivo { font-size: 13px; }
+  .motivo--ok { color: var(--verde-claro); }
+  .motivo--bloqueio { color: #a32020; }
+
+  .escala__resultado { align-items: center; background: var(--creme); border-top: 1px solid var(--borda); display: flex; flex-wrap: wrap; gap: 12px 20px; justify-content: space-between; margin-top: 8px; padding: 18px 24px; }
+  .escala__resultado p { color: var(--texto-2); font-size: 15px; }
+  .escala__resultado strong { color: var(--texto); }
 
   /* ── fecho ──────────────────────────────────────────────────────────────── */
   .fecho { text-align: center; }
@@ -173,6 +181,16 @@
   .pend__acao { background: var(--creme); border: 1px solid var(--borda); border-radius: 6px; color: var(--texto); flex: 0 0 auto; font-size: 12px; font-weight: 600; margin-left: auto; padding: 5px 10px; }
   .pend--critica .pend__acao { background: var(--verde); border-color: var(--verde); color: var(--texto-claro); }
 
+  /* ── busca ──────────────────────────────────────────────────────────────── */
+  .busca { background: var(--branco); border: 1px solid var(--borda); border-radius: 14px; margin-top: 36px; max-width: 620px; overflow: hidden; }
+  .busca__campo { align-items: center; border-bottom: 1px solid var(--borda); color: var(--texto-2); display: flex; gap: 10px; font-size: 16px; padding: 16px 20px; }
+  .busca__campo b { color: var(--texto); font-weight: 600; }
+  .busca__grupo { border-top: 1px solid var(--borda); padding: 14px 20px; }
+  .busca__grupo:first-of-type { border-top: 0; }
+  .busca__rotulo { color: var(--texto-2); font-size: 12px; font-weight: 600; letter-spacing: .1em; margin-bottom: 8px; text-transform: uppercase; }
+  .busca__item { font-size: 15px; padding: 3px 0; }
+  .busca__item small { color: var(--texto-2); }
+
   @media (max-width: 960px) {
     .heroi { grid-template-columns: 1fr; gap: 40px; }
     .previa { max-width: 460px; }
@@ -183,9 +201,10 @@
     .heroi { padding: 64px 0 48px; }
     .dor { grid-template-columns: 1fr; }
     .dor__custa::before { content: '→ '; }
-    .preco { grid-template-columns: 1fr; }
     .marca__nome { font-size: 20px; }
     .topo nav .btn--fantasma { display: none; }
+    .funil div { border-left: 0; border-top: 1px solid var(--borda); }
+    .funil div:first-child { border-top: 0; }
   }
 </style>
 </head>
@@ -211,20 +230,20 @@
   <h1>O gestor não deveria precisar perguntar o que está acontecendo.</h1>
 
   <p class="heroi__sub">
-    Escala, férias, documentos e equipe num lugar só — conectados. Você abre o Mamão
-    de manhã e vê o que precisa da sua atenção hoje.
+    Quem está disponível, quem está ausente, quem já participou da última vez. O Mamão
+    junta pessoas, atividades e disponibilidade — e responde antes de você perguntar.
   </p>
 
   <div class="heroi__acoes">
     <a class="btn btn--destaque" href="https://app.mamao.tech/cadastrar-empresa">Começar grátis</a>
-    <a class="btn btn--fantasma" href="#escala">Ver como funciona</a>
+    <a class="btn btn--fantasma" href="#escala">Ver a escala sendo montada</a>
   </div>
 
-  <p class="heroi__nota">14 dias para testar. Sem cartão de crédito.</p>
+  <p class="heroi__nota">Grátis durante a validação. Sem cartão de crédito.</p>
 
   <div class="heroi__para">
-    <strong>Feito para quem opera com plantão e turno.</strong>
-    <span>Manutenção, segurança, saúde, facilities e equipes de campo, de 15 a 60 pessoas.</span>
+    <strong>Feito para equipes pequenas que operam de verdade.</strong>
+    <span>Seções, escritórios técnicos, manutenção e equipes de campo, de 5 a 60 pessoas.</span>
   </div>
   </div>
 
@@ -241,35 +260,35 @@
       <div class="pend pend--critica">
         <span class="pend__icone" aria-hidden="true">🚨</span>
         <span class="pend__texto">
-          Turno B sem cobertura mínima em 07/09
-          <small>Férias do Pedro deixam o noturno sozinho</small>
+          Formatura amanhã às 07h — faltam 3 pessoas
+          <small>17 de 20 escaladas</small>
         </span>
-        <span class="pend__acao">Ajustar escala</span>
-      </div>
-
-      <div class="pend">
-        <span class="pend__icone" aria-hidden="true">⚠️</span>
-        <span class="pend__texto">
-          NR-35 de Carlos Mendes vence em 6 dias
-          <small>Reciclagem de trabalho em altura</small>
-        </span>
-        <span class="pend__acao">Cobrar</span>
+        <span class="pend__acao">Completar</span>
       </div>
 
       <div class="pend">
         <span class="pend__icone" aria-hidden="true">🏖️</span>
         <span class="pend__texto">
-          Ana Lima perde 12 dias de férias em 30 dias
-          <small>Período concessivo vencendo</small>
+          3 pessoas entram de férias esta semana
+          <small>Duas delas são da mesma seção</small>
         </span>
-        <span class="pend__acao">Programar</span>
+        <span class="pend__acao">Ver impacto</span>
       </div>
 
       <div class="pend">
-        <span class="pend__icone" aria-hidden="true">🔄</span>
+        <span class="pend__icone" aria-hidden="true">⏳</span>
         <span class="pend__texto">
-          Troca de plantão: Pedro ⇄ Carlos em 20/08
-          <small>Interjornada ok · cobertura mantida</small>
+          Relatório de inspeção vence sexta
+          <small>Carlos Mendes · em execução</small>
+        </span>
+        <span class="pend__acao">Abrir</span>
+      </div>
+
+      <div class="pend">
+        <span class="pend__icone" aria-hidden="true">✋</span>
+        <span class="pend__texto">
+          Pedro Alves pediu dispensa em 22/08
+          <small>Não conflita com nenhuma escala</small>
         </span>
         <span class="pend__acao">Aprovar</span>
       </div>
@@ -279,34 +298,34 @@
 
 <section class="secao secao--branca" id="problema">
   <div class="env">
-    <p class="olho">O que está custando caro hoje</p>
-    <h2 class="titulo">Nada disso aparece numa planilha. Todo mundo descobre tarde.</h2>
+    <p class="olho">As perguntas que você repete toda semana</p>
+    <h2 class="titulo">Toda resposta existe. Só não está em lugar nenhum.</h2>
 
     <div class="dores" style="margin-top: 36px">
       <div class="dor">
-        <span class="dor__o-que">A NR-35 do eletricista venceu</span>
-        <span class="dor__custa">Multa, embargo, gente parada</span>
-        <span class="dor__hoje">Hoje: ninguém controla. Você descobre na fiscalização.</span>
+        <span class="dor__o-que">"Onde está o Carlos?"</span>
+        <span class="dor__custa">Três mensagens e vinte minutos</span>
+        <span class="dor__hoje">Hoje: você pergunta no grupo e espera alguém lembrar.</span>
       </div>
       <div class="dor">
-        <span class="dor__o-que">As férias venceram o prazo legal</span>
-        <span class="dor__custa">Pagamento em dobro</span>
-        <span class="dor__hoje">Hoje: o contador avisa quando já não dá para evitar.</span>
+        <span class="dor__o-que">"Quem posso escalar para amanhã?"</span>
+        <span class="dor__custa">Escala montada com quem veio à cabeça</span>
+        <span class="dor__hoje">Hoje: memória, mais uma planilha que só uma pessoa entende.</span>
       </div>
       <div class="dor">
-        <span class="dor__o-que">Três pessoas do mesmo turno fora na mesma semana</span>
-        <span class="dor__custa">Operação para</span>
-        <span class="dor__hoje">Hoje: só a memória de quem aprovou as férias.</span>
+        <span class="dor__o-que">"Esse não foi da última vez também?"</span>
+        <span class="dor__custa">Sempre os mesmos; o resto percebe</span>
+        <span class="dor__hoje">Hoje: ninguém guarda quem participou de quê.</span>
       </div>
       <div class="dor">
-        <span class="dor__o-que">Alguém saiu às 23h e voltou às 7h</span>
-        <span class="dor__custa">Passivo trabalhista</span>
-        <span class="dor__hoje">Hoje: a planilha não confere intervalo entre jornadas.</span>
+        <span class="dor__o-que">"Quem entra de férias este mês?"</span>
+        <span class="dor__custa">Você descobre no dia em que a pessoa some</span>
+        <span class="dor__hoje">Hoje: um papel na gaveta e a boa vontade de quem avisou.</span>
       </div>
       <div class="dor">
-        <span class="dor__o-que">O documento do funcionário sumiu no WhatsApp</span>
-        <span class="dor__custa">Retrabalho e admissão atrasada</span>
-        <span class="dor__hoje">Hoje: uma pasta no Drive que ninguém mantém.</span>
+        <span class="dor__o-que">"Cadê o certificado do João?"</span>
+        <span class="dor__custa">Retrabalho e atividade travada</span>
+        <span class="dor__hoje">Hoje: procurando no WhatsApp de seis meses atrás.</span>
       </div>
     </div>
   </div>
@@ -315,68 +334,94 @@
 <section class="secao" id="escala">
   <div class="env">
     <p class="olho">A tela que muda o jogo</p>
-    <h2 class="titulo">Cobertura por turno, não por dia.</h2>
+    <h2 class="titulo">"Preciso de 20 pessoas amanhã."</h2>
     <p class="subtitulo">
-      Saber que seis pessoas estão disponíveis não serve de nada se as duas do noturno
-      estiverem de férias na mesma semana. O Mamão mostra o buraco antes de ele acontecer.
+      O Mamão sabe quem está de férias, quem está de serviço, quem já tem outra atividade
+      naquele horário — e quem participou pouco nos últimos meses. Ele monta a sugestão.
+      Quem decide é você.
     </p>
 
-    <div class="cobertura">
-      <table>
-        <caption class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">
-          Exemplo de escala com cobertura mínima por turno
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Setembro</th>
-            <th scope="col">04</th><th scope="col">05</th><th scope="col">06</th>
-            <th scope="col">07</th><th scope="col">08</th><th scope="col">09</th>
-            <th scope="col">10</th><th scope="col">11</th><th scope="col">12</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>João Silva</td>
-            <td><span class="turno">A</span></td><td></td><td><span class="turno">A</span></td>
-            <td></td><td><span class="turno">A</span></td><td></td>
-            <td><span class="turno">A</span></td><td></td><td><span class="turno">A</span></td>
-          </tr>
-          <tr>
-            <td>Carlos Mendes</td>
-            <td><span class="turno turno--b">B</span></td><td></td><td><span class="turno turno--b">B</span></td>
-            <td></td><td><span class="turno turno--b">B</span></td><td></td>
-            <td><span class="turno turno--b">B</span></td><td></td><td><span class="turno turno--b">B</span></td>
-          </tr>
-          <tr>
-            <td>Maria Souza</td>
-            <td></td><td><span class="turno">A</span></td><td></td><td><span class="turno">A</span></td>
-            <td></td><td><span class="turno">A</span></td><td></td><td><span class="turno">A</span></td><td></td>
-          </tr>
-          <tr>
-            <td>Pedro Alves</td>
-            <td></td><td><span class="turno turno--b">B</span></td><td></td>
-            <td><span class="ferias">🏖</span></td><td><span class="ferias">🏖</span></td>
-            <td><span class="ferias">🏖</span></td><td><span class="ferias">🏖</span></td>
-            <td><span class="ferias">🏖</span></td><td><span class="ferias">🏖</span></td>
-          </tr>
-          <tr class="soma">
-            <td>Turno A — mínimo 1</td>
-            <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
-          </tr>
-          <tr class="soma">
-            <td>Turno B — mínimo 1</td>
-            <td>1</td><td>1</td><td>1</td>
-            <td class="furo">0</td><td>1</td><td class="furo">0</td>
-            <td>1</td><td class="furo">0</td><td>1</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="escala">
+      <div class="escala__pedido">
+        <strong>Formatura</strong>
+        <span>15/08 · 07h · 20 pessoas</span>
+      </div>
 
-      <p class="cobertura__legenda">
-        As férias do Pedro deixam o <strong>turno B sem ninguém em três dias</strong>.
-        O Mamão avisa na hora de aprovar — não depois.
-      </p>
+      <div class="funil">
+        <div>
+          <b>64</b>
+          <small>na seção</small>
+        </div>
+        <div class="fora">
+          <b>8</b>
+          <small>indisponíveis</small>
+        </div>
+        <div class="fora">
+          <b>9</b>
+          <small>com conflito de horário</small>
+        </div>
+        <div>
+          <b>37</b>
+          <small>elegíveis</small>
+        </div>
+      </div>
+
+      <div class="escala__tabela">
+        <table>
+          <caption style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">
+            Exemplo de sugestão de escala considerando rodízio e disponibilidade
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Pessoa</th>
+              <th scope="col">Seção</th>
+              <th scope="col" class="num">Formaturas 90d</th>
+              <th scope="col">Última vez</th>
+              <th scope="col">Situação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="dentro">
+              <td>André Rocha</td><td>Engenharia</td><td class="num">0</td><td>nunca</td>
+              <td class="motivo motivo--ok">entra primeiro</td>
+            </tr>
+            <tr class="dentro">
+              <td>João Silva</td><td>Manutenção</td><td class="num">1</td><td>45 dias</td>
+              <td class="motivo motivo--ok">há mais tempo sem participar</td>
+            </tr>
+            <tr class="dentro">
+              <td>Carlos Mendes</td><td>Engenharia</td><td class="num">2</td><td>30 dias</td>
+              <td class="motivo motivo--ok">dentro do rodízio</td>
+            </tr>
+            <tr class="fora">
+              <td>Pedro Alves</td><td>Manutenção</td><td class="num">4</td><td>7 dias</td>
+              <td class="motivo">participou demais — fica de fora</td>
+            </tr>
+            <tr class="fora">
+              <td>Ana Lima</td><td>Engenharia</td><td class="num">1</td><td>60 dias</td>
+              <td class="motivo motivo--bloqueio">de férias até 21/09</td>
+            </tr>
+            <tr class="fora">
+              <td>Marcos Dias</td><td>Apoio</td><td class="num">0</td><td>nunca</td>
+              <td class="motivo motivo--bloqueio">de serviço em 15/08</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="escala__resultado">
+        <p>
+          <strong>20 de 20 preenchidas.</strong> Rodízio equilibrado · nenhum conflito ·
+          ninguém indisponível na lista.
+        </p>
+        <span class="btn btn--principal">Confirmar escala</span>
+      </div>
     </div>
+
+    <p class="subtitulo" style="margin-top:24px">
+      Você troca quem quiser antes de confirmar. E o que foi confirmado vira histórico —
+      é dele que sai o rodízio da próxima vez.
+    </p>
   </div>
 </section>
 
@@ -385,64 +430,101 @@
     <p class="olho">O que você passa a ter</p>
     <h2 class="titulo">Cinco coisas conversando entre si.</h2>
     <p class="subtitulo">
-      Não são cinco sistemas. Aprovar férias mexe na escala, na carga da equipe e nas
-      cobranças de documento — tudo de uma vez.
+      Não são cinco sistemas. Aprovar umas férias muda a disponibilidade, que muda a
+      escala, que muda quem está livre para a próxima demanda — tudo de uma vez.
     </p>
 
     <div class="grade">
       <div class="cartao">
-        <p class="cartao__marca">Escalas</p>
-        <h3>12×36, 5×2, 6×1</h3>
+        <p class="cartao__marca">Pessoas</p>
+        <h3>Como está cada um</h3>
         <p>
-          Gera do padrão e você ajusta na grade. Troca de plantão com aprovação, cobertura
-          mínima por turno e alerta quando o intervalo entre jornadas fica curto.
+          Uma tela por pessoa: disponível agora, próxima atividade, próximas férias,
+          demandas em andamento e o que está pendente. Sem abrir cinco telas.
+        </p>
+      </div>
+      <div class="cartao">
+        <p class="cartao__marca">Atividades</p>
+        <h3>Quem está fazendo o quê</h3>
+        <p>
+          Responsável, prazo e situação, num quadro que mostra o que está atrasado e o
+          que trava esperando alguém. O trabalho normal do escritório.
+        </p>
+      </div>
+      <div class="cartao">
+        <p class="cartao__marca">Missões</p>
+        <h3>Quando precisa de muita gente</h3>
+        <p>
+          Formatura, inspeção, visita, atividade externa. Você diz quantos e quando; o
+          Mamão diz quem pode e monta a sugestão.
+        </p>
+      </div>
+      <div class="cartao">
+        <p class="cartao__marca">Disponibilidade</p>
+        <h3>Calculada, não digitada</h3>
+        <p>
+          Férias, folga, falta, serviço, afastamento e as próprias missões. "Disponível"
+          é o que sobra — por isso nunca fica desatualizado.
         </p>
       </div>
       <div class="cartao">
         <p class="cartao__marca">Documentos</p>
-        <h3>Avisa antes de vencer</h3>
+        <h3>Ligados a quem e a quê</h3>
         <p>
-          NR-10, NR-35, ASO, reciclagem, CNH. O sistema sabe o que é exigido de cada
-          cargo e cobra o que está faltando — não só guarda o que já chegou.
+          Certificado, ASO, ofício, relatório. Cada arquivo preso à pessoa ou à atividade
+          a que pertence — e um aviso antes de vencer.
         </p>
       </div>
       <div class="cartao">
-        <p class="cartao__marca">Férias</p>
-        <h3>Saldo e prazo calculados</h3>
+        <p class="cartao__marca">Quatro visões</p>
+        <h3>Painel, quadro, calendário, escala</h3>
         <p>
-          Período aquisitivo, dias de direito, fracionamento e a data-limite para conceder.
-          Com o conflito de equipe à vista na hora de aprovar.
-        </p>
-      </div>
-      <div class="cartao">
-        <p class="cartao__marca">Ausências</p>
-        <h3>Quem está disponível hoje</h3>
-        <p>
-          Presencial, home office, falta, licença, folga e feriado. Uma resposta só,
-          usada pela escala, pelas férias e pelo painel.
-        </p>
-      </div>
-      <div class="cartao">
-        <p class="cartao__marca">Painel</p>
-        <h3>Pendência acima de gráfico</h3>
-        <p>
-          O que precisa de você primeiro, com o botão que resolve ali mesmo. Você abre,
-          resolve e fecha.
-        </p>
-      </div>
-      <div class="cartao">
-        <p class="cartao__marca">Começar</p>
-        <h3>Sua equipe em 15 minutos</h3>
-        <p>
-          Importe a lista por planilha. E funciona com você sozinho: seu time não precisa
-          criar conta para o Mamão servir para alguma coisa.
+          Os mesmos dados vistos de quatro ângulos. O painel para começar o dia, o
+          calendário para enxergar a semana, a escala para resolver amanhã.
         </p>
       </div>
     </div>
   </div>
 </section>
 
-<section class="secao secao--branca">
+<section class="secao secao--branca" id="busca">
+  <div class="env">
+    <p class="olho">Uma coisa pequena que muda o dia</p>
+    <h2 class="titulo">Digite um nome. Receba tudo.</h2>
+    <p class="subtitulo">
+      Porque a pergunta real nunca é "abrir o cadastro do João". É "me mostra tudo do João".
+    </p>
+
+    <div class="busca" role="img" aria-label="Exemplo de busca global pelo nome de uma pessoa">
+      <div class="busca__campo">
+        <span aria-hidden="true">🔎</span> <b>João da Silva</b>
+      </div>
+      <div class="busca__grupo">
+        <p class="busca__rotulo">Pessoa</p>
+        <p class="busca__item">João da Silva <small>· Manutenção · disponível agora</small></p>
+      </div>
+      <div class="busca__grupo">
+        <p class="busca__rotulo">Documentos</p>
+        <p class="busca__item">Certificado NR-10 <small>· vence em 12/2026</small></p>
+        <p class="busca__item">ASO <small>· vence em 03/2027</small></p>
+      </div>
+      <div class="busca__grupo">
+        <p class="busca__rotulo">Atividades</p>
+        <p class="busca__item">Relatório de inspeção <small>· responsável · vence sexta</small></p>
+      </div>
+      <div class="busca__grupo">
+        <p class="busca__rotulo">Missões</p>
+        <p class="busca__item">Formatura 15/08 <small>· escalado</small></p>
+      </div>
+      <div class="busca__grupo">
+        <p class="busca__rotulo">Disponibilidade</p>
+        <p class="busca__item">Férias <small>· 12 a 21 de setembro</small></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="secao">
   <div class="env" style="display:grid;gap:48px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
     <div>
       <p class="olho">Uma linha que não cruzamos</p>
@@ -450,7 +532,7 @@
       <p class="subtitulo" style="font-size:16px">
         O Mamão mostra quanto trabalho está alocado para a semana que vem, para você
         perceber que está colocando tudo na mesma pessoa. Ele não cronometra ninguém,
-        não registra hora trabalhada e não faz ranking entre funcionários.
+        não registra hora trabalhada e não faz ranking entre pessoas.
       </p>
       <p class="subtitulo" style="font-size:16px">
         A conta é sobre a sua decisão de distribuir, não sobre o esforço de quem executa.
@@ -459,11 +541,10 @@
 
     <div>
       <p class="olho">E o que ele não faz</p>
-      <h2 class="titulo" style="font-size:30px">Folha, ponto e eSocial continuam com o seu contador.</h2>
+      <h2 class="titulo" style="font-size:30px">Folha, ponto e contabilidade continuam onde estão.</h2>
       <p class="subtitulo" style="font-size:16px">
-        O Mamão <strong>planeja</strong> a jornada e <strong>avisa</strong> sobre prazos e
-        vencimentos. Ele não apura ponto nem substitui a contabilidade — e não promete
-        conformidade trabalhista no seu lugar.
+        O Mamão cuida da <strong>operação</strong> da equipe: quem está, quem pode, quem
+        vai. Ele não apura ponto, não calcula folha e não quer ser um ERP.
       </p>
       <p class="subtitulo" style="font-size:16px">
         Preferimos dizer isso agora a decepcionar depois.
@@ -472,35 +553,15 @@
   </div>
 </section>
 
-<section class="secao" id="preco">
-  <div class="env">
-    <p class="olho">Preço</p>
-    <h2 class="titulo">Por funcionário ativo. Sem surpresa.</h2>
-
-    <div class="preco">
-      <div>
-        <div class="preco__valor">R$ 00 <small>/ funcionário / mês</small></div>
-        <ul>
-          <li>Todos os recursos, um plano só</li>
-          <li>Usuários ilimitados — você paga por funcionário cadastrado, não por login</li>
-          <li>Mínimo mensal equivalente a 10 funcionários</li>
-          <li>Sem fidelidade, cancele quando quiser</li>
-        </ul>
-      </div>
-      <a class="btn btn--destaque" href="https://app.mamao.tech/cadastrar-empresa">Testar 14 dias</a>
-    </div>
-  </div>
-</section>
-
 <section class="secao secao--escura fecho">
   <div class="env">
-    <h2>Sua empresa em ordem. Pessoas, tarefas e rotinas conectadas.</h2>
+    <h2>Do "quem está disponível?" ao "escala pronta".</h2>
     <div class="heroi__acoes">
       <a class="btn btn--destaque" href="https://app.mamao.tech/cadastrar-empresa">Começar grátis</a>
       <a class="btn btn--fantasma" href="mailto:contato@mamao.tech">Falar com a gente</a>
     </div>
     <p class="heroi__nota" style="color:rgb(247 243 234 / 65%)">
-      14 dias para testar. Sem cartão de crédito.
+      Estamos validando com as primeiras equipes. Grátis nesse período.
     </p>
   </div>
 </section>
@@ -509,12 +570,8 @@
 
 <footer>
   <div class="env rodape">
-    <span>Mamão — gestão sem complicação</span>
-    <span>
-      <a href="mailto:contato@mamao.tech">contato@mamao.tech</a> ·
-      <a href="/privacidade">Privacidade</a> ·
-      <a href="/termos">Termos</a>
-    </span>
+    <span>Mamão — a operação da sua equipe em um lugar só</span>
+    <span><a href="mailto:contato@mamao.tech">contato@mamao.tech</a></span>
   </div>
 </footer>
 
