@@ -124,9 +124,10 @@ ENV
     aviso "Guarde o BACKUP_PASSPHRASE de $DESTINO/.env fora deste servidor."
 fi
 
-# As duas connection strings referenciam as variaveis acima; o shell do compose nao
-# expande isso sozinho, entao resolvemos aqui na leitura.
-set -a; . "$DESTINO/.env"; set +a
+# Le SO o que este script precisa, em vez de dar `source` no arquivo. As connection
+# strings tem ponto e virgula, que no bash separa comandos: dar source nelas faria o
+# shell executar pedaco de configuracao como se fosse comando.
+PUBLIC_HOST="$(sed -n 's/^PUBLIC_HOST=//p' "$DESTINO/.env" | head -1)"
 
 # ── configuracao ──────────────────────────────────────────────────────────────
 # Reenviada a cada deploy para nao dessincronizar com o repositorio.
@@ -173,6 +174,15 @@ definir_no_env IMAGE_WORKER mamao-worker
 
 passo "Subindo"
 cd "$DESTINO"
+
+# Confere a configuracao ANTES de subir. Uma connection string sem senha sobe tudo
+# normalmente e so aparece como "nao ficou pronto" tres minutos depois, com o Worker
+# em laco de reinicio — caro de diagnosticar para algo que se ve aqui em um segundo.
+# A saida vai para /dev/null: ela contem os segredos ja resolvidos.
+if ! docker compose --env-file .env config 2>/dev/null | grep -q 'Password=[^;"[:space:]]'; then
+    morrer "As connection strings em $DESTINO/.env estao sem senha. Veja DB_CONNECTION_OWNER e DB_CONNECTION_APP."
+fi
+
 docker compose --env-file .env up -d --remove-orphans
 
 # /healthz/ready so responde 200 quando o banco esta acessivel E as migrations foram

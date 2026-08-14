@@ -18,8 +18,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Nunca rodar como root.
-RUN useradd --uid 64198 --create-home mamao
+# Nunca rodar como root. Ver o Dockerfile da API: o diretorio do volume precisa existir
+# e pertencer ao usuario aqui na imagem, senao o volume nasce do root e o processo nao
+# consegue escrever.
+RUN useradd --uid 64198 --create-home mamao \
+    && mkdir -p /var/mamao/uploads \
+    && chown -R 64198:64198 /var/mamao
 USER 64198
 
 COPY --from=build --chown=64198 /app .

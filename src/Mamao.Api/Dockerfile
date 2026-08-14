@@ -21,7 +21,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Nunca rodar como root.
-RUN useradd --uid 64198 --create-home mamao
+#
+# Os diretorios de volume precisam existir E pertencer ao usuario AQUI, na imagem:
+# quando o Docker monta um volume nomeado vazio, ele copia dono e permissao do que
+# encontra na imagem. Sem isso o volume nasce do root, o processo (64198) nao escreve,
+# e o Data Protection quebra ao gravar a chave — sem chave nao ha recuperacao de senha
+# nem convite.
+RUN useradd --uid 64198 --create-home mamao \
+    && mkdir -p /var/mamao/keys /var/mamao/uploads \
+    && chown -R 64198:64198 /var/mamao
 USER 64198
 
 COPY --from=build --chown=64198 /app .
