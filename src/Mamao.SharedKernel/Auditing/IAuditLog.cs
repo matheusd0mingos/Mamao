@@ -14,6 +14,15 @@ public interface ICurrentActor
     string Name { get; }
     string? IpAddress { get; }
     string? CorrelationId { get; }
+
+    /// <summary>
+    /// O ator tem esta permissao?
+    ///
+    /// Existe porque nem toda regra de permissao cabe no endpoint. "Pedir ferias" e
+    /// permitido a todos, mas "pedir PARA OUTRA PESSOA" so a quem aprova — e essa
+    /// distincao depende do dado sendo gravado, que o endpoint nao conhece.
+    /// </summary>
+    bool Can(string permission);
 }
 
 /// <summary>

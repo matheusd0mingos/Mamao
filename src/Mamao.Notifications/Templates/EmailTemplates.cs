@@ -135,6 +135,51 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
         { ToName = nome };
     }
 
+    /// <summary>
+    /// A resposta ao pedido de ausencia.
+    ///
+    /// Fecha o ciclo: sem este e-mail a pessoa pede ferias e fica esperando alguem
+    /// comentar no corredor. E o produto perde a promessa — quem pediu volta a perguntar,
+    /// que era exatamente o que o sistema deveria eliminar.
+    /// </summary>
+    public EmailMessage AbsenceDecision(
+        string destinatario, string nome, string tipo, string periodo, bool aprovada, string? observacao)
+    {
+        var veredito = aprovada ? "aprovado" : "recusado";
+        var assunto = aprovada
+            ? $"Seu pedido de {tipo} foi aprovado"
+            : $"Seu pedido de {tipo} não foi aprovado";
+
+        var complemento = observacao is null
+            ? string.Empty
+            : $"\n\nObservação de quem decidiu:\n{observacao}";
+
+        var texto = $"""
+            Olá, {nome}.
+
+            Seu pedido de {tipo} para {periodo} foi {veredito}.{complemento}
+
+            {_app.ProductName} — a operação da sua equipe em um lugar só
+            """;
+
+        return new EmailMessage(
+            destinatario,
+            assunto,
+            Layout(
+                titulo: assunto,
+                corpo: $"""
+                    <p>Olá, {Escapar(nome)}.</p>
+                    <p>
+                      Seu pedido de <strong>{Escapar(tipo)}</strong> para
+                      <strong>{Escapar(periodo)}</strong> foi
+                      <strong style="color:{(aprovada ? "#1c5245" : "#a32020")}">{veredito}</strong>.
+                    </p>
+                    {(observacao is null ? "" : $"<p><em>{Escapar(observacao)}</em></p>")}
+                    """),
+            texto)
+        { ToName = nome };
+    }
+
     private string Layout(string titulo, string corpo) => $"""
         <!doctype html>
         <html lang="pt-BR">

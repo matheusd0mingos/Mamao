@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Mamao.SharedKernel.Authorization;
 using System.Security.Claims;
 using Mamao.SharedKernel.Auditing;
 using Microsoft.AspNetCore.Http;
@@ -30,6 +31,14 @@ public sealed class HttpCurrentActor(IHttpContextAccessor accessor) : ICurrentAc
         ?? "sistema";
 
     public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+    /// <summary>
+    /// Le a mesma claim que o pipeline de autorizacao usa. Uma segunda fonte de permissao
+    /// (consultar papel no banco, por exemplo) poderia discordar do token que o endpoint
+    /// ja validou — e a divergencia apareceria como "as vezes deixa, as vezes nao".
+    /// </summary>
+    public bool Can(string permission) =>
+        Principal?.HasClaim(Permissions.ClaimType, permission) ?? false;
 
     /// <summary>
     /// O mesmo id que amarra log, trace e auditoria. Investigar um incidente sem isso e

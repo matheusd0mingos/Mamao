@@ -7,5 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="../Mamao.People.Domain/Mamao.People.Domain.csproj" />
     <ProjectReference Include="../Mamao.People.Contracts/Mamao.People.Contracts.csproj" />
+    <ProjectReference Include="../../../Mamao.Notifications/Mamao.Notifications.csproj" />
   </ItemGroup>
 </Project>

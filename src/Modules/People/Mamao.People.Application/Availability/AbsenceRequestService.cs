@@ -1,8 +1,12 @@
+using Mamao.Notifications;
+using Mamao.Notifications.Email;
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Availability;
 using Mamao.SharedKernel.Auditing;
+using Mamao.SharedKernel.Authorization;
 using Mamao.SharedKernel.Results;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Mamao.People.Application.Availability;
 
@@ -45,6 +49,9 @@ public sealed class AbsenceRequestService(
     IPeopleDbContext dbContext,
     IAuditLog audit,
     ICurrentActor actor,
+    IEmailSender emails,
+    EmailTemplates templates,
+    ILogger<AbsenceRequestService> logger,
     TimeProvider timeProvider)
 {
     public async Task<IReadOnlyList<AbsenceRequestResponse>> ListAsync(
@@ -74,6 +81,17 @@ public sealed class AbsenceRequestService(
 
         if (funcionario is null)
             return Result.Failure<AbsenceRequestResponse>(new Error("employee.not_found", "Funcionário não encontrado."));
+
+        // Quem NAO decide so pede para si. Sem isto, qualquer pessoa com permissao de
+        // pedir abriria solicitacao em nome de outra — e o registro diria que foi ela.
+        // Quem decide (RH, chefia) lanca por qualquer um, que e o fluxo real de quem
+        // recebe o pedido no papel e transcreve.
+        if (!actor.Can(Permissions.TimeOffApprove) && funcionario.UserId != actor.UserId)
+        {
+            return Result.Failure<AbsenceRequestResponse>(new Error(
+                "absence_request.not_yourself",
+                "Você só pode pedir para você mesmo. Peça ao RH para lançar por outra pessoa."));
+        }
 
         var criacao = AbsenceRequest.Create(
             request.EmployeeId, request.Kind, request.StartsOn, request.EndsOn,
@@ -117,6 +135,7 @@ public sealed class AbsenceRequestService(
             new { pedido.Kind, pedido.StartsOn, pedido.EndsOn, pedido.Dias });
 
         await dbContext.SaveChangesAsync(ct);
+        await AvisarAsync(pedido, funcionario?.Email, funcionario?.FullName, true, null, ct);
 
         return Result.Success(ToResponse(pedido, funcionario?.FullName ?? string.Empty, []));
     }
@@ -141,8 +160,45 @@ public sealed class AbsenceRequestService(
             new { pedido.Kind, pedido.StartsOn, pedido.EndsOn, request.Note });
 
         await dbContext.SaveChangesAsync(ct);
+        await AvisarAsync(pedido, funcionario?.Email, funcionario?.FullName, false, request.Note, ct);
 
         return Result.Success(ToResponse(pedido, funcionario?.FullName ?? string.Empty, []));
+    }
+
+    /// <summary>
+    /// Avisa quem pediu. DEPOIS de gravar e sem derrubar a decisão se o e-mail falhar: a
+    /// aprovação é o fato, o aviso é consequência. Estourar aqui devolveria erro para o
+    /// chefe numa operação que já deu certo — e ele aprovaria de novo, gerando confusão.
+    ///
+    /// Sem e-mail cadastrado não há o que fazer, e isso é comum: boa parte da equipe entra
+    /// pela planilha, sem endereço. Fica no log para aparecer quando alguém perguntar por
+    /// que não recebeu.
+    /// </summary>
+    private async Task AvisarAsync(
+        AbsenceRequest pedido, string? email, string? nome, bool aprovada, string? nota, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            logger.LogInformation(
+                "Solicitação {Id} decidida, mas o funcionário não tem e-mail cadastrado.", pedido.Id);
+            return;
+        }
+
+        var periodo = pedido.StartsOn == pedido.EndsOn
+            ? pedido.StartsOn.ToString("dd/MM/yyyy")
+            : $"{pedido.StartsOn:dd/MM/yyyy} a {pedido.EndsOn:dd/MM/yyyy}";
+
+        try
+        {
+            await emails.SendAsync(
+                templates.AbsenceDecision(
+                    email, nome ?? email, pedido.Kind.ToString().ToLowerInvariant(), periodo, aprovada, nota),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Falha ao avisar {Email} sobre a solicitação {Id}.", email, pedido.Id);
+        }
     }
 
     /// <summary>Desistência de quem pediu, antes da decisão.</summary>

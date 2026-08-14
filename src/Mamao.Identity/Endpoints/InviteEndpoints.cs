@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Mamao.Identity.Domain;
+using Mamao.People.Contracts;
 using Mamao.Identity.Persistence;
 using Mamao.Identity.Tokens;
 using Mamao.Notifications.Email;
@@ -243,9 +244,12 @@ public static class InviteEndpoints
             MamaoIdentityDbContext dbContext,
             UserManager<MamaoUser> userManager,
             TokenService tokens,
+            IEmployeeDirectory employees,
+            ILoggerFactory loggerFactory,
             TimeProvider timeProvider,
             CancellationToken ct) =>
         {
+            var logger = loggerFactory.CreateLogger("Mamao.Identity.Invites");
             var agora = timeProvider.GetUtcNow();
             var convite = await BuscarPorTokenAsync(request.Token, dbContext, ct);
 
@@ -282,6 +286,29 @@ public static class InviteEndpoints
             // continua valendo e a pessoa tenta de novo em vez de ficar sem caminho.
             convite.Accept(user.Id, agora);
             await dbContext.SaveChangesAsync(ct);
+
+            // Aqui — e so aqui — o sistema sabe com certeza que este usuario E aquela
+            // pessoa do cadastro: quem convidou apontou o funcionario, e quem aceitou
+            // provou ter o e-mail. Sem amarrar neste ponto, o funcionario nunca consegue
+            // pedir as proprias ferias e o RH continua digitando por todo mundo.
+            //
+            // Fora da transacao do Identity de proposito: os dois modulos tem bancos
+            // logicos separados, e uma falha aqui nao pode desfazer uma conta que a pessoa
+            // ja usou para entrar. Se falhar, o vinculo e refeito pelo convite, que guarda
+            // os dois lados.
+            if (convite.EmployeeId is { } funcionarioId)
+            {
+                try
+                {
+                    await employees.LinkUserAsync(new EmployeeId(funcionarioId), user.Id, ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(
+                        ex, "Convite {Id} aceito, mas o vinculo com o funcionario {Funcionario} falhou.",
+                        convite.Id, funcionarioId);
+                }
+            }
 
             var pair = await tokens.IssueAsync(user, ct);
 

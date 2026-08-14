@@ -42,4 +42,25 @@ public sealed class EmployeeDirectory(PeopleDbContext dbContext) : IEmployeeDire
 
         return summaries.ToDictionary(s => s.Id);
     }
+
+    public async Task LinkUserAsync(EmployeeId employeeId, Guid userId, CancellationToken cancellationToken)
+    {
+        var funcionario = await dbContext.Employees.FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+        if (funcionario is null)
+            return;
+
+        funcionario.LinkUser(userId);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<EmployeeId?> FindByUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var id = await dbContext.Employees
+            .AsNoTracking()
+            .Where(e => e.UserId == userId)
+            .Select(e => (EmployeeId?)e.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return id;
+    }
 }

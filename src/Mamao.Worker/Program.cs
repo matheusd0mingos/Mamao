@@ -67,4 +67,11 @@ internal sealed class SystemActor : ICurrentActor
     public string Name => "Mamão (processo automático)";
     public string? IpAddress => null;
     public string? CorrelationId => System.Diagnostics.Activity.Current?.TraceId.ToString();
+
+    /// <summary>
+    /// O processo de fundo nao carrega permissao de ninguem. Responder "sim" aqui daria ao
+    /// Worker um poder que nenhum usuario tem — e a regra que ele driblasse passaria a ser
+    /// contornavel por qualquer job novo.
+    /// </summary>
+    public bool Can(string permission) => false;
 }

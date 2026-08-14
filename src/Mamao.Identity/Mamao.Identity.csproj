@@ -14,6 +14,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
   <ItemGroup>
+    <!-- So o Contracts do outro modulo: e a regra verificada pelo teste de arquitetura,
+         e o que mantem People substituivel por um servico sem mexer aqui. -->
+    <ProjectReference Include="../Modules/People/Mamao.People.Contracts/Mamao.People.Contracts.csproj" />
     <ProjectReference Include="../Mamao.Notifications/Mamao.Notifications.csproj" />
     <ProjectReference Include="../Mamao.SharedKernel/Mamao.SharedKernel.csproj" />
     <ProjectReference Include="../Mamao.SharedKernel.Web/Mamao.SharedKernel.Web.csproj" />
