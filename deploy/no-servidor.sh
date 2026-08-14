@@ -155,7 +155,7 @@ while IFS= read -r padrao; do
     chave="${padrao%%=*}"
     grep -q "^$chave=" "$DESTINO/.env" && continue
     printf '%s\n' "$padrao" >> "$DESTINO/.env"
-    criou "$DESTINO/.env: acrescentado $padrao"
+    info "acrescentado ao .env: $padrao"
 done <<'PADROES'
 SMTP_USE_SSL=false
 PADROES
