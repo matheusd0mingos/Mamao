@@ -63,7 +63,29 @@ Os padrões saem carregados por regime; o cliente ajusta o que a norma dele diss
 É a mesma decisão do 3×10, generalizada: **o sistema traz o padrão e o cliente
 corrige, com a mudança auditada.**
 
-### 3. O que o sistema NÃO promete
+### 3. O regime NÃO determina a jornada
+
+Vale escrever porque é o engano fácil: **militar pode cumprir expediente administrativo**,
+e celetista pode estar em rodízio. `Regime` e `ScheduleType` são campos independentes de
+propósito. O que o regime decide é **quais regras se aplicam** à jornada escolhida:
+
+| Regime | Teto semanal | Acordo do 12×36 |
+|---|---|---|
+| CLT | 44h (art. 58) | exigido (art. 59-A) |
+| Estatutário federal | **40h** (Lei 8.112/90, art. 19) | não se aplica |
+| Estatutário estadual/municipal | varia por ente — cliente configura | não se aplica |
+| Militar | **não tem** | não se aplica |
+| Outro | não se aplica | não se aplica |
+
+**Militar não ter teto semanal é resposta, não omissão:** o Estatuto dos Militares trata o
+serviço como dedicação integral, regulado por escala de cada Força, e não por jornada
+semanal. Alertar com número inventado seria pior que calar.
+
+A primeira implementação tratava todo regime não-CLT como "sem regra nenhuma". Era
+preguiça: o estatutário federal tem número próprio, e 42h — que não alertaria em CLT —
+está acima do teto dele.
+
+### 4. O que o sistema NÃO promete
 
 Para estatutário estadual/municipal e para militar, o Mamão **não afirma
 conformidade**. Ele calcula em cima da política que o cliente configurou, e a tela diz

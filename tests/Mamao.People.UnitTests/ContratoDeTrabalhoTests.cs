@@ -52,7 +52,43 @@ public class ContratoDeTrabalhoTests
     {
         var alertas = Contrato(horas: 48m).Warnings();
 
-        alertas.ShouldContain(a => a.Code == "contract.weekly_hours_above_clt");
+        alertas.ShouldContain(a => a.Code == "contract.weekly_hours_above_limit");
+        alertas[0].Message.ShouldContain("CLT, art. 58");
+    }
+
+    [Fact]
+    public void Estatutario_federal_tem_teto_PROPRIO_de_40h()
+    {
+        // 42h nao alertaria em CLT (teto 44), mas alerta aqui: a Lei 8.112 tem numero
+        // proprio. Tratar todo nao-CLT como "sem regra" era o buraco.
+        var alertas = Contrato(EmploymentRegime.EstatutarioFederal, horas: 42m).Warnings();
+
+        alertas.ShouldHaveSingleItem();
+        alertas[0].Message.ShouldContain("Lei 8.112/90, art. 19");
+    }
+
+    [Fact]
+    public void Estatutario_federal_dentro_das_40h_nao_alerta()
+        => Contrato(EmploymentRegime.EstatutarioFederal, horas: 40m).Warnings().ShouldBeEmpty();
+
+    [Fact]
+    public void Militar_em_expediente_administrativo_e_caso_normal()
+    {
+        // O regime NAO determina a jornada: militar pode cumprir expediente comum, assim
+        // como celetista pode estar em rodizio. Os dois campos sao independentes.
+        var contrato = Contrato(EmploymentRegime.Militar, WorkScheduleType.Administrativo, horas: 40m);
+
+        contrato.ScheduleType.ShouldBe(WorkScheduleType.Administrativo);
+        contrato.Warnings().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Militar_nao_tem_teto_semanal_e_isso_e_resposta_e_nao_omissao()
+    {
+        // O Estatuto dos Militares trata o servico como dedicacao integral, regulado por
+        // escala de cada Forca — nao por jornada semanal. Alertar com numero inventado
+        // seria pior que calar.
+        Contrato(EmploymentRegime.Militar, horas: 60m).Warnings().ShouldBeEmpty();
     }
 
     [Theory]
@@ -60,13 +96,21 @@ public class ContratoDeTrabalhoTests
     [InlineData(EmploymentRegime.EstatutarioFederal)]
     [InlineData(EmploymentRegime.EstatutarioLocal)]
     [InlineData(EmploymentRegime.Outro)]
-    public void Regime_que_nao_e_clt_nao_recebe_alerta_de_clt(EmploymentRegime regime)
+    public void Acordo_de_compensacao_do_12x36_e_exigencia_so_da_clt(EmploymentRegime regime)
     {
-        // Alertar aqui seria pior que calar: ensina o cliente a ignorar alerta, e aí o
+        // Alertar sobre o art. 59-A fora da CLT ensina o cliente a ignorar alerta, e aí o
         // alerta que importa também passa despercebido.
-        var alertas = Contrato(regime, WorkScheduleType.DozePorTrintaESeis, horas: 60m).Warnings();
+        var alertas = Contrato(regime, WorkScheduleType.DozePorTrintaESeis, horas: 36m).Warnings();
 
-        alertas.ShouldBeEmpty($"Regra da CLT não se aplica a {regime}.");
+        alertas.ShouldNotContain(a => a.Code == "contract.missing_12x36_agreement");
+    }
+
+    [Fact]
+    public void Celetista_em_rodizio_tambem_e_caso_normal()
+    {
+        // A outra ponta da mesma independencia: vigilante CLT que entra na escala de
+        // servico quando e a vez.
+        Contrato(EmploymentRegime.Clt, WorkScheduleType.Rodizio, horas: 44m).Warnings().ShouldBeEmpty();
     }
 
     [Theory]
@@ -91,7 +135,7 @@ public class ContratoDeTrabalhoTests
             Funcionario, EmploymentRegime.Clt, WorkScheduleType.DozePorTrintaESeis, 60m, Inicio);
 
         resultado.IsSuccess.ShouldBeTrue("60h é fora do comum, não impossível — a operação real tem exceção.");
-        resultado.Value.Warnings().ShouldContain(a => a.Code == "contract.weekly_hours_above_clt");
+        resultado.Value.Warnings().ShouldContain(a => a.Code == "contract.weekly_hours_above_limit");
     }
 
     [Fact]

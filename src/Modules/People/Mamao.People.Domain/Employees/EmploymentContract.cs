@@ -132,22 +132,55 @@ public sealed class EmploymentContract : ITenantOwned
     }
 
     /// <summary>
+    /// Teto semanal do estatutário federal (Lei 8.112/90, art. 19). Regra própria, com
+    /// número próprio — não é a da CLT com outro nome.
+    /// </summary>
+    public const decimal EstatutarioFederalWeeklyHoursLimit = 40m;
+
+    /// <summary>
+    /// Teto semanal por regime, ou <c>null</c> quando o regime não tem um.
+    ///
+    /// <b>Militar não tem teto semanal e isso é resposta, não omissão:</b> o Estatuto dos
+    /// Militares trata o serviço como dedicação integral, regulado por escala de cada Força
+    /// — não por jornada semanal. Alertar com número inventado seria pior que calar.
+    ///
+    /// Estatutário estadual/municipal varia por ente federativo, então o padrão é não
+    /// alertar; quem sabe o número é o cliente, e ele configura
+    /// (ver <see href="../../../docs/adr/0017-regime-de-vinculo.md"/>).
+    /// </summary>
+    private decimal? TetoSemanal => Regime switch
+    {
+        EmploymentRegime.Clt => CltWeeklyHoursLimit,
+        EmploymentRegime.EstatutarioFederal => EstatutarioFederalWeeklyHoursLimit,
+        _ => null,
+    };
+
+    private string TetoSemanalFundamento => Regime switch
+    {
+        EmploymentRegime.Clt => "CLT, art. 58",
+        EmploymentRegime.EstatutarioFederal => "Lei 8.112/90, art. 19",
+        _ => string.Empty,
+    };
+
+    /// <summary>
     /// Alertas do contrato — nunca bloqueios. É a primeira aparição concreta do modo alerta
     /// decidido em P4b: o sistema aponta o que parece errado e deixa a pessoa decidir, porque
-    /// a operação real tem exceção e porque nós não conhecemos a convenção coletiva dela.
+    /// a operação real tem exceção e porque nós não conhecemos a norma interna dela.
     ///
-    /// As regras de jornada citadas são da CLT. Para militar e estatutário elas simplesmente
-    /// NÃO se aplicam, e alertar seria pior que calar: ensinaria o cliente a ignorar alerta.
+    /// <b>O regime não determina a jornada.</b> Militar pode cumprir expediente
+    /// administrativo, e celetista pode estar em rodízio — os dois campos são independentes
+    /// de propósito. O que o regime decide é QUAIS REGRAS se aplicam à jornada escolhida.
     /// Ver docs/adr/0017-regime-de-vinculo.md.
     /// </summary>
     public IReadOnlyList<ContractWarning> Warnings()
     {
-        if (Regime is not EmploymentRegime.Clt)
-            return [];
-
         var alertas = new List<ContractWarning>();
 
-        if (ScheduleType == WorkScheduleType.DozePorTrintaESeis && CompensationAgreementOn is null)
+        // Acordo de compensação do 12×36 é exigência da CLT (art. 59-A) e só dela.
+        // Estatutário e militar têm normas próprias de escala, sem esse instrumento.
+        if (Regime == EmploymentRegime.Clt
+            && ScheduleType == WorkScheduleType.DozePorTrintaESeis
+            && CompensationAgreementOn is null)
         {
             alertas.Add(new ContractWarning(
                 "contract.missing_12x36_agreement",
@@ -155,12 +188,12 @@ public sealed class EmploymentContract : ITenantOwned
                 + "ou norma coletiva. Registre a data do acordo para o alerta sumir."));
         }
 
-        if (WeeklyHours > CltWeeklyHoursLimit)
+        if (TetoSemanal is { } teto && WeeklyHours > teto)
         {
             alertas.Add(new ContractWarning(
-                "contract.weekly_hours_above_clt",
-                $"Carga semanal de {WeeklyHours:0.#}h acima das {CltWeeklyHoursLimit:0}h da CLT (art. 58). "
-                + "Confira se há acordo de compensação ou se a carga está correta."));
+                "contract.weekly_hours_above_limit",
+                $"Carga semanal de {WeeklyHours:0.#}h acima das {teto:0}h previstas ({TetoSemanalFundamento}). "
+                + "Confira se a carga está correta ou se há instrumento que autorize."));
         }
 
         return alertas;
