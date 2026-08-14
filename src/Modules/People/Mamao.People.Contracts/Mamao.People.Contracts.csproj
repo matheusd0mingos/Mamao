@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../../Mamao.SharedKernel/Mamao.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

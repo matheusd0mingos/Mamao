@@ -1,0 +1,84 @@
+# Producao inicial no VPS. Escrito a mao de proposito: o output de deploy do Aspire mira
+# Azure/Kubernetes, e num no unico voce quer um compose legivel as 2h da manha.
+# Ver docs/adr/0011-aspire-e-deploy.md.
+#
+# Uso:  TAG=<sha> docker compose --env-file .env up -d
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./web-dist:/srv/web:ro        # build estatico do Angular; sem container Node
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+  api:
+    image: ghcr.io/matheusd0mingos/mamao-api:${TAG:?defina TAG}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__mamao: ${DB_CONNECTION:?}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?}
+      Jwt__Issuer: mamao
+      Jwt__Audience: mamao
+      Cors__Origins__0: ${PUBLIC_ORIGIN:?}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_ENDPOINT:-}
+    volumes:
+      - uploads:/var/mamao/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Postgres sem limite consumindo tudo e o OOM killer matando a API e o incidente
+    # classico de VPS. Ajuste conforme o plano contratado.
+    mem_limit: 768m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    image: ghcr.io/matheusd0mingos/mamao-worker:${TAG:?defina TAG}
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__mamao: ${DB_CONNECTION:?}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_ENDPOINT:-}
+    volumes:
+      - uploads:/var/mamao/uploads
+    mem_limit: 512m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mamao
+      POSTGRES_USER: ${POSTGRES_USER:-mamao_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mamao_owner} -d mamao"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 1g
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+artifacts/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Ambiente
+.env
+*.local
+appsettings.Local.json
+
+# Ferramentas
+.idea/
+.DS_Store
+
+# Saidas de deploy
+deploy/web-dist/
+deploy/.env

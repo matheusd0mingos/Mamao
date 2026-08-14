@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Mamao.People.Contracts/Mamao.People.Contracts.csproj" />
+    <ProjectReference Include="../../../Mamao.SharedKernel/Mamao.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

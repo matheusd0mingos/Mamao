@@ -46,11 +46,16 @@ desenvolvimento (com pgAdmin, volume de dados, hot reload) — que legitimamente
 - Aspire acrescenta dependência de tooling no desenvolvimento. Aceitável: o ganho
   em observabilidade local é grande.
 
-## Nota sobre versões
+## Nota sobre versões (verificada na montagem do Marco 0)
 
-Aspire teve mudanças de nome e de versionamento recentes. Fixe a versão no
-`Directory.Packages.props` e confirme a compatibilidade com o SDK do .NET 10 ao
-iniciar o projeto — não assuma por memória.
+- Aspire está em **13.4.6** e não usa mais workload: o AppHost declara
+  `<Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />`. Um `IsAspireHost=true` sem esse
+  SDK dispara erro de workload descontinuada (`NETSDK1228`).
+- `Aspire.Hosting.NodeJs` ainda está na linha 9.x e não acompanhou o 13.x. Por isso o
+  **Angular não sobe pelo AppHost**: rode `npm start` em `web/mamao-web`, que usa o
+  proxy do dev server para a API. Uma decisão a revisitar quando o pacote alcançar.
+- Fixe tudo no `Directory.Packages.props` e confirme antes de subir de versão — estas
+  notas envelhecem.
 
 ## Quando revisitar
 

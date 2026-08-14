@@ -1,0 +1,258 @@
+/*
+ * Tokens do design system do Mamao.
+ *
+ * Angular CDK sim, Angular Material nao na camada visual: tematizar Material ate deixar de
+ * parecer Material e briga que reabre a cada versao maior.
+ * Ver docs/adr/0008-frontend-angular.md.
+ */
+
+:root {
+  /* Marca */
+  --mamao-green-900: #11362d;
+  --mamao-green-700: #1c5245;
+  --mamao-yellow-500: #f2b233;
+  --mamao-cream-50: #f7f3ea;
+  --mamao-gray-200: #e6e6e1;
+  --mamao-sage-200: #cde6d5;
+
+  /* Superficies e texto */
+  --surface: #ffffff;
+  --surface-app: var(--mamao-cream-50);
+  --surface-sunken: #f1ede3;
+  --border: var(--mamao-gray-200);
+
+  --text-primary: #16211d;
+  --text-secondary: #5b6661;
+  --text-disabled: #99a29e;
+  --text-on-dark: #f7f3ea;
+
+  /*
+   * Status separado da acao de proposito: o amarelo da marca e cor de ACAO. Reusa-lo como
+   * "atencao" faz as duas coisas colidirem na primeira tela de pendencias.
+   */
+  --status-success-bg: #e8f3ec;
+  --status-success-fg: #1e6b42;
+  --status-warning-bg: #fdf1d8;
+  --status-warning-fg: #8a5a08;
+  --status-danger-bg: #fdeaea;
+  --status-danger-fg: #a32020;
+  --status-info-bg: #e9eff5;
+  --status-info-fg: #2a5578;
+  --status-neutral-bg: #eeeeea;
+  --status-neutral-fg: var(--text-secondary);
+
+  /* Escala de 4px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgb(17 54 45 / 8%);
+  --shadow-md: 0 4px 16px rgb(17 54 45 / 10%);
+
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--surface-app);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Serifada so em titulo de pagina e numero grande. Dentro de tabela densa ela atrapalha. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+a {
+  color: var(--mamao-green-700);
+}
+
+/* Foco visivel e requisito, nao polimento. */
+:focus-visible {
+  outline: 2px solid var(--mamao-green-700);
+  outline-offset: 2px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 500;
+  gap: var(--space-2);
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn--primary {
+  background: var(--mamao-green-900);
+  color: var(--text-on-dark);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--mamao-green-700);
+}
+
+.btn--accent {
+  background: var(--mamao-yellow-500);
+  color: var(--mamao-green-900);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.field label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.field input,
+.field select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+}
+
+.field--invalid input {
+  border-color: var(--status-danger-fg);
+}
+
+.field__error {
+  color: var(--status-danger-fg);
+  font-size: 13px;
+}
+
+.badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px var(--space-2);
+}
+
+.badge--success {
+  background: var(--status-success-bg);
+  color: var(--status-success-fg);
+}
+
+.badge--neutral {
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-fg);
+}
+
+.alert {
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+
+.alert--danger {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
+/* Tabela larga rola dentro do proprio container; o body nunca rola na horizontal. */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.data {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table.data th,
+table.data td {
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+}
+
+table.data th {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+table.data tbody tr:hover {
+  background: var(--surface-sunken);
+}
+
+.empty-state {
+  color: var(--text-secondary);
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+}
+
+.muted {
+  color: var(--text-secondary);
+}

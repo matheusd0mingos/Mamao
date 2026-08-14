@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>mamao-apphost</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Mamao.Api/Mamao.Api.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="../Mamao.Worker/Mamao.Worker.csproj" IsAspireProjectResource="true" />
+  </ItemGroup>
+</Project>

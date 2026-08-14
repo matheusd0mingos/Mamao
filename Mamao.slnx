@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Mamao.Api/Mamao.Api.csproj" />
+    <Project Path="src/Mamao.AppHost/Mamao.AppHost.csproj" />
+    <Project Path="src/Mamao.Identity/Mamao.Identity.csproj" />
+    <Project Path="src/Mamao.Messaging/Mamao.Messaging.csproj" />
+    <Project Path="src/Mamao.ServiceDefaults/Mamao.ServiceDefaults.csproj" />
+    <Project Path="src/Mamao.SharedKernel.Web/Mamao.SharedKernel.Web.csproj" />
+    <Project Path="src/Mamao.SharedKernel/Mamao.SharedKernel.csproj" />
+    <Project Path="src/Mamao.Worker/Mamao.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/People/">
+    <Project Path="src/Modules/People/Mamao.People.Application/Mamao.People.Application.csproj" />
+    <Project Path="src/Modules/People/Mamao.People.Contracts/Mamao.People.Contracts.csproj" />
+    <Project Path="src/Modules/People/Mamao.People.Domain/Mamao.People.Domain.csproj" />
+    <Project Path="src/Modules/People/Mamao.People.Infrastructure/Mamao.People.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Mamao.ArchitectureTests/Mamao.ArchitectureTests.csproj" />
+    <Project Path="tests/Mamao.IntegrationTests/Mamao.IntegrationTests.csproj" />
+    <Project Path="tests/Mamao.People.UnitTests/Mamao.People.UnitTests.csproj" />
+  </Folder>
+</Solution>

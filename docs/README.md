@@ -58,6 +58,7 @@ necessidade real de overengineering e anota o gatilho para revisitar.
 | [0013](adr/0013-capacidade-sem-vigilancia.md) | Capacidade prospectiva, nunca vigilância |
 | [0014](adr/0014-regras-clt-de-ferias.md) | Regras CLT de férias no domínio, desde a V1 |
 | [0015](adr/0015-regras-de-jornada-e-escala.md) | Escalas na V1, com validação de jornada em modo alerta |
+| [0016](adr/0016-bibliotecas-de-terceiros.md) | Critério de licença e saúde para biblioteca de terceiro |
 
 ## Como manter
 

@@ -1,0 +1,33 @@
+# Cloudflare -> Caddy -> API. O Angular e servido daqui como estatico.
+{$PUBLIC_HOST:app.mamao.tech} {
+	encode zstd gzip
+
+	handle_path /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle /healthz* {
+		reverse_proxy api:8080
+	}
+
+	handle {
+		root * /srv/web
+		try_files {path} /index.html   # SPA fallback
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+	}
+}

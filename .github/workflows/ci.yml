@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore Mamao.slnx
+
+      - name: Build
+        run: dotnet build Mamao.slnx --no-restore -c Release
+
+      # Testcontainers sobe um Postgres de verdade; o runner do GitHub ja tem Docker.
+      - name: Testes
+        run: dotnet test Mamao.slnx --no-build -c Release --verbosity normal
+
+      # A checagem que fecha o circuito do contrato: o documento commitado tem que ser o
+      # que a API produz hoje. O frontend valida o outro lado (schema.d.ts x openapi.json).
+      - name: OpenAPI commitado esta em dia?
+        run: |
+          # Caminho absoluto: `dotnet run --project` usa o diretorio do PROJETO como cwd.
+          dotnet run --project src/Mamao.Api --no-build -c Release --no-launch-profile \
+            -- --generate-openapi "$GITHUB_WORKSPACE/web/openapi.json"
+          node web/normalize-openapi.mjs web/openapi.json
+          if ! git diff --quiet -- web/openapi.json; then
+            echo "::error::web/openapi.json desatualizado. Regenere e comite."
+            git --no-pager diff -- web/openapi.json
+            exit 1
+          fi
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__mamao: Host=localhost;Database=ci_apenas_openapi
+          Jwt__SigningKey: chave-de-ci-com-mais-de-trinta-e-dois-bytes
+
+      - name: Pacotes com vulnerabilidade conhecida
+        run: |
+          saida=$(dotnet list Mamao.slnx package --vulnerable --include-transitive)
+          echo "$saida"
+          if echo "$saida" | grep -q "has the following vulnerable packages"; then
+            echo "::error::Dependencia com vulnerabilidade conhecida."
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web/mamao-web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/mamao-web/package-lock.json
+
+      - run: npm ci
+
+      # O contrato e o OpenAPI: se o gerado divergir do commitado, alguem mudou a API sem
+      # atualizar o frontend — e este e o momento certo de descobrir.
+      # Ver docs/adr/0009-cliente-gerado-do-openapi.md.
+      - name: Cliente gerado esta em dia?
+        run: |
+          npm run generate:api
+          if ! git diff --quiet -- src/app/core/http/api-schema.d.ts; then
+            echo "::error::api-schema.d.ts desatualizado. Rode 'npm run generate:api' e comite."
+            git --no-pager diff -- src/app/core/http/api-schema.d.ts
+            exit 1
+          fi
+
+      - run: npm run build
+
+      - run: npm audit --audit-level=high
+        continue-on-error: true

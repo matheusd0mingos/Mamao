@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Mamao.People.Domain/Mamao.People.Domain.csproj" />
+    <ProjectReference Include="../Mamao.People.Contracts/Mamao.People.Contracts.csproj" />
+  </ItemGroup>
+</Project>

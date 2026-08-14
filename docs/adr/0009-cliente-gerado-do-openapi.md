@@ -10,17 +10,40 @@ a divergência aparece em produção, não no build.
 
 ## Decisão
 
-O backend expõe OpenAPI (`Microsoft.AspNetCore.OpenApi`). O frontend **gera**
-cliente e tipos a partir dele. Nenhum DTO de API escrito à mão no Angular.
+O backend expõe OpenAPI (`Microsoft.AspNetCore.OpenApi`). O frontend **gera os
+tipos** a partir dele e escreve serviços finos sobre o `HttpClient` do Angular.
+Nenhum DTO de API escrito à mão.
+
+### Tipos gerados, não cliente gerado
+
+Refinamento descoberto ao implementar o Marco 0: um cliente HTTP gerado (fetch)
+**passa por fora dos interceptors do Angular** — e é neles que moram o bearer
+token, a rotação do refresh e a tradução de `ProblemDetails`. Adotá-lo
+significaria reimplementar tudo isso dentro do gerado, ou perdê-lo.
+
+Solução: `openapi-typescript` gera apenas o `.d.ts` do schema; cada feature tem um
+serviço de ~30 linhas sobre `HttpClient` usando esses tipos. Ganha-se a segurança
+de tipos do contrato sem abrir mão do pipeline HTTP do framework.
 
 ```bash
-dotnet run --project src/Mamao.Api -- --generate-openapi > web/openapi.json
-npx openapi-typescript-codegen --input web/openapi.json \
-    --output src/app/core/http/generated
+# O caminho e absoluto porque `dotnet run --project` usa o diretorio do PROJETO como cwd.
+dotnet run --project src/Mamao.Api -- --generate-openapi "$PWD/web/openapi.json"
+
+cd web/mamao-web && npm run generate:api
 ```
 
-O gerado é **commitado**. O CI regenera e falha se houver diferença não commitada —
-assim ninguém esquece.
+O script `generate:api` roda `web/normalize-openapi.mjs` antes do gerador. Motivo: o
+gerador de OpenAPI do .NET 10 emite `format: int32` **sem** `type: integer` em algumas
+propriedades, e o `openapi-typescript` então infere `unknown`, quebrando o build do
+frontend em cima de um contrato que está correto na intenção. A normalização foi
+tentada primeiro como `IOpenApiDocumentTransformer` no host, mas nesta versão os
+schemas só entram em `components` **depois** dos transformers de documento — por isso
+ela vive num passo explícito do pipeline, e não escondida no cliente gerado.
+
+Tanto `web/openapi.json` quanto `api-schema.d.ts` são **commitados**, e o CI verifica
+os dois lados do circuito: o job de backend regenera o `openapi.json` a partir da API e
+falha se divergir do commitado; o de frontend regenera o `.d.ts` e falha se divergir.
+Assim, mudar a API sem atualizar o frontend quebra no PR, não em produção.
 
 ## Motivo
 
@@ -44,6 +67,6 @@ divergência garantida.
 
 ## Alternativa considerada
 
-NSwag gerando cliente C# **e** TypeScript do mesmo documento. Vale se um dia houver
-um segundo consumidor .NET (por exemplo, um serviço extraído). Por enquanto,
-`openapi-typescript-codegen` é mais simples e produz saída mais limpa.
+NSwag gerando cliente C# **e** TypeScript do mesmo documento. Vale no dia em que
+houver um segundo consumidor .NET — por exemplo, o cliente HTTP para um módulo
+extraído. Aí o mesmo documento passa a alimentar os dois geradores.
