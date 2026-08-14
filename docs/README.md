@@ -62,6 +62,7 @@ necessidade real de overengineering e anota o gatilho para revisitar.
 - [ADR-0017 — Regime de vínculo configurável (CLT, estatutário, militar)](adr/0017-regime-de-vinculo.md)
 - [ADR-0018 — Empresas independentes são tenants; subordinadas são unidades](adr/0018-organizacoes-e-unidades.md)
 - [ADR-0019 — Escala de serviço por rodízio justo](adr/0019-escala-por-rodizio.md)
+- [ADR-0020 — Usuário pertence à empresa (substitui S6 da ADR-0006)](adr/0020-usuario-pertence-a-empresa.md)
 
 ## Como manter
 

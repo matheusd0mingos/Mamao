@@ -1,5 +1,10 @@
 # ADR-0006 — ASP.NET Core Identity + JWT próprio; User global com Membership
 
+> **Parcialmente substituída pela [ADR-0020](0020-usuario-pertence-a-empresa.md).**
+> O `User` deixou de ser global e passou a pertencer a uma empresa; `Membership` deixou de
+> existir. O resto desta ADR — Identity + JWT próprio, refresh com rotação e detecção de
+> reuso — continua valendo.
+
 **Status:** aceita · **Data:** 2026-08
 
 ## Contexto
