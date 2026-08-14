@@ -24,7 +24,9 @@ services:
       - api
 
   api:
-    image: ghcr.io/matheusd0mingos/mamao-api:${TAG:?defina TAG}
+    # IMAGE_API muda conforme de onde a imagem vem: construida no proprio servidor
+    # (mamao-api) ou baixada do registry. O padrao e o registry.
+    image: ${IMAGE_API:-ghcr.io/matheusd0mingos/mamao-api}:${TAG:?defina TAG}
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -66,7 +68,7 @@ services:
         condition: service_healthy
 
   worker:
-    image: ghcr.io/matheusd0mingos/mamao-worker:${TAG:?defina TAG}
+    image: ${IMAGE_WORKER:-ghcr.io/matheusd0mingos/mamao-worker}:${TAG:?defina TAG}
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production

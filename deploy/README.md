@@ -4,22 +4,76 @@ Cloudflare → Caddy → Docker Compose, num VPS de nó único.
 Decisões em [ADR-0011](../docs/adr/0011-aspire-e-deploy.md) e
 [infraestrutura](../docs/arquitetura/infraestrutura-e-deploy.md).
 
+**Dois caminhos.** Escolha um e ignore o outro:
+
+| | `no-servidor.sh` | `deploy.sh` |
+|---|---|---|
+| Roda | no VPS, dentro do repositório clonado | na sua máquina (ou no CI), por SSH |
+| Precisa de | Docker no servidor | registry, dois tokens, SSH configurado |
+| Constrói | no próprio servidor, dentro de containers | na sua máquina, publica no registry |
+| Bom quando | um servidor, sem CI, começando | há CI, ou o servidor não pode gastar CPU com build |
+
+Comece pelo primeiro. O segundo continua aqui para quando o build no servidor incomodar.
+
 | Arquivo | Papel |
 |---|---|
-| `deploy.sh` | Provisiona o ambiente e executa o deploy, da sua máquina, por SSH |
+| `no-servidor.sh` | **Caminho simples:** um comando, no servidor |
+| `deploy.sh` | Caminho com registry: da sua máquina, por SSH |
 | `docker-compose.yml` | Topologia de produção |
 | `Caddyfile` | TLS, estáticos do Angular, proxy de `/api` |
 | `init-db.sql` | Cria o role `mamao_app` (sem `BYPASSRLS`) na primeira subida |
 | `backup.sh` | Dump + uploads, criptografado, enviado para fora do VPS |
-| `.env.example` | Referência da config do **deploy** — o script gera a sua |
-| `.env.producao.example` | Referência dos **segredos** — o script gera os seus, no servidor |
-
-Os dois `.env` são diferentes de propósito: a senha do banco e a chave do JWT nunca
-saem do servidor nem passam pela sua máquina no fluxo normal.
+| `.env.example` | Referência da config do **deploy** — só o caminho com registry usa |
+| `.env.producao.example` | Referência dos **segredos**; ambos os caminhos geram os seus no servidor |
 
 ---
 
-## Primeira configuração
+## Caminho simples
+
+Uma vez, no servidor, para o `git clone` funcionar sem token:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/github -N '' -q && cat ~/.ssh/github.pub
+```
+
+Cole a saída em **Settings → Deploy keys → Add deploy key** do repositório, deixando
+*Allow write access* **desmarcado**. Chave de deploy é somente leitura e vale só para
+este repositório — diferente de um token pessoal, que dá acesso a todos os seus.
+
+```bash
+printf 'Host github.com\n  IdentityFile ~/.ssh/github\n' >> ~/.ssh/config
+git clone git@github.com:matheusd0mingos/Mamao.git /opt/mamao-src
+```
+
+E o deploy, agora e sempre:
+
+```bash
+cd /opt/mamao-src
+git pull
+sudo ./deploy/no-servidor.sh
+```
+
+Na primeira vez ele instala o Docker se faltar, pergunta o domínio, gera as senhas e
+sobe. Nas seguintes, só constrói e sobe. Não sobrescreve segredo nenhum.
+
+Rollback é `git checkout <sha> && sudo ./deploy/no-servidor.sh`.
+
+**Antes do primeiro deploy:** aponte o domínio para o IP do VPS no Cloudflare com o
+proxy (nuvem laranja) **desligado**, senão o Caddy não consegue emitir o certificado.
+Ligue depois que o site abrir em HTTPS.
+
+**Depois do primeiro deploy:** preencha o SMTP em `/opt/mamao/.env` e reinicie
+(`cd /opt/mamao && docker compose restart api`). Sem SMTP não há convite nem
+recuperação de senha.
+
+---
+
+## Caminho com registry
+
+Tudo daqui para baixo é o **outro** caminho. Se você está usando o `no-servidor.sh`,
+pode pular direto para [Backup](#backup) — que vale para os dois.
+
+### Primeira configuração
 
 O `deploy.sh` faz o provisionamento. Rodar `./deploy/deploy.sh` numa máquina virgem
 pergunta o que falta, cria o que não existe e segue para o deploy. Se preferir separar
