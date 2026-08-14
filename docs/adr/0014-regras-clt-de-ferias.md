@@ -74,17 +74,38 @@ saldo real e das regras do tenant, oferece as duas ou três mais comuns como ata
 clique, e mostra o resto. Quando uma divisão é recusada, o motivo vem junto com o número
 que falta ("faltam 4 dias no período mais longo"), nunca "divisão inválida".
 
-**Recusa com registro, não bloqueio mudo.** Convenção coletiva pode dispor diferente do
-que está aqui, e a operação real tem exceção. Então a divisão fora da regra é recusada
-por padrão, com o artigo citado, mas o tenant pode liberar — e a liberação fica gravada
-com autor, data e justificativa. Mesma filosofia do modo alerta das regras de jornada
-([ADR-0015](0015-regras-de-jornada-e-escala.md)): o sistema não finge que é normal, e
-também não trava a empresa.
+### Os limites são parâmetro do tenant, não constante no código
+
+Empresas fracionam diferente do que está na letra do artigo — por convenção coletiva, por
+vínculo que não é CLT, ou por prática antiga que nunca foi questionada. Isso é o caso
+normal, não a exceção, então merece configuração e não escape hatch:
+
+```
+VacationPolicy (por tenant)
+  MaxPeriods                 padrão 3      art. 134, §1º
+  MinimumLongPeriodDays      padrão 14     art. 134, §1º
+  MinimumOtherPeriodDays     padrão 5      art. 134, §1º
+  MinimumDaysBeforeHoliday   padrão 2      art. 134, §3º
+```
+
+Uma empresa que pratica 3×10 muda `MinimumLongPeriodDays` para 10 e pronto — **a
+validação continua ligada**, só com outra régua. Isso é melhor que um "ignorar a regra"
+por dois motivos: a política fica declarada em um lugar auditável em vez de virar
+justificativa repetida linha a linha, e o resto da validação continua protegendo (com
+mínimo 10, quem tem 18 dias de direito ainda não consegue três períodos, porque 10+5+5
+são 20).
+
+**O padrão continua sendo a letra da CLT.** Quem muda é o cliente que sabe por que está
+mudando; quem não mexe recebe a regra que protege. Ao alterar, a tela mostra o artigo que
+está sendo afastado — sem sermão, uma linha — e a mudança fica no log de auditoria com
+autor e data. E o override linha a linha, com justificativa, continua existindo para o
+caso único que a política não cobre.
 
 > **Pendente de validação jurídica:** se CCT/ACT pode afastar o mínimo de 14 dias do
 > art. 134, §1º. A reforma de 2017 ampliou o negociado sobre o legislado (art. 611-A),
-> mas fracionamento de férias não está entre os itens listados. Por isso a liberação
-> existe como configuração do cliente, e não como recurso que a gente anuncia.
+> mas fracionamento de férias não está entre os itens listados. Enquanto isso não estiver
+> resolvido, o parâmetro existe e funciona, mas **não vira argumento de marketing** — o
+> Mamão não anuncia flexibilizar limite de férias.
 
 ## <a name="depois-da-aprovação"></a>Depois da aprovação: quem fica sabendo, e com que prazo
 
