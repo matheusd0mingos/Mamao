@@ -267,8 +267,8 @@ garantir_diretorio_remoto() {
         fi
     fi
 
-    remoto "mkdir -p '$REMOTE_DIR/web-dist'"
-    existe "$REMOTE_DIR/web-dist"
+    remoto "mkdir -p '$REMOTE_DIR/web-dist' '$REMOTE_DIR/landing'"
+    existe "$REMOTE_DIR/web-dist e $REMOTE_DIR/landing"
 }
 
 garantir_segredos_remotos() {
@@ -305,6 +305,9 @@ JWT_SIGNING_KEY=\$JWT_KEY
 
 PUBLIC_ORIGIN=$PUBLIC_ORIGIN
 PUBLIC_HOST=$PUBLIC_HOST
+
+# Dominio da landing (apex). O app fica no subdominio acima.
+LANDING_HOST=${PUBLIC_HOST#app.}
 
 # ── e-mail (SMTP) ─────────────────────────────────────────────────────────────
 # Preencha antes de abrir para clientes: sem SMTP nao ha recuperacao de senha, e
@@ -520,6 +523,11 @@ passo "Enviando os arquivos estaticos"
 rsync -az --delete -e "ssh ${SSH_OPTS[*]}" \
     "web/mamao-web/dist/mamao-web/browser/" \
     "$SSH_USER@$SSH_HOST:$REMOTE_DIR/web-dist/"
+
+# A landing nao tem build: e HTML estatico, vai como esta.
+rsync -az --delete -e "ssh ${SSH_OPTS[*]}" \
+    "web/landing/" \
+    "$SSH_USER@$SSH_HOST:$REMOTE_DIR/landing/"
 
 # ── subida ────────────────────────────────────────────────────────────────────
 ANTERIOR="$(remoto "cat '$ARQUIVO_VERSAO' 2>/dev/null || true")"

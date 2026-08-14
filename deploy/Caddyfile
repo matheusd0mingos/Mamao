@@ -1,4 +1,33 @@
-# Cloudflare -> Caddy -> API. O Angular e servido daqui como estatico.
+# Dois sites, dois papeis:
+#   mamao.tech       -> landing estatica (indexavel, sem JavaScript)
+#   app.mamao.tech   -> aplicacao Angular + API
+#
+# Separados de proposito: carregar o bundle do app para mostrar uma pagina de venda
+# seria pagar o custo de uma aplicacao para entregar um texto.
+
+# ── landing ───────────────────────────────────────────────────────────────────
+{$LANDING_HOST:mamao.tech} {
+	encode zstd gzip
+
+	root * /srv/landing
+	file_server
+
+	# Fontes e favicon nao mudam: cache longo com immutable.
+	@estaticos path /fonts/* /favicon.svg
+	header @estaticos Cache-Control "public, max-age=31536000, immutable"
+
+	# O HTML muda a cada deploy: revalida sempre.
+	header /index.html Cache-Control "public, max-age=0, must-revalidate"
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+# ── aplicacao ─────────────────────────────────────────────────────────────────
 {$PUBLIC_HOST:app.mamao.tech} {
 	encode zstd gzip
 
@@ -23,6 +52,9 @@
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server
 	}
+
+	# Area logada nao entra em buscador.
+	header X-Robots-Tag "noindex, nofollow"
 
 	log {
 		output file /data/access.log {

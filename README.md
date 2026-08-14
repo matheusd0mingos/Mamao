@@ -146,7 +146,8 @@ src/
   Mamao.Worker/               Migrations + publicacao da outbox
   Modules/People/             Contracts | Domain | Application | Infrastructure
 tests/                        Unitarios | Arquitetura | Integracao
-web/mamao-web/                Angular 22
+web/landing/                  Landing estatica (mamao.tech)
+web/mamao-web/                Angular 22 (app.mamao.tech)
 deploy/                       deploy.sh, Compose, Caddy, init do banco, backup
 docs/                         Decisoes de produto e arquitetura
 ```

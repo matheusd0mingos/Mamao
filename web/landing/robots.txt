@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# O app nao deve ser indexado: e area logada.
+Disallow: /app/
+
+Sitemap: https://mamao.tech/sitemap.xml

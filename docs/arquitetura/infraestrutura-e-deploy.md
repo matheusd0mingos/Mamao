@@ -116,6 +116,21 @@ app.mamao.com.br {
 
 Angular é **estático servido pelo Caddy**. Nada de container Node em produção.
 
+### Dois sites, dois papéis
+
+| Domínio | Conteúdo |
+|---|---|
+| `mamao.tech` | Landing estática (`web/landing/`), HTML puro, sem JavaScript |
+| `app.mamao.tech` | Aplicação Angular + API, com `X-Robots-Tag: noindex` |
+
+A landing **não** mora dentro do SPA. Carregar o bundle do Angular para mostrar uma
+página de venda é pagar o custo de uma aplicação para entregar um texto — e um
+`index.html` vazio preenchido por JavaScript é pior para indexação e para o tempo até
+o primeiro conteúdo. São 120 KB no total, fontes incluídas.
+
+As fontes da marca são servidas do próprio domínio, não do Google Fonts: uma
+requisição a terceiro a menos e um dado a menos saindo do navegador de quem visita.
+
 ### Realidades do nó único (assuma, não descubra)
 
 | Fato | Consequência prática |

@@ -8,12 +8,16 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?}
+      LANDING_HOST: ${LANDING_HOST:-mamao.tech}
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./web-dist:/srv/web:ro        # build estatico do Angular; sem container Node
+      - ./landing:/srv/landing:ro     # landing estatica, servida no dominio apex
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
