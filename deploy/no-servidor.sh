@@ -143,6 +143,23 @@ ENV
     aviso "Guarde o BACKUP_PASSPHRASE de $DESTINO/.env fora deste servidor."
 fi
 
+# O .env existente NUNCA e sobrescrito — sobrescrever trocaria a senha do banco e
+# derrubaria o acesso aos dados. Mas isso deixava um buraco: chave nova introduzida
+# aqui jamais chegava a um servidor ja instalado, e a pessoa so descobria procurando
+# no repositorio por que a configuracao "nao existe".
+#
+# Entao acrescentamos SO o que falta, com o valor padrao, e dizemos o que foi
+# acrescentado. Linha existente jamais e tocada: o que voce configurou continua seu.
+while IFS= read -r padrao; do
+    [[ -n "$padrao" ]] || continue
+    chave="${padrao%%=*}"
+    grep -q "^$chave=" "$DESTINO/.env" && continue
+    printf '%s\n' "$padrao" >> "$DESTINO/.env"
+    criou "$DESTINO/.env: acrescentado $padrao"
+done <<'PADROES'
+SMTP_USE_SSL=false
+PADROES
+
 # Le SO o que este script precisa, em vez de dar `source` no arquivo. As connection
 # strings tem ponto e virgula, que no bash separa comandos: dar source nelas faria o
 # shell executar pedaco de configuracao como se fosse comando.
