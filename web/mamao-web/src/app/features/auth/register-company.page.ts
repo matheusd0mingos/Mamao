@@ -55,6 +55,17 @@ import type { ApiProblem } from '../../core/http/api.types';
           <button type="submit" class="btn btn--primary full" [disabled]="enviando()">
             {{ enviando() ? 'Criando…' : 'Criar empresa' }}
           </button>
+
+          <!--
+            Os Termos dizem que o aceite acontece ao criar a conta. Se a tela nao mostra isso,
+            o aceite nao existe: ninguem se vincula a um texto que nunca viu.
+          -->
+          <p class="muted legal">
+            Ao criar a empresa você aceita os
+            <a href="https://mamao.tech/termos" target="_blank" rel="noopener">Termos de Uso</a>
+            e a
+            <a href="https://mamao.tech/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.
+          </p>
         </form>
 
         <p class="muted rodape">Já tem conta? <a routerLink="/entrar">Entrar</a></p>
@@ -67,6 +78,7 @@ import type { ApiProblem } from '../../core/http/api.types';
     .panel h1 { margin-bottom: var(--space-1); }
     .full { width: 100%; }
     .rodape { font-size: 13px; margin-bottom: 0; margin-top: var(--space-4); text-align: center; }
+    .legal { font-size: 12px; line-height: 1.5; margin-bottom: 0; margin-top: var(--space-3); text-align: center; }
   `,
 })
 export class RegisterCompanyPage {

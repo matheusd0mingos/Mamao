@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de Privacidade — Mamão</title>
+<meta name="description" content="Como o Mamão trata dados pessoais: o que coleta, por quê, com quem compartilha e por quanto tempo guarda.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://mamao.tech/privacidade">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+<!--
+  ESTE TEXTO PRECISA DE REVISÃO JURÍDICA antes do primeiro cliente pagante.
+  Ele foi escrito a partir do que o sistema REALMENTE faz — as tabelas, os campos, os
+  serviços de terceiros e os prazos são os do código, não de um modelo genérico. Isso
+  torna a revisão barata (um advogado ajusta a forma) e evita o erro mais comum:
+  publicar uma política que descreve um produto diferente do seu.
+-->
+<style>
+  @font-face {
+    font-family: 'DM Serif Display'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('/fonts/dm-serif-display-latin-400-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
+    src: url('/fonts/inter-latin-400-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap;
+    src: url('/fonts/inter-latin-600-normal.woff2') format('woff2');
+  }
+
+  :root {
+    --verde: #11362d; --amarelo: #f2b233; --creme: #f7f3ea;
+    --borda: #e6e6e1; --texto: #16211d; --texto-2: #55605b;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --ui: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--creme); color: var(--texto);
+    font-family: var(--ui); font-size: 17px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2 { font-family: var(--serif); font-weight: 400; letter-spacing: -.015em; }
+  h1 { font-size: clamp(30px, 4vw, 42px); margin: 0 0 8px; }
+  h2 { font-size: 22px; margin: 40px 0 12px; }
+  p, li { color: var(--texto-2); }
+  p { margin: 0 0 14px; }
+  strong { color: var(--texto); }
+  a { color: var(--verde); }
+
+  header { background: var(--creme); border-bottom: 1px solid var(--borda); }
+  .env { margin: 0 auto; max-width: 760px; padding: 0 24px; }
+  .topo { align-items: center; display: flex; gap: 10px; padding: 14px 0; text-decoration: none; }
+  .topo span:first-child { color: var(--amarelo); font-family: var(--serif); font-size: 30px; line-height: .9; }
+  .topo span:last-child { color: var(--texto); font-family: var(--serif); font-size: 22px; }
+
+  main { padding: 48px 0 72px; }
+  .atualizado { color: var(--texto-2); font-size: 14px; margin-bottom: 32px; }
+
+  table { border-collapse: collapse; font-size: 15px; margin: 8px 0 20px; width: 100%; }
+  th, td { border: 1px solid var(--borda); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #fff; color: var(--texto); font-weight: 600; }
+  td { background: #fff; color: var(--texto-2); }
+
+  footer { background: var(--verde); color: rgb(247 243 234 / 70%); font-size: 14px; padding: 28px 0; }
+  footer a { color: rgb(247 243 234 / 90%); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="env">
+    <a class="topo" href="/">
+      <span aria-hidden="true">ã</span>
+      <span>mamão</span>
+    </a>
+  </div>
+</header>
+
+<main class="env">
+  <h1>Política de Privacidade</h1>
+  <p class="atualizado">Última atualização: 14 de agosto de 2026.</p>
+
+  <p>
+    O Mamão é um sistema de gestão operacional de equipes. Esta política explica que dados
+    pessoais o sistema trata, por quê, com quem eles são compartilhados e por quanto tempo
+    ficam guardados. Ela descreve o que o software realmente faz — não um modelo genérico.
+  </p>
+
+  <h2>Quem é responsável pelo quê</h2>
+  <p>
+    Esta distinção muda quem você deve procurar, então ela vem antes de tudo.
+  </p>
+  <p>
+    <strong>Sobre os dados dos funcionários</strong> cadastrados por uma empresa cliente, quem
+    decide o que coletar e para que usar é <strong>a empresa contratante</strong> — ela é a
+    controladora. O Mamão é <strong>operador</strong>: trata esses dados apenas seguindo as
+    instruções dela e o que o contrato prevê. Se você é funcionário de uma empresa que usa o
+    Mamão e quer acessar, corrigir ou excluir seus dados, o pedido começa no RH ou na chefia
+    da sua empresa.
+  </p>
+  <p>
+    <strong>Sobre os dados de quem cria a conta</strong> — nome, e-mail e senha de acesso —, o
+    Mamão é o controlador, porque é ele quem decide o que é necessário para manter o serviço
+    no ar.
+  </p>
+
+  <h2>Que dados o sistema guarda</h2>
+
+  <table>
+    <thead>
+      <tr><th>O quê</th><th>Para quê</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Nome, e-mail e senha de quem acessa</td>
+        <td>Autenticar. A senha é guardada apenas como <em>hash</em>; ninguém, nem nós, consegue lê-la.</td>
+      </tr>
+      <tr>
+        <td>Nome, matrícula, cargo, seção, datas de admissão e desligamento</td>
+        <td>Identificar a pessoa dentro da operação da equipe.</td>
+      </tr>
+      <tr>
+        <td>Regime de vínculo e jornada contratada</td>
+        <td>Aplicar as regras corretas de jornada e de férias — elas mudam conforme o regime.</td>
+      </tr>
+      <tr>
+        <td>Ausências: férias, folga, falta, afastamento, serviço</td>
+        <td>Calcular disponibilidade e montar escalas. <strong>Um afastamento pode revelar informação de saúde</strong>, e por isso esse dado tem o mesmo cuidado dos demais dados sensíveis: acesso restrito a quem tem permissão na empresa e registro de quem consultou ou alterou.</td>
+      </tr>
+      <tr>
+        <td>Participação em missões e escalas</td>
+        <td>Distribuir as atividades com rodízio, e permitir explicar por que alguém foi ou não escalado.</td>
+      </tr>
+      <tr>
+        <td>Registro de auditoria: quem fez o quê, quando, de qual endereço IP</td>
+        <td>Segurança e prestação de contas. É gravado de forma <strong>somente-adição</strong>: nem a aplicação consegue alterar ou apagar um registro já feito.</td>
+      </tr>
+      <tr>
+        <td>Endereço IP e horário de acesso</td>
+        <td>Proteger contra tentativas de invasão e abuso.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    O Mamão <strong>não</strong> registra ponto, não rastreia localização, não monitora
+    atividade em computador e não faz avaliação automatizada de desempenho.
+  </p>
+
+  <h2>Com quem os dados são compartilhados</h2>
+  <p>
+    Apenas com os prestadores necessários para o serviço funcionar, e apenas no que cada um
+    precisa:
+  </p>
+  <table>
+    <thead><tr><th>Serviço</th><th>Para quê</th><th>Dados</th></tr></thead>
+    <tbody>
+      <tr><td>Hostinger</td><td>Servidor onde a aplicação e o banco de dados rodam</td><td>Todos os dados do sistema</td></tr>
+      <tr><td>Zoho Mail</td><td>Envio de e-mails de convite, recuperação de senha e aviso de aprovação</td><td>Nome e e-mail do destinatário</td></tr>
+      <tr><td>Cloudflare</td><td>Resolução de domínio</td><td>Nenhum dado pessoal</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Os dados <strong>não são vendidos, alugados nem usados para publicidade</strong>, e não são
+    compartilhados com outras empresas clientes. O isolamento entre empresas é aplicado no
+    próprio banco de dados, e não apenas no código da aplicação.
+  </p>
+
+  <h2>Por quanto tempo ficam guardados</h2>
+  <ul>
+    <li>
+      <strong>Enquanto durar o contrato</strong> com a empresa cliente. Encerrado o contrato,
+      os dados são excluídos em até 30 dias, salvo obrigação legal de guarda.
+    </li>
+    <li>
+      <strong>Cópias de segurança</strong> são criptografadas e mantidas por até 6 meses,
+      seguindo a rotina de retenção. Um dado excluído pode permanecer numa cópia de segurança
+      até ela expirar.
+    </li>
+    <li>
+      <strong>Registros de auditoria</strong> são preservados enquanto durar o contrato, porque
+      é neles que a empresa consegue demonstrar quem autorizou o quê.
+    </li>
+  </ul>
+
+  <h2>Como os dados são protegidos</h2>
+  <ul>
+    <li>Tráfego sempre por HTTPS.</li>
+    <li>Senhas guardadas como hash, nunca em texto.</li>
+    <li>
+      Isolamento entre empresas aplicado pelo banco de dados: mesmo uma falha no código da
+      aplicação não devolve dados de outra empresa.
+    </li>
+    <li>Acesso por permissão: quem não precisa ver, não vê.</li>
+    <li>Cópias de segurança criptografadas e guardadas fora do servidor principal.</li>
+  </ul>
+
+  <h2>Seus direitos</h2>
+  <p>
+    A Lei Geral de Proteção de Dados (Lei 13.709/2018) garante a você confirmar a existência
+    de tratamento, acessar seus dados, corrigir o que estiver errado, pedir anonimização ou
+    exclusão do que for desnecessário, pedir portabilidade e revogar consentimento.
+  </p>
+  <p>
+    <strong>Se você é funcionário de uma empresa cliente</strong>, procure primeiro o RH ou a
+    chefia: é a sua empresa quem decide sobre esses dados. Nós atendemos o pedido dela.
+    <strong>Se você criou a conta</strong>, escreva para
+    <a href="mailto:contato@mamao.tech">contato@mamao.tech</a> e respondemos em até 15 dias.
+  </p>
+
+  <h2>Incidentes</h2>
+  <p>
+    Se ocorrer um incidente de segurança que possa gerar risco relevante, avisaremos a empresa
+    cliente e a Autoridade Nacional de Proteção de Dados nos prazos da lei, com o que se sabe
+    até o momento — sem esperar a investigação terminar para dar o primeiro aviso.
+  </p>
+
+  <h2>Mudanças nesta política</h2>
+  <p>
+    Alterações relevantes são comunicadas por e-mail aos responsáveis pelas contas antes de
+    entrarem em vigor. A data no topo indica a última revisão.
+  </p>
+
+  <h2>Contato</h2>
+  <p>
+    <a href="mailto:contato@mamao.tech">contato@mamao.tech</a>
+  </p>
+</main>
+
+<footer>
+  <div class="env">
+    <a href="/">Mamão</a> ·
+    <a href="/termos">Termos de Uso</a> ·
+    <a href="mailto:contato@mamao.tech">contato@mamao.tech</a>
+  </div>
+</footer>
+
+</body>
+</html>

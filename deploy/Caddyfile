@@ -10,6 +10,11 @@
 	encode zstd gzip
 
 	root * /srv/landing
+
+	# /privacidade serve privacidade.html. Sem isto o link do rodape da 404 — e um 404
+	# na politica de privacidade de um B2B diz mais que a falta do link.
+	try_files {path} {path}.html {path}/index.html
+
 	file_server
 
 	# Fontes e favicon nao mudam: cache longo com immutable.
