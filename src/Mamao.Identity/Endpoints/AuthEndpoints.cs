@@ -18,12 +18,12 @@ using Microsoft.Extensions.Logging;
 namespace Mamao.Identity.Endpoints;
 
 public sealed record RegisterCompanyRequest(string CompanyName, string FullName, string Email, string Password);
-public sealed record LoginRequest(string Email, string Password, Guid? TenantId);
+// Sem TenantId: um usuario pertence a uma empresa, entao nao ha o que escolher.
+// Ver docs/adr/0020-usuario-pertence-a-empresa.md.
+public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 public sealed record ForgotPasswordRequest(string Email);
 public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
-
-public sealed record TenantOption(Guid TenantId, string Name, string Role);
 
 public sealed record AuthResponse(
     string AccessToken,
@@ -33,15 +33,6 @@ public sealed record AuthResponse(
     string TenantName,
     string Role,
     IReadOnlyList<string> Permissions);
-
-/// <summary>
-/// Uma forma so para os dois desfechos do login. Anonimo aqui geraria contrato ruim no
-/// OpenAPI e, por consequencia, no cliente TypeScript gerado.
-/// </summary>
-public sealed record LoginResponse(
-    bool RequiresTenantSelection,
-    IReadOnlyList<TenantOption>? Tenants,
-    AuthResponse? Auth);
 
 public sealed record MeResponse(
     Guid UserId,
@@ -111,21 +102,17 @@ public static class AuthEndpoints
                 CreatedAt = now,
             };
 
-            var membership = new Membership
-            {
-                Id = Guid.CreateVersion7(),
-                UserId = user.Id,
-                TenantId = tenant.Id,
-                Role = Roles.Owner,
-                CreatedAt = now,
-            };
-
             dbContext.Tenants.Add(tenant);
-            dbContext.Memberships.Add(membership);
             await dbContext.SaveChangesAsync(ct);
 
-            var pair = await tokens.IssueAsync(user, membership, ct);
-            return TypedResults.Ok(ToResponse(pair, tenant, membership.Role));
+            // A empresa nasce depois do usuario porque o Identity valida o e-mail primeiro;
+            // por isso o vinculo e gravado num segundo passo, na mesma requisicao.
+            user.TenantId = tenant.Id;
+            user.Role = Roles.Owner;
+            await dbContext.SaveChangesAsync(ct);
+
+            var pair = await tokens.IssueAsync(user, ct);
+            return TypedResults.Ok(ToResponse(pair, tenant, user.Role));
         })
         .WithName("registerCompany")
         .Produces<AuthResponse>()
@@ -145,37 +132,19 @@ public static class AuthEndpoints
             if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
                 return HttpResultsExtensions.Problem(new Error("auth.invalid_credentials", "E-mail ou senha invalidos."));
 
-            var memberships = await dbContext.Memberships
-                .Include(m => m.Tenant)
-                .Where(m => m.UserId == user.Id && m.IsActive && m.Tenant.IsActive)
-                .ToListAsync(ct);
+            var tenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.Id == user.TenantId, ct);
 
-            if (memberships.Count == 0)
-                return HttpResultsExtensions.Problem(new Error(
-                    "auth.no_membership", "Seu usuario nao esta vinculado a nenhuma empresa ativa."));
+            // Conta ou empresa desativada devolve a MESMA mensagem de credencial invalida:
+            // dizer "sua conta esta desativada" confirma para quem tentou que o e-mail
+            // existe e que a senha estava certa.
+            if (!user.IsActive || tenant is null || !tenant.IsActive)
+                return HttpResultsExtensions.Problem(new Error("auth.invalid_credentials", "E-mail ou senha invalidos."));
 
-            var membership = request.TenantId is { } tenantId
-                ? memberships.FirstOrDefault(m => m.TenantId == tenantId)
-                : memberships.Count == 1 ? memberships[0] : null;
-
-            if (membership is null)
-            {
-                // Mesma pessoa em varias empresas: o cliente escolhe e repete o login com
-                // o tenantId. Ver docs/adr/0006-identidade.md.
-                return TypedResults.Ok(new LoginResponse(
-                    RequiresTenantSelection: true,
-                    Tenants: memberships
-                        .Select(m => new TenantOption(m.TenantId, m.Tenant.Name, m.Role))
-                        .ToList(),
-                    Auth: null));
-            }
-
-            var pair = await tokens.IssueAsync(user, membership, ct);
-            return TypedResults.Ok(new LoginResponse(
-                false, null, ToResponse(pair, membership.Tenant, membership.Role)));
+            var pair = await tokens.IssueAsync(user, ct);
+            return TypedResults.Ok(ToResponse(pair, tenant, user.Role));
         })
         .WithName("login")
-        .Produces<LoginResponse>()
+        .Produces<AuthResponse>()
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .AllowAnonymous();
 
@@ -190,7 +159,7 @@ public static class AuthEndpoints
                     "auth.invalid_refresh_token", "Sessao expirada. Entre novamente."));
 
             return TypedResults.Ok(ToResponse(
-                refreshed.Pair, refreshed.Membership.Tenant, refreshed.Membership.Role));
+                refreshed.Pair, refreshed.Tenant, refreshed.User.Role));
         })
         .WithName("refreshToken")
         .Produces<AuthResponse>()

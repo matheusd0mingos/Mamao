@@ -28,7 +28,7 @@ observabilidade, migrations e testes.
 | Aspire (Postgres + API + Worker) | ✅ `dotnet run --project src/Mamao.AppHost` |
 | Tenancy: contexto, filtro global, interceptor | ✅ coberto por teste de arquitetura |
 | RLS no PostgreSQL | ✅ ligada e provada contra banco real — ver [ADR-0003](docs/adr/0003-multi-tenancy.md) |
-| Identity: empresa, usuário, membership, JWT + refresh | ✅ |
+| Identity: empresa, usuário **da empresa**, JWT + refresh | ✅ [ADR-0020](docs/adr/0020-usuario-pertence-a-empresa.md) |
 | Autorização por permissão | ✅ policies geradas de `Permissions.All` |
 | Módulo People (CRUD de funcionário) | ✅ |
 | Outbox + publisher + dispatcher idempotente | ✅ `People.EmployeeHired.v1` ponta a ponta |

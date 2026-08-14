@@ -69,8 +69,8 @@ não no mês 4, quando vira um projeto próprio.
       `Owner`/`Hr`/`Manager`/`Employee`, policies geradas de `Permissions.All`.
       Falta a **tela** de gerenciar quem tem qual papel
 - [ ] Auditoria gravando
-- [ ] **`User` pertence à empresa** ([ADR-0020](adr/0020-usuario-pertence-a-empresa.md)):
-      `Membership` some, some a tela de escolher empresa
+- [x] **`User` pertence à empresa** ([ADR-0020](adr/0020-usuario-pertence-a-empresa.md)):
+      `Membership` removida, tela de escolher empresa removida
 - [ ] **Convite de acesso**: RH importa a planilha e convida as **pessoas-chave**
       (coordenador, supervisor, auxiliar de RH). Token com prazo, uso único, e-mail faltante
       preenchido no próprio convite

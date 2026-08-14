@@ -426,13 +426,6 @@ export interface components {
         LoginRequest: {
             email: string;
             password: string;
-            /** Format: uuid */
-            tenantId: string | null;
-        };
-        LoginResponse: {
-            requiresTenantSelection: boolean;
-            tenants: components["schemas"]["TenantOption"][] | null;
-            auth: components["schemas"]["AuthResponse"] | null;
         };
         MeResponse: {
             /** Format: uuid */
@@ -485,12 +478,6 @@ export interface components {
             email: string;
             token: string;
             newPassword: string;
-        };
-        TenantOption: {
-            /** Format: uuid */
-            tenantId: string;
-            name: string;
-            role: string;
         };
         TerminateEmployeeRequest: {
             /** Format: date */
@@ -571,7 +558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoginResponse"];
+                    "application/json": components["schemas"]["AuthResponse"];
                 };
             };
             /** @description Bad Request */

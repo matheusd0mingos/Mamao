@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import type { AuthResponse, LoginResponse, TenantOption } from '../http/api.types';
+import type { AuthResponse } from '../http/api.types';
 
 const STORAGE_KEY = 'mamao.session';
 
@@ -48,19 +48,16 @@ export class SessionService {
     return this.permissions().includes(permission);
   }
 
-  async login(email: string, password: string, tenantId?: string): Promise<TenantOption[] | null> {
-    const response = await firstValueFrom(
-      this.http.post<LoginResponse>('/api/v1/auth/login', { email, password, tenantId: tenantId ?? null }),
+  /**
+   * Um usuario pertence a uma empresa, entao o login tem um desfecho so — nao ha mais
+   * lista de empresas para escolher. Ver docs/adr/0020-usuario-pertence-a-empresa.md.
+   */
+  async login(email: string, password: string): Promise<void> {
+    const auth = await firstValueFrom(
+      this.http.post<AuthResponse>('/api/v1/auth/login', { email, password }),
     );
 
-    // Mesma pessoa em varias empresas: o servidor devolve a lista e o login se repete
-    // com o tenant escolhido.
-    if (response.requiresTenantSelection) {
-      return response.tenants ?? [];
-    }
-
-    this.store(response.auth!);
-    return null;
+    this.store(auth);
   }
 
   async registerCompany(companyName: string, fullName: string, email: string, password: string): Promise<void> {

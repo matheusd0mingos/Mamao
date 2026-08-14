@@ -3,15 +3,30 @@ using Microsoft.AspNetCore.Identity;
 namespace Mamao.Identity.Domain;
 
 /// <summary>
-/// Usuario, global por e-mail. Nao pertence a um tenant: a mesma pessoa pode atender
-/// varias empresas (contador, consultor, socio de duas empresas) com uma senha so.
-/// Corrigir isso depois seria migracao com merge de contas.
-/// Ver docs/adr/0006-identidade.md.
+/// Usuario. PERTENCE a uma empresa: e ela que cria, gerencia e, ao ser excluida, apaga.
+/// Ver docs/adr/0020-usuario-pertence-a-empresa.md.
+///
+/// O e-mail continua unico no sistema INTEIRO, e as duas coisas nao se contradizem:
+/// unico global nao significa usuario global. A linha pertence a uma empresa; o indice
+/// so garante que o endereco aponta para uma pessoa so — e e o que permite o login
+/// continuar sendo e-mail + senha, sem subdominio nem campo de empresa.
 /// </summary>
 public sealed class MamaoUser : IdentityUser<Guid>
 {
     public string FullName { get; set; } = null!;
+
+    /// <summary>Empresa dona da conta. Nunca muda: trocar de empresa e criar outra conta.</summary>
+    public Guid TenantId { get; set; }
+
+    /// <summary>Papel nesta empresa. Ver Mamao.SharedKernel.Authorization.Roles.</summary>
+    public string Role { get; set; } = null!;
+
+    /// <summary>Desativar preserva historico e auditoria; excluir nao.</summary>
+    public bool IsActive { get; set; } = true;
+
     public DateTimeOffset CreatedAt { get; set; }
+
+    public Tenant Tenant { get; set; } = null!;
 }
 
 /// <summary>Empresa cliente.</summary>
@@ -27,19 +42,10 @@ public sealed class Tenant
     public bool IsActive { get; set; } = true;
 }
 
-/// <summary>Vinculo entre usuario e empresa, com o papel naquela empresa.</summary>
-public sealed class Membership
-{
-    public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public Guid TenantId { get; set; }
-    public string Role { get; set; } = null!;
-    public bool IsActive { get; set; } = true;
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public MamaoUser User { get; set; } = null!;
-    public Tenant Tenant { get; set; } = null!;
-}
+// Membership foi removida na ADR-0020. Um usuario tem UM papel em UMA empresa, entao a
+// tabela de ligacao nao descrevia mais nada que MamaoUser nao diga. Se um dia um cliente
+// pedir acesso a duas empresas com o mesmo login, o caminho esta escrito na propria ADR —
+// e nao passa por trazer esta tabela de volta.
 
 /// <summary>
 /// Refresh token com rotacao. Guardamos o hash, nunca o valor — vazamento de banco nao

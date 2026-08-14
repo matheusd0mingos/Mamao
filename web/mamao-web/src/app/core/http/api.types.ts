@@ -9,10 +9,8 @@ type Schemas = components['schemas'];
 
 export type AuthResponse = Schemas['AuthResponse'];
 export type LoginRequest = Schemas['LoginRequest'];
-export type LoginResponse = Schemas['LoginResponse'];
 export type RegisterCompanyRequest = Schemas['RegisterCompanyRequest'];
 export type MeResponse = Schemas['MeResponse'];
-export type TenantOption = Schemas['TenantOption'];
 
 export type EmployeeResponse = Schemas['EmployeeResponse'];
 export type EmployeeListItem = Schemas['EmployeeListItem'];

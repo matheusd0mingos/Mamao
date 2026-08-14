@@ -34,7 +34,8 @@ public sealed record AccessToken(string Token, DateTimeOffset ExpiresAt);
 
 public sealed record TokenPair(string AccessToken, DateTimeOffset AccessTokenExpiresAt, string RefreshToken);
 
-public sealed record RefreshResult(TokenPair Pair, Membership Membership);
+/// <param name="Tenant">Carregado junto porque a resposta do refresh mostra o nome da empresa.</param>
+public sealed record RefreshResult(TokenPair Pair, MamaoUser User, Tenant Tenant);
 
 /// <summary>
 /// Emissao de tokens. O tenant ativo vai NO TOKEN — trocar de empresa emite token novo,
@@ -50,7 +51,7 @@ public sealed class TokenService(
 
     private readonly JwtOptions _options = options.Value;
 
-    public AccessToken CreateAccessToken(MamaoUser user, Membership membership)
+    public AccessToken CreateAccessToken(MamaoUser user)
     {
         var now = timeProvider.GetUtcNow();
         var expires = now.AddMinutes(_options.AccessTokenMinutes);
@@ -61,11 +62,11 @@ public sealed class TokenService(
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
             new(ClaimTypes.Name, user.FullName),
-            new(TenantClaim, membership.TenantId.ToString()),
-            new(ClaimTypes.Role, membership.Role),
+            new(TenantClaim, user.TenantId.ToString()),
+            new(ClaimTypes.Role, user.Role),
         };
 
-        claims.AddRange(Roles.PermissionsOf(membership.Role)
+        claims.AddRange(Roles.PermissionsOf(user.Role)
             .Select(permission => new Claim(Permissions.ClaimType, permission)));
 
         var credentials = new SigningCredentials(
@@ -83,10 +84,10 @@ public sealed class TokenService(
         return new AccessToken(new JwtSecurityTokenHandler().WriteToken(token), expires);
     }
 
-    public async Task<TokenPair> IssueAsync(MamaoUser user, Membership membership, CancellationToken ct)
+    public async Task<TokenPair> IssueAsync(MamaoUser user, CancellationToken ct)
     {
-        var access = CreateAccessToken(user, membership);
-        var refresh = await CreateRefreshTokenAsync(user.Id, membership.TenantId, replacing: null, ct);
+        var access = CreateAccessToken(user);
+        var refresh = await CreateRefreshTokenAsync(user.Id, user.TenantId, replacing: null, ct);
         return new TokenPair(access.Token, access.ExpiresAt, refresh);
     }
 
@@ -113,20 +114,19 @@ public sealed class TokenService(
             return null;
         }
 
-        var membership = await dbContext.Memberships
-            .Include(m => m.User)
-            .Include(m => m.Tenant)
-            .FirstOrDefaultAsync(
-                m => m.UserId == stored.UserId && m.TenantId == stored.TenantId && m.IsActive, ct);
+        var user = await dbContext.Users
+            .Include(u => u.Tenant)
+            .FirstOrDefaultAsync(u => u.Id == stored.UserId && u.IsActive, ct);
 
-        if (membership is null || !membership.Tenant.IsActive)
+        // O tenant do token tem que continuar batendo com o do usuario. Divergiu, o token
+        // e de antes de alguma mudanca de conta e nao vale mais.
+        if (user is null || !user.Tenant.IsActive || user.TenantId != stored.TenantId)
             return null;
 
-        var newToken = await CreateRefreshTokenAsync(stored.UserId, stored.TenantId, stored, ct);
-        var access = CreateAccessToken(membership.User, membership);
+        var newToken = await CreateRefreshTokenAsync(stored.UserId, user.TenantId, stored, ct);
+        var access = CreateAccessToken(user);
 
-        return new RefreshResult(
-            new TokenPair(access.Token, access.ExpiresAt, newToken), membership);
+        return new RefreshResult(new TokenPair(access.Token, access.ExpiresAt, newToken), user, user.Tenant);
     }
 
     public async Task RevokeAllForUserAsync(Guid userId, DateTimeOffset now, CancellationToken ct)

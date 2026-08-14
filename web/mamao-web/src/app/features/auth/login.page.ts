@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { rotuloDoPapel } from '../../core/auth/role-label';
 import { SessionService } from '../../core/auth/session.service';
-import type { ApiProblem, TenantOption } from '../../core/http/api.types';
+import type { ApiProblem } from '../../core/http/api.types';
 
 @Component({
   selector: 'mamao-login',
@@ -23,14 +23,6 @@ import type { ApiProblem, TenantOption } from '../../core/http/api.types';
           <div class="alert alert--danger">{{ problema.detail }}</div>
         }
 
-        @if (empresas().length > 0) {
-          <p class="muted">Seu acesso vale para mais de uma empresa. Escolha uma:</p>
-          @for (empresa of empresas(); track empresa.tenantId) {
-            <button type="button" class="btn btn--ghost empresa" (click)="entrarNaEmpresa(empresa.tenantId)">
-              {{ empresa.name }} <span class="muted">· {{ rotuloDoPapel(empresa.role) }}</span>
-            </button>
-          }
-        } @else {
           <form [formGroup]="form" (ngSubmit)="entrar()">
             <div class="field" [class.field--invalid]="invalido('email')">
               <label for="email">E-mail</label>
@@ -60,7 +52,6 @@ import type { ApiProblem, TenantOption } from '../../core/http/api.types';
           <p class="muted rodape">
             Primeira vez? <a href="#" (click)="irParaCadastro($event)">Cadastre sua empresa</a>
           </p>
-        }
       </div>
     </div>
   `,
@@ -82,7 +73,6 @@ export class LoginPage {
 
   readonly enviando = signal(false);
   readonly erro = signal<ApiProblem | null>(null);
-  readonly empresas = signal<TenantOption[]>([]);
   readonly rotuloDoPapel = rotuloDoPapel;
 
   readonly form = this.fb.nonNullable.group({
@@ -95,7 +85,7 @@ export class LoginPage {
     return control.invalid && (control.dirty || control.touched);
   }
 
-  async entrar(tenantId?: string): Promise<void> {
+  async entrar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -106,13 +96,7 @@ export class LoginPage {
 
     try {
       const { email, password } = this.form.getRawValue();
-      const opcoes = await this.session.login(email, password, tenantId);
-
-      if (opcoes) {
-        this.empresas.set(opcoes);
-        return;
-      }
-
+      await this.session.login(email, password);
       await this.router.navigate(['/inicio']);
     } catch (problema) {
       this.erro.set(problema as ApiProblem);
@@ -121,9 +105,6 @@ export class LoginPage {
     }
   }
 
-  entrarNaEmpresa(tenantId: string): Promise<void> {
-    return this.entrar(tenantId);
-  }
 
   irParaCadastro(evento: Event): void {
     evento.preventDefault();

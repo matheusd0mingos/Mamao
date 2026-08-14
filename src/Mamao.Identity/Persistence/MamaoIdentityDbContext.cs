@@ -6,9 +6,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Mamao.Identity.Persistence;
 
 /// <summary>
-/// Schema "identity". Nao herda de TenantDbContext de proposito: User e Tenant sao
-/// globais e Membership cruza os dois — filtro por tenant aqui impediria o login, que
-/// acontece antes de existir tenant ativo.
+/// Schema "identity". NAO herda de TenantDbContext, e a excecao e consciente: o login
+/// precisa achar o usuario pelo e-mail ANTES de existir tenant, e um filtro global (ou
+/// RLS) aqui impediria exatamente isso.
+///
+/// O que compensa: esta tabela guarda e-mail, hash de senha e nome — nunca dado de
+/// funcionario, documento ou escala, que vivem em modulos com RLS. E toda consulta que
+/// lista usuarios filtra por TenantId explicitamente.
+/// Ver docs/adr/0020-usuario-pertence-a-empresa.md.
 /// </summary>
 public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbContext> options)
     : IdentityDbContext<MamaoUser, IdentityRole<Guid>, Guid>(options)
@@ -16,7 +21,6 @@ public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbConte
     public const string Schema = "identity";
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
-    public DbSet<Membership> Memberships => Set<Membership>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -28,6 +32,16 @@ public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbConte
         {
             b.ToTable("users");
             b.Property(u => u.FullName).HasMaxLength(200).IsRequired();
+            b.Property(u => u.Role).HasMaxLength(50).IsRequired();
+
+            // Cascade: excluir a empresa apaga os usuarios dela. E o que torna a exclusao
+            // de conta pela LGPD uma operacao so, sem ressalva.
+            b.HasOne(u => u.Tenant)
+                .WithMany()
+                .HasForeignKey(u => u.TenantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasIndex(u => new { u.TenantId, u.IsActive });
         });
 
         builder.Entity<IdentityRole<Guid>>().ToTable("aspnet_roles");
@@ -43,16 +57,6 @@ public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbConte
             b.HasKey(t => t.Id);
             b.Property(t => t.Name).HasMaxLength(200).IsRequired();
             b.Property(t => t.TimeZoneId).HasMaxLength(60).IsRequired();
-        });
-
-        builder.Entity<Membership>(b =>
-        {
-            b.ToTable("memberships");
-            b.HasKey(m => m.Id);
-            b.Property(m => m.Role).HasMaxLength(50).IsRequired();
-            b.HasIndex(m => new { m.UserId, m.TenantId }).IsUnique();
-            b.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Cascade);
-            b.HasOne(m => m.Tenant).WithMany().HasForeignKey(m => m.TenantId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<RefreshToken>(b =>
