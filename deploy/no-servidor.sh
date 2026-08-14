@@ -77,7 +77,11 @@ else
     # Caddy recusar o arquivo inteiro ("ambiguous site definition") e reiniciar em laco.
     landing="${dominio#app.}"
     if [[ "$landing" == "$dominio" ]]; then
-        landing="landing.invalid"   # endereco interno que ninguem resolve
+        # O "http://" na frente desliga o HTTPS automatico so para este site. Sem ele o
+        # Caddy tenta tirar certificado publico para um endereco que nao existe, o Let's
+        # Encrypt recusa ("does not end with a valid public suffix") e ele repete para
+        # sempre — barulho no log que parece defeito e nao e.
+        landing="http://landing.invalid"
         aviso "O app vai ocupar $dominio inteiro; a landing nao sera publicada."
         aviso "Para publicar as duas, use app.$dominio aqui e aponte os dois no DNS."
     fi
@@ -195,8 +199,8 @@ fi
 
 # .env antigo pode ter os dois iguais; o Caddy recusa e reinicia em laco.
 landing_atual="$(sed -n 's/^LANDING_HOST=//p' .env | head -1)"
-if [[ "$landing_atual" == "$PUBLIC_HOST" ]]; then
-    morrer "LANDING_HOST e PUBLIC_HOST sao iguais ($PUBLIC_HOST) em $DESTINO/.env. O Caddy recusa dois sites no mesmo endereco: troque LANDING_HOST por landing.invalid, ou mude PUBLIC_HOST para app.$PUBLIC_HOST."
+if [[ "$landing_atual" == "$PUBLIC_HOST" || "$landing_atual" == "landing.invalid" ]]; then
+    morrer "LANDING_HOST invalido em $DESTINO/.env (\"$landing_atual\"). Use LANDING_HOST=http://landing.invalid para publicar so o app, ou mude PUBLIC_HOST para app.$PUBLIC_HOST e deixe LANDING_HOST=$PUBLIC_HOST para ter as duas."
 fi
 
 docker compose --env-file .env up -d --remove-orphans
