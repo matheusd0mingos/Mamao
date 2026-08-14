@@ -56,8 +56,11 @@ não no mês 4, quando vira um projeto próprio.
 - [x] **Setores em árvore** (caminho materializado: "tudo abaixo de Operações" em uma
       consulta) e **cargos** como entidade. Equipes e gestor: parcial — `ManagerId` existe
       no modelo, falta a tela
-- [ ] `EmploymentContract`: tipo de jornada (12×36, 5×2, 6×1, ADM), carga semanal,
+- [ ] `EmploymentContract`: **regime de vínculo** (CLT, estatutário, militar, outro —
+      [ADR-0017](adr/0017-regime-de-vinculo.md)), tipo de jornada, carga semanal,
       registro de acordo de compensação
+- [ ] `Department` → **`OrgUnit` com `Kind`** (organização, setor, equipe), para o grupo
+      com subordinadas caber na árvore que já existe ([ADR-0018](adr/0018-organizacoes-e-unidades.md))
 - [x] **Importação CSV** com mapeamento de coluna, pré-visualização e erro por linha
       (XLSX fica para depois: exige biblioteca nova e o Excel exporta CSV em dois cliques —
       a tela ensina como)
@@ -92,6 +95,9 @@ de NR antes de alguém perceber. **Primeiro momento de venda.**
 
 ## Marco 3 — Ausências e disponibilidade (1 a 2 semanas)
 
+> **Virou pré-requisito duro do Marco 4**, não paralelo: a proposta de rodízio que
+> escala alguém de férias perde a confiança na primeira tentativa.
+
 - [ ] `AbsenceType` configurável; registro de ausência e presença
 - [ ] Feriados nacionais + municipais
 - [ ] **`IAvailabilityQuery`** ([modelo de domínio](produto/modelo-de-dominio.md#disponibilidade)),
@@ -102,30 +108,33 @@ de NR antes de alguém perceber. **Primeiro momento de venda.**
 
 ---
 
-## Marco 4 — Escalas (3 semanas)
+## Marco 4 — Escalas por rodízio (2 semanas)
 
-O marco que define o segmento. Entrada mais cara da V1 e a que decide a venda.
+O marco que define o segmento. **Redesenhado** — ver [ADR-0019](adr/0019-escala-por-rodizio.md).
 
-- [ ] `ShiftTemplate` (A/B/ADM, com horário e intervalo)
-- [ ] `ScheduleCycle`: 12×36, 5×2, 6×1, semanal fixo
-- [ ] Geração da escala do período a partir do ciclo
-- [ ] **Grade editável** (`TimeGrid`: linhas = pessoas, colunas = dias)
-- [ ] Troca e substituição de plantão, com aprovação
-- [ ] Cobertura mínima por turno, por setor/equipe
-- [ ] **Validação em modo alerta**: interjornada de 11h, DSR semanal, extras,
-      acordo 12×36 registrado ([ADR-0015](adr/0015-regras-de-jornada-e-escala.md))
-- [ ] Escala do mês exportável em PDF (o coordenador vai imprimir e colar na parede —
-      não lute contra isso)
+- [ ] `Duty` + `DutyRequirement`: o serviço, quantas pessoas, mínimos por cargo/posto
+- [ ] `RotationLedger`: quantas vezes cada um serviu e quando foi a última —
+      **é o que separa rodízio de sorteio**
+- [ ] Proposta ordenada por disponibilidade → há quanto tempo não serve → quantas vezes
+      → desempate **estável** (nunca aleatório)
+- [ ] **Justificativa por nome, guardada e não recalculada**: "última vez 12/03, 2 vezes
+      no trimestre". A escala de março tem que continuar explicável em junho
+- [ ] Ajuste manual com motivo; quem sai fica devendo uma
+- [ ] `Position.Precedence` para posto e graduação (comandante do serviço, ordem de leitura)
+- [ ] `ScheduleCycle` (12×36, 5×2, 6×1) como **modo alternativo**, para o cliente CLT de turno
+- [ ] Validação de jornada condicionada ao regime ([ADR-0017](adr/0017-regime-de-vinculo.md))
+- [ ] Escala publicada em PDF (vai ser impressa e afixada — não lute contra isso)
 - [ ] `ScheduleChanged` alimentando disponibilidade e notificações
 
-**Pronto quando:** um piloto monta a escala do mês seguinte no Mamão em vez da
-planilha, e o sistema aponta uma violação de interjornada que a planilha não via.
+**Pronto quando:** o responsável monta a escala do próximo serviço no Mamão em vez da
+planilha, e consegue responder "por que o Silva e não eu?" sem abrir outra tela.
 
 ---
 
 ## Marco 5 — Férias (2 a 3 semanas)
 
-- [ ] `VacationEntitlement` com regras CLT ([ADR-0014](adr/0014-regras-clt-de-ferias.md))
+- [ ] `VacationEntitlement` com política **por regime** — CLT, 8.112 e militar têm
+      padrões diferentes ([ADR-0017](adr/0017-regime-de-vinculo.md))
 - [ ] Solicitação com fracionamento e abono; validação das regras
 - [ ] **Divisões válidas calculadas do saldo real**, não menu fixo — quem tem 18 dias
       de direito não consegue fracionar, e o saldo muda com faltas e abono

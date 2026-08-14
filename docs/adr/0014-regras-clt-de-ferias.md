@@ -1,5 +1,10 @@
 # ADR-0014 — Regras de férias da CLT no domínio, desde a V1
 
+> **Escopo estreitado pela [ADR-0017](0017-regime-de-vinculo.md).** Esta ADR descreve a
+> política padrão do regime **CLT**. Estatutário e militar têm normas próprias e usam a
+> mesma estrutura de parâmetros com outros padrões. Nada aqui se perde; o que muda é que
+> deixou de valer para todo mundo.
+
 **Status:** aceita · **Data:** 2026-08
 
 > **Aviso.** O resumo abaixo é insumo de engenharia, não parecer jurídico. Valide o

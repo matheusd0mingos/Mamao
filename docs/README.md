@@ -59,6 +59,9 @@ necessidade real de overengineering e anota o gatilho para revisitar.
 | [0014](adr/0014-regras-clt-de-ferias.md) | Regras CLT de férias no domínio, desde a V1 |
 | [0015](adr/0015-regras-de-jornada-e-escala.md) | Escalas na V1, com validação de jornada em modo alerta |
 | [0016](adr/0016-bibliotecas-de-terceiros.md) | Critério de licença e saúde para biblioteca de terceiro |
+- [ADR-0017 — Regime de vínculo configurável (CLT, estatutário, militar)](adr/0017-regime-de-vinculo.md)
+- [ADR-0018 — Empresas independentes são tenants; subordinadas são unidades](adr/0018-organizacoes-e-unidades.md)
+- [ADR-0019 — Escala de serviço por rodízio justo](adr/0019-escala-por-rodizio.md)
 
 ## Como manter
 

@@ -1,5 +1,12 @@
 # ADR-0015 — Escalas na V1, com validação de regras de jornada
 
+> **Reordenada pela [ADR-0019](0019-escala-por-rodizio.md).** O motor primário do Marco 4
+> passou a ser **rodízio justo por serviço**; o ciclo fixo de turno descrito aqui continua
+> valendo, mas como um dos modos, para o cliente CLT de turno. As regras de jornada abaixo
+> passam a ser condicionadas ao regime de vínculo ([ADR-0017](0017-regime-de-vinculo.md)):
+> interjornada e DSR são da CLT e não se aplicam a militar nem a estatutário sem norma
+> equivalente.
+
 **Status:** aceita · **Data:** 2026-08 · **Altera:** [ADR-0014](0014-regras-clt-de-ferias.md) (mesmo princípio, outro domínio)
 
 > **Aviso.** O resumo de regras abaixo é insumo de engenharia, não parecer jurídico.
