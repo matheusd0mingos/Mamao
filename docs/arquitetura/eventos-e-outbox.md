@@ -184,7 +184,10 @@ Regras para consumidor:
 | `DocumentExpiring` | Documents (job) | Notifications |
 | `TaskAssigned` | Work | Notifications |
 | `TaskOverdue` | Work (job) | Notifications |
+| `SchedulePublished` | Scheduling | Notifications (avisa toda a equipe) |
 | `ScheduleChanged` | Scheduling | Notifications, Work |
+| `ShiftSwapRequested` / `ShiftSwapApproved` | Scheduling | Notifications |
+| `CoverageBelowMinimum` | Scheduling (job) | Notifications (pendência crítica) |
 
 Regra sobre `Notifications`: ele consome quase tudo e é o único módulo com essa
 característica. Isso é normal e não indica fronteira errada — ele é, por definição,

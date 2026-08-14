@@ -2,12 +2,17 @@
 
 **Gestão sem complicação.**
 
-Sistema operacional da equipe para pequenas empresas (5–50 funcionários): pessoas,
-atividades, férias, ausências, documentos, escalas e a visão que o gestor precisa
-para não ter que perguntar o que está acontecendo.
+Sistema operacional da equipe para pequenas empresas: pessoas, escalas, férias,
+ausências, documentos, atividades e a visão que o gestor precisa para não ter que
+perguntar o que está acontecendo.
 
 > O gestor não deveria precisar perguntar o que está acontecendo.
 > Ele deveria abrir o Mamão e ver.
+
+**Segmento inicial:** operação com plantão, turno e rodízio — manutenção,
+segurança, saúde, campo e facilities, de 15 a 60 funcionários.
+
+`mamao.tech`
 
 ---
 
@@ -18,10 +23,11 @@ Repositório em fase de **decisão de produto e arquitetura**. Ainda não há c�
 Toda a discussão está em [`docs/`](docs/). Comece por:
 
 1. [Sumário de decisões](docs/00-sumario-de-decisoes.md) — a tabela que responde "o que já está decidido e por quê"
-2. [Posicionamento e MVP](docs/produto/mvp-e-posicionamento.md) — onde discordo do briefing e por quê
-3. [Visão geral de arquitetura](docs/arquitetura/visao-geral.md)
-4. [Roadmap](docs/roadmap.md) — a sequência até o primeiro cliente pagante
-5. [Riscos e pontos de atenção](docs/riscos-e-pontos-de-atencao.md) — LGPD, CLT, marca, backup
+2. [Cliente ideal e pilotos](docs/produto/icp-e-pilotos.md) — para quem é e como validar
+3. [Posicionamento e MVP](docs/produto/mvp-e-posicionamento.md) — onde discordo do briefing e por quê
+4. [Visão geral de arquitetura](docs/arquitetura/visao-geral.md)
+5. [Roadmap](docs/roadmap.md) — a sequência até o primeiro cliente pagante
+6. [Riscos e pontos de atenção](docs/riscos-e-pontos-de-atencao.md) — LGPD, CLT, jornada, marca, backup
 
 ## Stack decidida
 

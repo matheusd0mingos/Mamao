@@ -52,11 +52,17 @@ Quando várias fontes se aplicam à mesma data, a ordem é fixa e explícita:
 5. Folga / compensação
 6. Fora de escala (não é dia de trabalho para esta pessoa)
 7. Registro de presença (presencial / home office)
-8. Padrão da jornada contratada
+8. Turno atribuído na escala          ← fonte primária das horas do dia
+9. Padrão da jornada contratada       ← fallback, quando não há escala
 ```
 
 Regra: a primeira que casar vence. Documentada aqui e implementada em um único
 lugar.
+
+Com Escalas na V1 ([ADR-0015](../adr/0015-regras-de-jornada-e-escala.md)), os níveis
+6 e 8 deixam de ser detalhe: numa operação de plantão, **a escala é quem define
+quantas horas a pessoa tem naquele dia**, e a jornada contratada vira apenas o
+fallback de quem trabalha em horário administrativo.
 
 ### Onde mora
 
@@ -198,13 +204,24 @@ pergunta que vende o módulo. Sem ela, você só sabe o que existe, não o que d
 existir. É a diferença entre um repositório de arquivos e um controle de
 conformidade.
 
-### Scheduling (V1.5)
+### Scheduling (V1)
 
 ```
-ShiftTemplate (raiz)   jornada nomeada: A = 08–17, B = 17–02
-ScheduleCycle (raiz)   padrão recorrente: 12×36, 5×2, semanal fixo
-ScheduleAssignment     pessoa × data × turno, origem (gerado/manual/substituição)
+ShiftTemplate (raiz)      turno nomeado: A = 07–19, B = 19–07, ADM = 08–17
+                          com intervalo intrajornada e marcação de noturno
+ScheduleCycle (raiz)      padrão recorrente: 12×36, 5×2, 6×1, semanal fixo
+ScheduleAssignment        pessoa × data × turno, origem (gerado/manual/troca)
+ShiftSwap (raiz)          troca ou substituição, com aprovação e motivo
+CoverageRequirement       turno × setor/equipe × mínimo de pessoas
 ```
+
+`CoverageRequirement` é o que transforma a escala de calendário em ferramenta: sem
+ele o sistema mostra quem trabalha; com ele, mostra **onde a operação vai furar**.
+É também o que a timeline de férias consome.
+
+`ShiftSwap` como agregado próprio (e não um `update` no `ScheduleAssignment`) porque
+troca de plantão é workflow com aprovação, histórico e auditoria — e é a operação
+mais frequente do dia a dia do coordenador.
 
 ### Notifications
 
@@ -224,13 +241,18 @@ essa promessa. Ver [ADR-0013](../adr/0013-capacidade-sem-vigilancia.md).
 
 ```
 Capacidade(pessoa, semana) = Σ horas disponíveis por dia   ← vem de Disponibilidade
-                             (jornada contratada, menos férias/ausência/folga/feriado)
+                             (horas de turno da escala, ou jornada contratada
+                              como fallback; menos férias/ausência/folga/feriado)
 
 Carga(pessoa, semana)      = Σ horas estimadas das tarefas abertas,
                              distribuídas nos dias úteis entre início e prazo
 
 Utilização                 = Carga / Capacidade
 ```
+
+Com escalas, a capacidade fica mais precisa: quem faz 12×36 tem 3 ou 4 turnos na
+semana, não 5 dias de 8h. Derivar da escala em vez da jornada contratada é a
+diferença entre um número defensável e um número que o coordenador desmente na hora.
 
 ### As três armadilhas
 

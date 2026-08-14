@@ -1,7 +1,11 @@
 # UX — as telas que decidem o produto
 
-Cinco telas carregam o produto. Todo o resto é formulário e tabela, e formulário
-e tabela se resolvem com um bom design system.
+Seis telas carregam o produto. Todo o resto é formulário e tabela, e formulário e
+tabela se resolvem com um bom design system.
+
+Duas delas — a grade de escala e a timeline de férias — são o **mesmo componente**
+(`TimeGrid`) com conteúdo de célula diferente. Construir uma vez e usar duas é o
+principal corte que faz Escalas caber na V1 ([roadmap](../roadmap.md#o-que-foi-cortado-para-caber)).
 
 ---
 
@@ -33,10 +37,11 @@ um dashboard genérico.
 Bom dia, João.
 
 ┌─ PRECISA DE VOCÊ ─────────────────────────────────────────────┐
+│ 🚨  Turno B sem cobertura mínima em 07/09      [Ajustar escala]│
 │ ⚠  NR-35 de Carlos Mendes vence em 6 dias      [Cobrar]       │
 │ 🏖  Férias de Ana Souza (10/09–20/09)          [Aprovar] [Ver] │
 │ 🏖  Ana perde 12 dias de férias em 30 dias     [Programar]     │
-│ ⏰  3 tarefas atrasadas na equipe               [Ver]          │
+│ 🔄  Troca de plantão Pedro ⇄ Carlos em 20/08   [Aprovar]       │
 │ 📄  RG e comprovante de residência de Beatriz   [Cobrar]       │
 └───────────────────────────────────────────────────────────────┘
 
@@ -65,10 +70,46 @@ Observações:
 
 ---
 
-## 2. Timeline de férias e ausências
+## 2. Grade de escala
 
-A tela que vende na demo. Precisa ser componente próprio; nenhum scheduler genérico
-entrega isso.
+A tela mais usada do produto no segmento escolhido. É ela que substitui a planilha.
+
+```
+                    SETEMBRO 2026 · OPERAÇÕES        [12×36] [Publicar]
+                 01  02  03  04  05  06  07  08  09  10  11  12
+                 seg ter qua qui sex sáb dom seg ter qua qui sex
+──────────────────────────────────────────────────────────────────
+ João Silva      A   ·   A   ·   A   ·   A   ·   A   ·   A   ·
+ Carlos Mendes   B   ·   B   ·   B   ·   B   ·   B   ·   B   ·
+ Maria Souza     ·   A   ·   A   ·   A   ·   A   ·   A   ·   A
+ Pedro Alves     ·   B   ·   B   ·   B   ·  🏖  ·  🏖  ·  🏖
+──────────────────────────────────────────────────────────────────
+ TURNO A (mín 2)  2   2   2   2   2   2   2   2   2   2   2   2
+ TURNO B (mín 2)  2   2   2   2   2   2   1   2   1   2   1   2
+                                          ⚠           ⚠       ⚠
+        Pedro em férias 07–12/09 · turno B abaixo do mínimo em 3 dias
+```
+
+O que importa:
+
+- **Cobertura por turno, não por dia.** "6 disponíveis" não significa nada se as
+  duas pessoas do noturno estiverem fora. Este é o recurso que a planilha não tem.
+- Gerar do ciclo e **editar na grade**: clicar na célula troca o turno, arrastar
+  move a atribuição (CDK DragDrop).
+- **Alerta, nunca bloqueio.** Interjornada abaixo de 11h, semana sem DSR, dobra de
+  plantão: marca a célula e explica no popover. A operação real tem exceção, e um
+  sistema que impede o coordenador de registrar o que já aconteceu é abandonado na
+  primeira semana.
+- Distinguir **rascunho** de **publicada**. Publicar é o evento que notifica a
+  equipe — e é o momento em que a escala vira compromisso.
+- **Exportar em PDF.** O coordenador vai imprimir e colar na parede. Não lute contra
+  isso; é sinal de que a escala virou a fonte da verdade.
+
+---
+
+## 3. Timeline de férias e ausências
+
+A tela que vende na demo. Mesmo `TimeGrid`, célula com barra em vez de turno.
 
 ```
                          SETEMBRO 2026
@@ -80,8 +121,10 @@ entrega isso.
   Maria Souza         ░░
   Ana Lima
 ─────────────────────────────────────────────────────────────────
-  DISPONÍVEIS         8  8  6  6  6  5  5  5  5  5  6  6  8  8  8
-  cobertura mínima: 6 ⚠                    ▲ 3 dias abaixo do mínimo
+  TURNO A (mín 2)     3  3  2  2  2  2  2  2  2  2  2  3  3  3  3
+  TURNO B (mín 2)     3  3  2  2  2  1  1  1  1  1  2  2  3  3  3
+                              ⚠  ⚠  ⚠  ⚠  ⚠  ⚠  ⚠
+                              ▲ turno B abaixo do mínimo em 6 dias
 ```
 
 O que importa:
@@ -89,8 +132,8 @@ O que importa:
 - **A linha de cobertura é o recurso principal**, não as barras. Barras respondem
   "quem está fora"; a linha responde **"a operação aguenta?"**. É a diferença entre
   um calendário e uma ferramenta de gestão.
-- Cobertura mínima é configurável por setor/equipe. Dias abaixo do mínimo ficam
-  destacados e viram pendência no dashboard.
+- Cobertura mínima é configurável **por turno** e por setor/equipe. Dias abaixo do
+  mínimo ficam destacados e viram pendência no dashboard.
 - Agrupamento por setor, colapsável, com contagem.
 - Primeira coluna fixa (sticky). Scroll horizontal por tempo, vertical por pessoa.
 - Zoom: dia / semana / mês. Em mês, a barra vira bloco agregado.
@@ -98,46 +141,53 @@ O que importa:
   esta tela é toda codificada por cor.
 - Clique na barra abre um popover (CDK Overlay) com detalhe e ações.
 
-Implementação: CSS Grid com colunas de largura fixa por dia, linhas virtualizadas
-(CDK `VirtualScrollViewport`) acima de ~50 pessoas. Sem biblioteca de gantt.
+Implementação (vale para as duas telas): CSS Grid com colunas de largura fixa por
+dia, primeira coluna sticky, linhas virtualizadas (CDK `VirtualScrollViewport`)
+acima de ~50 pessoas. Sem biblioteca de gantt e sem scheduler pronto — nenhum
+entrega a linha de cobertura, que é justamente o que vende as duas telas.
 
 ---
 
-## 3. "Meu dia" (funcionário)
+## 4. "Meu dia" (funcionário)
 
 Móvel primeiro. É a tela que o funcionário abre no celular, e a única que ele abre.
+No segmento escolhido, ela gira em torno do **turno**, não de uma lista de tarefas.
 
 ```
 Bom dia, Carlos.
 
-HOJE · quinta, 14 de agosto        Escala 08:00–17:00 · presencial
+SEU TURNO HOJE · quinta, 14 de agosto
+  ▸ Turno B · 19:00 – 07:00 · noturno
+    Próximo turno: sábado, 16/08
 
-  ☑  08:00   Conferir material
-  ☐  09:00   Instalar luminárias · Loja 3
-  ☐  14:00   Fazer teste de carga
-  ☐  16:00   Enviar fotos da instalação
+  ☑  Conferir material
+  ☐  Instalar luminárias · Loja 3
+  ☐  Enviar fotos da instalação
 
 PENDÊNCIAS SUAS
   📄  Seu NR-10 vence em 12 dias        [Enviar novo]
   🏖  Você tem 18 dias de férias        [Solicitar]
+  🔄  Troca com Pedro em 20/08          [Ver]
 ```
 
+- O turno vem primeiro e em destaque. "Trabalho hoje? Que horas? Quando é o
+  próximo?" são as três perguntas reais do funcionário de plantão.
 - Concluir tarefa é um toque na checkbox. Sem tela de detalhe no caminho feliz.
+- Dia de folga mostra isso com clareza, e o próximo turno logo abaixo.
 - Sem gráfico, sem métrica, sem percentual da própria produtividade.
-- Tarefas sem horário aparecem em "Sem horário definido", abaixo.
 
 ---
 
-## 4. "Minha equipe"
+## 5. "Minha equipe"
 
 A resposta rápida para "como está o time hoje".
 
 ```
-Carlos Mendes     3/4 concluídas    62% capacidade    🟢 presencial
-Marcos Alves      5/5 concluídas    48% capacidade    🟢 home office
-João Silva        1/3 concluídas    95% capacidade    🔴 sobrecarga
-Ana Lima          —                  —                🏖 férias até 20/09
-Beatriz Costa     2/2 concluídas    35% capacidade    🟢 presencial
+Carlos Mendes    Turno B 19–07   3/4 concluídas   62% capacidade   🟢
+Marcos Alves     Turno A 07–19   5/5 concluídas   48% capacidade   🟢
+João Silva       Turno A 07–19   1/3 concluídas   95% capacidade   🔴 sobrecarga
+Ana Lima         —                —                —               🏖 férias até 20/09
+Pedro Alves      folga            —                —               ⚪ próximo: 16/08
 ```
 
 - O vermelho do João é sobre **carga**, não sobre desempenho. O texto de apoio deve
@@ -147,15 +197,18 @@ Beatriz Costa     2/2 concluídas    35% capacidade    🟢 presencial
 
 ---
 
-## 5. Fila de aprovações
+## 6. Fila de aprovações
 
 Uma fila, todos os tipos, resolvível com teclado.
 
 ```
-[ Todas ]  Férias 2   Documentos 5   Ausências 1
+[ Todas ]  Férias 2   Documentos 5   Ausências 1   Trocas 3
 
 ☐  🏖  Ana Lima · Férias 10/09–20/09 · 11 dias
-       ⚠ Carlos também estará fora em 12/09–14/09        [Aprovar] [Recusar] [Detalhe]
+       ⚠ Turno B fica com 1 pessoa (mín. 2) em 6 dias    [Aprovar] [Recusar] [Detalhe]
+
+☐  🔄  Pedro ⇄ Carlos · plantão de 20/08 · turno B
+       ✓ Interjornada ok · cobertura mantida             [Aprovar] [Recusar] [Detalhe]
 
 ☐  📄  Beatriz Costa · ASO admissional · enviado há 2h
        [pré-visualização]                                 [Aprovar] [Recusar] [Detalhe]

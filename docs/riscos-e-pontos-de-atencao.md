@@ -63,36 +63,37 @@ que você ainda não escreveu.
 
 ## <a name="marca"></a>4. Marca — dois pontos concretos
 
-### 4.1 "Quer moleza? Senta no Pudim."
+### 4.1 Slogan — resolvido
 
-O slogan aparece no brand board. Em português brasileiro, "senta no pudim" carrega
-uma conotação sexual imediata e amplamente reconhecida.
+**Posicionamento: "Mamão — gestão sem complicação"**, com a referência a "mamão com
+açúcar". "Quer moleza? Senta no Pudim" fica fora do produto e do material comercial.
 
-Isso contraria diretamente uma regra que você mesmo definiu no briefing: *"evitar
-qualquer símbolo com duplo sentido"*.
+Registro do motivo, para que a decisão não seja reaberta por engano: em português
+brasileiro "senta no pudim" carrega conotação sexual imediata e reconhecida, o que
+contrariava a regra do próprio briefing de evitar duplo sentido. O comprador é RH,
+sócio ou gerente de operações, e a apresentação costuma ser interna e para mais de
+uma pessoa — numa demo de sistema que gerencia atestados, vira objeção comercial.
 
-O contexto agrava: o comprador do Mamão é RH, sócio ou gestor de operações, e o
-produto é apresentado dentro da empresa, muitas vezes para um comitê. Uma piada
-sexual no material de um sistema que gerencia atestados e férias vira objeção
-comercial — e, num ambiente corporativo, potencialmente uma reclamação interna.
+"Gestão sem complicação" entrega a leveza pretendida sem esse custo, e conversa
+diretamente com a origem do nome.
 
-Recomendação: retirar de qualquer material voltado ao comprador (site, deck,
-proposta, produto). Se quiser preservar o tom irreverente, ele cabe em canais
-informais — e "gestão sem complicação" já entrega leveza sem esse custo.
+### 4.2 Domínio e marca
 
-Decisão sua. Está registrada como pendência Q1 no
-[sumário](00-sumario-de-decisoes.md).
+`mamao.tech` registrado. Dois pontos ainda abertos:
 
-### 4.2 Registro e domínio
+**Marca no INPI.** Domínio não é marca. Busca e depósito nas classes relevantes
+(NCL 9 para software e 42 para SaaS) continuam pendentes, e é o item barato hoje /
+caro depois — descobrir conflito com o primeiro cliente e o primeiro material
+impresso na rua é outra ordem de grandeza de custo.
 
-Verifique agora, porque é barato agora:
+**`.tech` versus `.com.br`.** `.tech` funciona e é coerente com produto de
+tecnologia. Mas o comprador deste segmento — sócio ou gerente de operações de uma
+empresa de manutenção ou segurança — reconhece `.com.br` como sinal de empresa
+brasileira estabelecida, e `.tech` ainda é pouco familiar fora do meio técnico.
 
-- Busca no INPI nas classes relevantes (NCL 9 para software, 42 para SaaS)
-- `mamao.com.br`, `mamaoapp.com.br`, `usemamao.com.br` e afins
-- Handles em redes sociais
-
-Descobrir conflito depois do primeiro material impresso e do primeiro cliente é
-outra ordem de grandeza de custo.
+Recomendação: registrar `mamao.com.br` se disponível (custo anual baixo) e apontar
+para o mesmo produto, mantendo `.tech` como principal ou secundário. Vale também
+garantir os handles em redes sociais antes do lançamento.
 
 O resto da identidade está bem resolvido: o "ã" como símbolo, o til como elemento
 proprietário, a paleta verde/creme/amarelo e a decisão de não desenhar o fruto —
@@ -102,19 +103,41 @@ tudo consistente com "nome inesperado, produto sério".
 
 ## 5. CLT — a regra que vende também é a regra que erra
 
-[ADR-0014](adr/0014-regras-clt-de-ferias.md) trata as regras de férias como
-diferencial. O outro lado: calcular errado gera prejuízo ao cliente e
-responsabilidade sua.
+[ADR-0014](adr/0014-regras-clt-de-ferias.md) (férias) e
+[ADR-0015](adr/0015-regras-de-jornada-e-escala.md) (jornada) tratam regras
+trabalhistas como diferencial. O outro lado: calcular errado gera prejuízo ao
+cliente e exposição sua.
+
+O risco cresceu com a entrada de Escalas na V1. Jornada é a área onde a **convenção
+coletiva** mais frequentemente impõe regra diferente da CLT — e ela varia por
+categoria, por sindicato e por região. Duas empresas do mesmo segmento em cidades
+diferentes podem ter limites distintos.
 
 Mitigações:
 
-- Regras **configuráveis**, nunca hard-coded — convenção coletiva pode ser mais
-  benéfica que a CLT.
-- Comunicar o sistema como **auxiliar**, não como garantia de conformidade. Ver a
-  fronteira em [ADR-0014](adr/0014-regras-clt-de-ferias.md).
+- Regras **configuráveis por tenant**, nunca hard-coded. Vale especialmente para
+  jornada.
+- Validação de escala em **modo alerta**, nunca bloqueio
+  ([ADR-0015](adr/0015-regras-de-jornada-e-escala.md)). O sistema aponta; quem
+  decide é o coordenador, que conhece o acordo da categoria dele.
+- Comunicar o produto como **auxiliar**: "o Mamão avisa antes de você furar a
+  escala", não "o Mamão garante conformidade de jornada".
 - Limitação de responsabilidade nos termos de uso.
-- Validar a suíte de testes com um contador antes do lançamento. Os testes são
-  nomeados em português justamente para isso.
+- Validar a suíte de testes com um contador e, para jornada, com um técnico de
+  segurança do trabalho ou advogado trabalhista. Os testes são nomeados em português
+  justamente para permitir essa revisão por quem não programa.
+- Peça a convenção coletiva dos três pilotos. É o insumo que mostra o quanto de
+  configuração o produto vai precisar de verdade.
+
+### Risco de escopo: banco de horas
+
+Com escalas no produto, o pedido "e o banco de horas?" vai chegar — provavelmente do
+primeiro piloto. É a porta de entrada para apuração de jornada e, dali, para ponto
+eletrônico, que é escopo explicitamente recusado
+([P8](00-sumario-de-decisoes.md)).
+
+A fronteira que separa os dois: o Mamão **planeja** a jornada; ele não **apura**.
+Tenha a resposta pronta antes da pergunta.
 
 ---
 
@@ -125,7 +148,9 @@ Mitigações:
 | **Ativação**: cliente cadastra 3 funcionários e para | Trial sem CSV importado | Importação CSV no Marco 1; onboarding assistido nos primeiros clientes |
 | **Sistema virar cemitério**: dados entram e envelhecem | Ninguém volta depois da semana 1 | Notificação e digest diário; a tela "Meu dia"; tarefas mínimas para criar hábito |
 | **Comparação com Trello** | Comprador abre o Trello ao lado na demo | Kanban fora da V1 ([P2](produto/mvp-e-posicionamento.md#p2)); demo começa por documentos e férias |
-| **Pedido de folha/ponto** | Cliente pede na primeira reunião | Resposta pronta e firme. É a fronteira que protege o roadmap |
+| **Pedido de folha/ponto/banco de horas** | Cliente pede na primeira reunião | Resposta pronta e firme. É a fronteira que protege o roadmap |
+| **Escala do piloto mais complexa que o modelo** | A planilha tem um padrão que `ScheduleCycle` não expressa | Colete as três planilhas **antes** do Marco 4. A interseção é a V1; as diferenças viram configuração, não código por cliente |
+| **Escala publicada com erro** | Equipe organiza a vida pelo turno errado | Rascunho ≠ publicada; publicar notifica; toda alteração pós-publicação é auditada e avisada |
 | **Customização por cliente** | "Só preciso deste campo" | Configuração por tenant (tipos de documento, tipos de ausência, políticas), nunca código por cliente |
 | **Preço errado** | Fecha rápido demais ou não fecha nunca | Comece mais alto do que o instinto sugere; desconto é reversível, aumento não é |
 

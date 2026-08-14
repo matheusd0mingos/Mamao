@@ -9,12 +9,15 @@ necessidade real de overengineering e anota o gatilho para revisitar.
 | Se você quer… | Leia |
 |---|---|
 | A resposta curta de tudo | [Sumário de decisões](00-sumario-de-decisoes.md) |
+| Saber para quem é o produto | [Cliente ideal e pilotos](produto/icp-e-pilotos.md) |
 | Saber o que construir primeiro | [Posicionamento e MVP](produto/mvp-e-posicionamento.md) e [Roadmap](roadmap.md) |
 | Entender o desenho técnico | [Visão geral de arquitetura](arquitetura/visao-geral.md) |
 | Saber o que pode dar errado | [Riscos e pontos de atenção](riscos-e-pontos-de-atencao.md) |
 
 ## Produto
 
+- [Cliente ideal e pilotos](produto/icp-e-pilotos.md) — segmento, catálogo de
+  documentos e roteiro de validação
 - [Posicionamento e MVP](produto/mvp-e-posicionamento.md) — onde este documento
   discorda do briefing, e por quê
 - [Modelo de domínio](produto/modelo-de-dominio.md) — agregados, disponibilidade,
@@ -54,6 +57,7 @@ necessidade real de overengineering e anota o gatilho para revisitar.
 | [0012](adr/0012-idioma.md) | Código em inglês, produto em pt-BR |
 | [0013](adr/0013-capacidade-sem-vigilancia.md) | Capacidade prospectiva, nunca vigilância |
 | [0014](adr/0014-regras-clt-de-ferias.md) | Regras CLT de férias no domínio, desde a V1 |
+| [0015](adr/0015-regras-de-jornada-e-escala.md) | Escalas na V1, com validação de jornada em modo alerta |
 
 ## Como manter
 

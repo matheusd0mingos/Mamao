@@ -3,6 +3,13 @@
 Este documento discorda do briefing em três pontos. Os motivos estão explícitos
 para que você possa rejeitar com conhecimento de causa.
 
+**Posicionamento:** *Mamão — gestão sem complicação.*
+**Segmento inicial:** operação com plantão, turno e rodízio, de 15 a 60
+funcionários ([ICP e pilotos](icp-e-pilotos.md)).
+
+O segmento não é detalhe de marketing: ele reordenou a V1 e trouxe Escalas para
+dentro dela ([ADR-0015](../adr/0015-regras-de-jornada-e-escala.md)).
+
 ---
 
 ## O problema que realmente se vende
@@ -17,11 +24,15 @@ existe uma **dor com consequência**:
 | Férias vencendo o período concessivo | Pagamento em dobro | Contador avisa tarde, por e-mail |
 | Três pessoas de férias na mesma semana | Operação para | Memória do gestor |
 | Documento do funcionário sumiu no WhatsApp | Retrabalho, atraso na admissão | Pasta no Drive que ninguém mantém |
-| Escala do plantão furada | Cliente sem atendimento | Planilha que só uma pessoa entende |
+| Escala do plantão furada | Cliente sem atendimento **hoje** | Planilha que só uma pessoa entende |
+| Interjornada de 11h violada numa dobra | Passivo trabalhista | Ninguém confere |
 | "Quem está disponível hoje?" | Trabalho mal distribuído | Gestor perguntando no grupo |
 
-Nenhuma dessas seis dores é resolvida por um Kanban. Todas as seis são resolvidas
-pelo Mamão. **Esse é o produto vendável.**
+Nenhuma dessas dores é resolvida por um Kanban. Todas são resolvidas pelo Mamão.
+**Esse é o produto vendável.**
+
+As duas linhas de escala são as mais agudas no segmento escolhido — e as que a
+planilha é estruturalmente incapaz de resolver, porque planilha não valida regra.
 
 O Kanban é o que faz o produto ser *usado todo dia*, não o que faz ser *comprado*.
 Essa distinção define o MVP.
@@ -61,6 +72,11 @@ anexos, comentários, evidência de conclusão.
 **Compensação obrigatória:** a tela **"Meu dia"** (do funcionário) e **"Minha
 equipe"** (do gestor) entram na V1. São elas que criam o hábito diário, não o
 quadro. A lista mínima alimenta as duas.
+
+**O segmento reforça esta decisão.** Numa empresa de plantão, o funcionário não
+organiza o dia num quadro — ele organiza em torno do turno. "Meu dia" passa a ser
+*qual meu turno hoje, o que preciso fazer nele, e o que está pendente comigo*.
+Isso reduz `Work` ainda mais na V1 e libera espaço para Escalas.
 
 ---
 
@@ -119,21 +135,26 @@ progressivo, preenchido depois. Formulário longo na primeira tela é abandono.
 
 | Módulo | Escopo |
 |---|---|
-| **Pessoas** | Cadastro mínimo, setores/equipes/funções, gestor, importação CSV, perfil do funcionário |
-| **Documentos** | Tipos configuráveis, upload, validade, aprovar/rejeitar, alerta de vencimento, painel de pendências |
-| **Férias** | Solicitação, saldo CLT, detecção de conflito, aprovação, timeline da equipe |
+| **Pessoas** | Cadastro mínimo, setores/equipes/funções, gestor, jornada contratada, importação CSV, perfil |
+| **Documentos** | Tipos configuráveis **pré-populados para o segmento**, upload, validade, aprovação, alerta de vencimento, painel de faltantes |
 | **Ausências** | Presencial / home office / falta / justificada / licenças / folga. Alimenta disponibilidade |
+| **Escalas** | Turnos, ciclos (12×36, 5×2, 6×1), geração recorrente, grade editável, troca/substituição, cobertura por turno, validação de jornada em alerta |
+| **Férias** | Solicitação, saldo CLT, conflito e **cobertura por turno**, aprovação, timeline |
 | **Tarefas (mínimo)** | Lista, responsável, prazo, checklist, estimativa opcional, carga de trabalho |
-| **Dashboard do gestor** | Pendências acionáveis + equipe hoje + trabalho. Tela "Meu dia" e "Minha equipe" |
-| **Aprovações** | Fila única: férias, documentos, ausências. Resolver sem sair da lista |
+| **Dashboard do gestor** | Pendências acionáveis + equipe hoje + trabalho. Telas "Meu dia" e "Minha equipe" |
+| **Aprovações** | Fila única: férias, documentos, ausências, trocas de plantão. Resolver sem sair da lista |
 | **Notificações** | In-app + e-mail. Digest diário para o gestor |
 | **Permissões** | Papéis + escopo de dados |
 | **Auditoria** | Registro imutável das ações sensíveis |
 
+Escalas **antes** de Férias, porque a cobertura por turno é pré-requisito da
+detecção de conflito de férias.
+
 ### V1.5 — o que retém
 
-Kanban completo · convites em massa e autoatendimento do funcionário · escalas ·
-onboarding por workflow · calendário unificado · recorrência de tarefas
+Kanban completo · convites em massa e autoatendimento do funcionário ·
+onboarding por workflow · calendário unificado · recorrência de tarefas ·
+competências ("quem pode cobrir este plantão?")
 
 ### V2 — o que expande
 
@@ -152,13 +173,14 @@ de férias · previsão de sobrecarga · integrações · ponto
 Não construa por módulo. Construa por **fluxo demonstrável**, porque cada etapa
 abaixo é uma demo que já vende alguma coisa:
 
-1. **Esqueleto vertical:** empresa + login + 1 funcionário + deploy no VPS + CI verde
-2. **Pessoas + CSV:** a base de dados real do cliente entra no sistema
+1. **Esqueleto vertical:** empresa + login + 1 funcionário + deploy + CI verde
+2. **Pessoas + CSV:** a base real do cliente entra no sistema
 3. **Documentos + validade + alerta:** primeira dor com consequência resolvida
 4. **Ausências + disponibilidade:** "quem está disponível hoje" passa a existir
-5. **Férias + conflito + timeline:** a tela que impressiona na demo
-6. **Tarefas mínimas + carga:** hábito diário
-7. **Dashboard + aprovações + notificações:** amarra tudo e fecha a narrativa
+5. **Escalas + cobertura + validação de jornada:** o marco que define o segmento
+6. **Férias + conflito por turno + timeline:** a tela que impressiona na demo
+7. **Tarefas mínimas + "Meu dia":** hábito diário, centrado no turno
+8. **Dashboard + aprovações + notificações:** amarra tudo e fecha a narrativa
 
 Ver [roadmap](../roadmap.md).
 
@@ -183,6 +205,11 @@ Estrutura sugerida para validar:
 Faixa: valide contra o que o cliente já paga por sistema de ponto ou honorário
 contábil — é esse o bolso mental, não o de software de gestão.
 
+Com três pilotos na mão, a calibragem tem fonte melhor que o instinto: a pergunta
+6 do [roteiro](icp-e-pilotos.md#antes-de-escrever-mais-código) — *"o que você já
+paga hoje para resolver isso?"* — é a que quase nunca se faz e a que mais informa
+o preço.
+
 ---
 
 ## O que explicitamente não fazer
@@ -191,6 +218,7 @@ contábil — é esse o bolso mental, não o de software de gestão.
 |---|---|
 | Folha de pagamento | Escopo regulatório enorme, concorrentes consolidados |
 | Ponto eletrônico com valor jurídico | Portaria 671, certificação de equipamento, responsabilidade legal |
+| Banco de horas e apuração de extras/adicional noturno | Porta de entrada para ponto. O Mamão **planeja** a jornada; não **apura** |
 | eSocial | Complexidade desproporcional; integre depois, não implemente |
 | Chat interno | Você mesmo disse: não é Slack. E não se ganha desse mercado |
 | App mobile nativo na V1 | PWA responsivo resolve. Nativo é um segundo produto para manter |

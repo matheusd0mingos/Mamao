@@ -11,15 +11,20 @@ Legenda de status: **Firme** (mudar custa caro) · **Provisória** (revisitar na
 
 | # | Decisão | Status | Motivo |
 |---|---|---|---|
+| P0 | **Segmento inicial: operação com plantão, turno e rodízio** (manutenção, segurança, saúde, campo, facilities), 15–60 funcionários | Firme | Dor com consequência imediata, planilha realmente não resolve, concorrência fraca nesse porte. [Detalhe](produto/icp-e-pilotos.md) |
 | P1 | O produto precisa ser 100% útil com **um único usuário logado** (o gestor). Login do funcionário é opcional e convidado depois | Firme | Se a adoção depender de 20 pessoas criarem conta, o produto morre no trial. [Detalhe](produto/mvp-e-posicionamento.md#p1) |
-| P2 | **Kanban sai da V1.** Entra uma lista de tarefas mínima (título, responsável, prazo, status, checklist) | Firme | Kanban compete com Trello/Asana e você perde no comparativo de features. A dor não atendida é documento/férias/escala. [Detalhe](produto/mvp-e-posicionamento.md#p2) |
+| P2 | **Kanban sai da V1.** Entra uma lista de tarefas mínima (título, responsável, prazo, status, checklist) | Firme | Kanban compete com Trello/Asana e você perde no comparativo de features. E no segmento escolhido o dia gira em torno do turno, não do quadro. [Detalhe](produto/mvp-e-posicionamento.md#p2) |
+| P2b | **Escalas entra na V1**, antes de Férias | Firme | Decorre de P0: para empresa de plantão, a escala é o sistema operacional. Custa ~3 semanas. [ADR-0015](adr/0015-regras-de-jornada-e-escala.md) |
 | P3 | **Importação CSV de funcionários** é feature de V1, não de backlog | Firme | Sem ela ninguém chega ao "aha moment". É o gargalo de ativação. |
 | P4 | Regras de **férias CLT** (período aquisitivo, saldo, fracionamento, restrição de início) no domínio desde a V1 | Firme | É o "por que não uma planilha". [ADR-0014](adr/0014-regras-clt-de-ferias.md) |
+| P4b | Regras de **jornada** (interjornada de 11h, DSR, 12×36, noturno) validadas na escala, **em modo alerta** | Firme | Mesma lógica de P4. Alerta e não bloqueio, porque a operação real tem exceção. [ADR-0015](adr/0015-regras-de-jornada-e-escala.md) |
 | P5 | Capacidade é **prospectiva** (alocação futura), nunca retrospectiva (horas trabalhadas). Sem ranking entre pessoas | Firme | Sustenta o posicionamento anti-vigilância e evita virar ponto eletrônico. [ADR-0013](adr/0013-capacidade-sem-vigilancia.md) |
-| P6 | **Disponibilidade** e **Pendências** são os dois conceitos que conectam os módulos | Firme | São a diferença entre "vários CRUDs" e "sistema integrado". [Detalhe](produto/modelo-de-dominio.md#disponibilidade) |
-| P7 | Precificação por funcionário ativo/mês (PEPM), com mínimo mensal | Provisória | Padrão da categoria, escala junto com o valor entregue. [Detalhe](produto/mvp-e-posicionamento.md#preco) |
-| P8 | Não fazer folha de pagamento, ponto eletrônico nem eSocial | Firme | Escopo regulatório enorme, concorrência estabelecida, mata o time-to-market. |
-| P9 | Revisar o slogan **"Senta no Pudim"** antes de qualquer material comercial | Aberta | Contradiz sua própria regra de "evitar duplo sentido". [Detalhe](riscos-e-pontos-de-atencao.md#marca) |
+| P6 | **Disponibilidade** e **Pendências** são os dois conceitos que conectam os módulos. Com escalas, a escala vira a fonte primária das horas do dia | Firme | São a diferença entre "vários CRUDs" e "sistema integrado". [Detalhe](produto/modelo-de-dominio.md#disponibilidade) |
+| P7 | Precificação por funcionário ativo/mês (PEPM), com mínimo mensal | Provisória | Padrão da categoria, escala junto com o valor entregue. Calibrar com a pergunta 6 do roteiro dos pilotos. [Detalhe](produto/mvp-e-posicionamento.md#preco) |
+| P8 | Não fazer folha de pagamento, ponto eletrônico, banco de horas nem eSocial | Firme | Escopo regulatório enorme, concorrência estabelecida, mata o time-to-market. Vale também para apuração de extras e adicional noturno |
+| P9 | Posicionamento é **"Mamão — gestão sem complicação"**. "Senta no Pudim" fora do material comercial e do produto | Firme | Confirmado pelo autor. [Detalhe](riscos-e-pontos-de-atencao.md#marca) |
+| P10 | Domínio `mamao.tech` registrado | Firme | Registro de marca no INPI segue pendente — ver Q2 |
+| P11 | Três empresas piloto confirmadas; roteiro de validação definido antes do Marco 1 | Firme | Coletar as planilhas de escala é o requisito real do Marco 4. [Plano](produto/icp-e-pilotos.md#plano-dos-pilotos) |
 
 ## Arquitetura — estrutura
 
@@ -64,7 +69,7 @@ Legenda de status: **Firme** (mudar custa caro) · **Provisória** (revisitar na
 | F2 | **Angular CDK sim, Angular Material não** na camada visual | Firme | Você quer design system próprio; tematizar Material até não parecer Material é briga perdida. CDK (drag-drop, overlay, a11y, virtual scroll) é neutro. [ADR-0008](adr/0008-frontend-angular.md) |
 | F3 | **Sem NgRx no MVP.** Signals + store service por feature | Firme | NgRx é solução para complexidade de estado que você ainda não tem. |
 | F4 | Cliente HTTP e DTOs **gerados do OpenAPI**, nunca escritos à mão | Firme | [ADR-0009](adr/0009-cliente-gerado-do-openapi.md) |
-| F5 | Timeline de férias e Kanban são componentes **próprios** (CSS Grid + CDK), não biblioteca de scheduler | Firme | São as telas que vendem o produto; genérico não serve. [Detalhe](produto/ux-telas-criticas.md) |
+| F5 | Um único componente **`TimeGrid`** próprio (CSS Grid + CDK) serve a grade de escala e a timeline de férias | Firme | Mesma estrutura (linhas = pessoas, colunas = dias); construir duas vezes seria erro. Nenhuma biblioteca de scheduler entrega a linha de cobertura. [Detalhe](produto/ux-telas-criticas.md) |
 | F6 | Strings de UI atrás de chave de i18n desde o commit 1, mas só pt-BR publicado | Firme | Custo marginal hoje, retrofit caro depois. [ADR-0012](adr/0012-idioma.md) |
 | F7 | Código, tabelas e API em inglês; produto em pt-BR | Firme | [ADR-0012](adr/0012-idioma.md) |
 
@@ -84,7 +89,9 @@ Legenda de status: **Firme** (mudar custa caro) · **Provisória** (revisitar na
 
 | # | Pergunta | Por que importa agora |
 |---|---|---|
-| Q1 | O slogan "Senta no Pudim" fica? Se sim, restrito a onde? | Afeta landing page e material comercial. Ver [riscos](riscos-e-pontos-de-atencao.md#marca) |
-| Q2 | Qual o segmento da primeira venda: operação com escala/plantão (manutenção, segurança, saúde) ou escritório? | Muda a ordem de Escalas vs Kanban no roadmap. Recomendo operação com escala |
-| Q3 | Você já tem 2–3 empresas dispostas a usar de graça em troca de feedback? | Sem elas, o roadmap é chute. É o insumo mais valioso agora |
-| Q4 | Marca "Mamão" registrada no INPI e `mamao.com.br` disponível? | Barato de verificar hoje, caro de descobrir depois do primeiro material impresso |
+| Q1 | **O que exatamente os três pilotos fazem** (manutenção, segurança, saúde, campo, facilities) e qual o padrão de turno de cada um? | Define os `ScheduleCycle` da V1 e o catálogo de documentos pré-configurado. É o insumo do Marco 4 |
+| Q2 | Registro da marca "Mamão" no INPI (classes NCL 9 e 42) | O domínio está garantido; a marca, não. Barato agora, caro depois do primeiro material |
+| Q3 | Vale registrar `mamao.com.br` também? | O comprador SMB brasileiro reconhece mais `.com.br`. Ver [riscos](riscos-e-pontos-de-atencao.md#marca) |
+| Q4 | O design system tem modo escuro? | Decidir antes do primeiro componente, não depois. [UX](produto/ux-telas-criticas.md#design-system) |
+
+**Resolvidas nesta rodada:** segmento (P0) · slogan e posicionamento (P9) · domínio (P10) · pilotos (P11).
