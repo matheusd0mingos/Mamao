@@ -18,7 +18,8 @@ public sealed class EmployeeService(
     TimeProvider timeProvider)
 {
     public async Task<PagedResult<EmployeeListItem>> ListAsync(
-        string? search, bool includeInactive, int page, int pageSize, CancellationToken ct)
+        string? search, bool includeInactive, int page, int pageSize,
+        DepartmentId? departmentId, CancellationToken ct)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 200);
@@ -31,6 +32,22 @@ public sealed class EmployeeService(
         if (!includeInactive)
             query = query.Where(e => e.TerminatedOn == null);
 
+        // Filtro por setor traz a SUBARVORE, nao so o setor exato: quem pede "Operacoes"
+        // quer os turnos abaixo tambem. E o que o caminho materializado paga.
+        if (departmentId is { } setorId)
+        {
+            var caminho = await dbContext.Departments
+                .Where(d => d.Id == setorId)
+                .Select(d => d.Path)
+                .FirstOrDefaultAsync(ct);
+
+            if (caminho is null)
+                return new PagedResult<EmployeeListItem>([], 0, page, pageSize);
+
+            var abaixo = dbContext.Departments.Where(d => d.Path.StartsWith(caminho)).Select(d => d.Id);
+            query = query.Where(e => e.DepartmentId != null && abaixo.Contains(e.DepartmentId.Value));
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             // Like sobre valor em minusculas em vez do ILIKE do Npgsql: mantem Application
@@ -40,7 +57,7 @@ public sealed class EmployeeService(
             query = query.Where(e =>
                 EF.Functions.Like(e.FullName.ToLower(), term) ||
                 (e.Code != null && EF.Functions.Like(e.Code.ToLower(), term)) ||
-                EF.Functions.Like(e.PositionName.ToLower(), term));
+                dbContext.Positions.Any(p => p.Id == e.PositionId && EF.Functions.Like(p.Name.ToLower(), term)));
         }
 
         var total = await query.CountAsync(ct);
@@ -50,19 +67,43 @@ public sealed class EmployeeService(
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(e => new EmployeeListItem(
-                e.Id, e.Code, e.FullName, e.PositionName, e.HiredOn, e.TerminatedOn == null))
+                e.Id,
+                e.Code,
+                e.FullName,
+                dbContext.Positions.Where(p => p.Id == e.PositionId).Select(p => p.Name).FirstOrDefault()!,
+                dbContext.Departments.Where(d => d.Id == e.DepartmentId).Select(d => d.Name).FirstOrDefault(),
+                e.HiredOn,
+                e.TerminatedOn == null))
             .ToListAsync(ct);
 
         return new PagedResult<EmployeeListItem>(items, total, page, pageSize);
     }
 
-    public async Task<EmployeeResponse?> GetAsync(EmployeeId id, CancellationToken ct)
-    {
-        var employee = await dbContext.Employees.AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == id, ct);
+    public Task<EmployeeResponse?> GetAsync(EmployeeId id, CancellationToken ct)
+        => ProjectAsync(dbContext.Employees.AsNoTracking().Where(e => e.Id == id), ct);
 
-        return employee is null ? null : ToResponse(employee);
-    }
+    /// <summary>
+    /// Projecao unica de EmployeeResponse. Existe uma vez so porque tres caminhos
+    /// (buscar, criar, atualizar) devolvem a mesma forma — e duplicar a juncao seria
+    /// garantir que um dos tres um dia esquecesse um campo novo.
+    /// </summary>
+    private Task<EmployeeResponse?> ProjectAsync(IQueryable<Employee> query, CancellationToken ct)
+        => query
+            .Select(e => new EmployeeResponse(
+                e.Id,
+                e.Code,
+                e.FullName,
+                e.PositionId,
+                dbContext.Positions.Where(p => p.Id == e.PositionId).Select(p => p.Name).FirstOrDefault()!,
+                e.DepartmentId,
+                dbContext.Departments.Where(d => d.Id == e.DepartmentId).Select(d => d.Name).FirstOrDefault(),
+                e.ManagerId,
+                dbContext.Employees.Where(m => m.Id == e.ManagerId).Select(m => m.FullName).FirstOrDefault(),
+                e.HiredOn,
+                e.TerminatedOn,
+                e.TerminatedOn == null,
+                e.UserId != null))
+            .FirstOrDefaultAsync(ct)!;
 
     public async Task<Result<EmployeeResponse>> CreateAsync(CreateEmployeeRequest request, CancellationToken ct)
     {
@@ -74,13 +115,26 @@ public sealed class EmployeeService(
                 nameof(request.Code)));
         }
 
+        var referencias = await ValidarReferenciasAsync(request.PositionId, request.DepartmentId, request.ManagerId, ct);
+        if (referencias.IsFailure)
+            return Result.Failure<EmployeeResponse>(referencias.Error!);
+
         var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
 
-        var creation = Employee.Hire(request.FullName, request.PositionName, request.HiredOn, today, request.Code);
+        var creation = Employee.Hire(
+            request.FullName, request.PositionId, request.HiredOn, today, request.Code, request.DepartmentId);
         if (creation.IsFailure)
             return Result.Failure<EmployeeResponse>(creation.Error!);
 
         var employee = creation.Value;
+
+        if (request.ManagerId is not null)
+        {
+            var gestor = employee.AssignManager(request.ManagerId);
+            if (gestor.IsFailure)
+                return Result.Failure<EmployeeResponse>(gestor.Error!);
+        }
+
         dbContext.Employees.Add(employee);
 
         // Evento e dado de negocio na MESMA transacao. E dai que vem a garantia — nao do
@@ -91,12 +145,13 @@ public sealed class EmployeeService(
             OccurredAt: timeProvider.GetUtcNow(),
             EmployeeId: employee.Id,
             FullName: employee.FullName,
-            PositionName: employee.PositionName,
+            PositionName: await NomeDoCargoAsync(employee.PositionId, ct),
             HiredOn: employee.HiredOn));
 
         await dbContext.SaveChangesAsync(ct);
 
-        return Result.Success(ToResponse(employee));
+        return Result.Success((await ProjectAsync(
+            dbContext.Employees.AsNoTracking().Where(e => e.Id == employee.Id), ct))!);
     }
 
     public async Task<Result<EmployeeResponse>> UpdateAsync(
@@ -106,16 +161,38 @@ public sealed class EmployeeService(
         if (employee is null)
             return Result.Failure<EmployeeResponse>(NotFound(id));
 
+        var referencias = await ValidarReferenciasAsync(request.PositionId, request.DepartmentId, request.ManagerId, ct);
+        if (referencias.IsFailure)
+            return Result.Failure<EmployeeResponse>(referencias.Error!);
+
+        // Ciclo de chefia: A chefia B e B chefia A trava qualquer travessia de hierarquia
+        // depois. O agregado so enxerga a si mesmo, entao a cadeia e verificada aqui.
+        if (request.ManagerId is { } novoGestor
+            && await ChefiaEmCicloAsync(id, novoGestor, ct))
+        {
+            return Result.Failure<EmployeeResponse>(new Error(
+                "employee.manager_cycle",
+                "Esse gestor já responde a esta pessoa (direta ou indiretamente).",
+                nameof(request.ManagerId)));
+        }
+
         var rename = employee.Rename(request.FullName);
         if (rename.IsFailure)
             return Result.Failure<EmployeeResponse>(rename.Error!);
 
-        var position = employee.ChangePosition(request.PositionName);
+        var position = employee.ChangePosition(request.PositionId);
         if (position.IsFailure)
             return Result.Failure<EmployeeResponse>(position.Error!);
 
+        var gestor = employee.AssignManager(request.ManagerId);
+        if (gestor.IsFailure)
+            return Result.Failure<EmployeeResponse>(gestor.Error!);
+
+        employee.MoveToDepartment(request.DepartmentId);
+
         await dbContext.SaveChangesAsync(ct);
-        return Result.Success(ToResponse(employee));
+        return Result.Success((await ProjectAsync(
+            dbContext.Employees.AsNoTracking().Where(e => e.Id == id), ct))!);
     }
 
     public async Task<Result<EmployeeResponse>> TerminateAsync(
@@ -130,8 +207,57 @@ public sealed class EmployeeService(
             return Result.Failure<EmployeeResponse>(termination.Error!);
 
         await dbContext.SaveChangesAsync(ct);
-        return Result.Success(ToResponse(employee));
+        return Result.Success((await ProjectAsync(
+            dbContext.Employees.AsNoTracking().Where(e => e.Id == id), ct))!);
     }
+
+    /// <summary>
+    /// Cargo, setor e gestor precisam existir NESTE tenant. O filtro global ja garante o
+    /// tenant; o que se checa aqui e a existencia — sem isso, um id inventado viraria
+    /// violacao de FK, que chega ao usuario como erro 500 sem explicacao.
+    /// </summary>
+    private async Task<Result> ValidarReferenciasAsync(
+        PositionId positionId, DepartmentId? departmentId, EmployeeId? managerId, CancellationToken ct)
+    {
+        if (!await dbContext.Positions.AnyAsync(p => p.Id == positionId, ct))
+            return Result.Failure("employee.position_not_found", "Cargo não encontrado.", nameof(positionId));
+
+        if (departmentId is { } setor && !await dbContext.Departments.AnyAsync(d => d.Id == setor, ct))
+            return Result.Failure("employee.department_not_found", "Setor não encontrado.", nameof(departmentId));
+
+        if (managerId is { } gestor && !await dbContext.Employees.AnyAsync(e => e.Id == gestor, ct))
+            return Result.Failure("employee.manager_not_found", "Gestor não encontrado.", nameof(managerId));
+
+        return Result.Success();
+    }
+
+    /// <summary>Sobe a cadeia de chefia a partir do gestor proposto até a raiz ou até topar com a propria pessoa.</summary>
+    private async Task<bool> ChefiaEmCicloAsync(EmployeeId pessoa, EmployeeId gestor, CancellationToken ct)
+    {
+        var atual = gestor;
+
+        for (var salto = 0; salto < 64; salto++)
+        {
+            if (atual == pessoa)
+                return true;
+
+            var acima = await dbContext.Employees
+                .Where(e => e.Id == atual)
+                .Select(e => e.ManagerId)
+                .FirstOrDefaultAsync(ct);
+
+            if (acima is null)
+                return false;
+
+            atual = acima.Value;
+        }
+
+        // Cadeia mais longa que o limite so acontece se ja houver ciclo gravado.
+        return true;
+    }
+
+    private async Task<string> NomeDoCargoAsync(PositionId id, CancellationToken ct)
+        => await dbContext.Positions.Where(p => p.Id == id).Select(p => p.Name).FirstOrDefaultAsync(ct) ?? string.Empty;
 
     private async Task<bool> CodeIsTakenAsync(string? code, EmployeeId? excluding, CancellationToken ct)
     {
@@ -146,7 +272,4 @@ public sealed class EmployeeService(
 
     private static Error NotFound(EmployeeId id) =>
         new("employee.not_found", $"Funcionario {id} nao encontrado.");
-
-    private static EmployeeResponse ToResponse(Employee e) => new(
-        e.Id, e.Code, e.FullName, e.PositionName, e.HiredOn, e.TerminatedOn, e.IsActive, e.UserId is not null);
 }

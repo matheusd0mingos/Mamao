@@ -6,13 +6,21 @@ namespace Mamao.People.Infrastructure.Persistence;
 /// <summary>
 /// Implementacao in-process do contrato publico de People.
 /// Ver docs/adr/0004-comunicacao-entre-modulos.md.
+///
+/// O contrato expoe o cargo como TEXTO e continua assim depois de Position virar entidade:
+/// outro modulo nao tem o que fazer com um PositionId — ele quer escrever "Vigilante" numa
+/// notificacao. A juncao fica deste lado da fronteira, que e onde ela pertence.
 /// </summary>
 public sealed class EmployeeDirectory(PeopleDbContext dbContext) : IEmployeeDirectory
 {
     public async Task<EmployeeSummary?> GetAsync(EmployeeId id, CancellationToken cancellationToken)
         => await dbContext.Employees.AsNoTracking()
             .Where(e => e.Id == id)
-            .Select(e => new EmployeeSummary(e.Id, e.FullName, e.PositionName, e.TerminatedOn == null))
+            .Select(e => new EmployeeSummary(
+                e.Id,
+                e.FullName,
+                dbContext.Positions.Where(p => p.Id == e.PositionId).Select(p => p.Name).FirstOrDefault()!,
+                e.TerminatedOn == null))
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyDictionary<EmployeeId, EmployeeSummary>> GetManyAsync(
@@ -25,7 +33,11 @@ public sealed class EmployeeDirectory(PeopleDbContext dbContext) : IEmployeeDire
 
         var summaries = await dbContext.Employees.AsNoTracking()
             .Where(e => idList.Contains(e.Id))
-            .Select(e => new EmployeeSummary(e.Id, e.FullName, e.PositionName, e.TerminatedOn == null))
+            .Select(e => new EmployeeSummary(
+                e.Id,
+                e.FullName,
+                dbContext.Positions.Where(p => p.Id == e.PositionId).Select(p => p.Name).FirstOrDefault()!,
+                e.TerminatedOn == null))
             .ToListAsync(cancellationToken);
 
         return summaries.ToDictionary(s => s.Id);

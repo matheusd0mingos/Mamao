@@ -212,6 +212,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listDepartments"];
+        put?: never;
+        post: operations["createDepartment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/departments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateDepartment"];
+        post?: never;
+        delete: operations["deleteDepartment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/departments/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["moveDepartment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPositions"];
+        put?: never;
+        post: operations["createPosition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/positions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updatePosition"];
+        post?: never;
+        delete: operations["deletePosition"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -227,14 +307,39 @@ export interface components {
             role: string;
             permissions: string[];
         };
+        CreateDepartmentRequest: {
+            name: string;
+            parentId: (string & components["schemas"]["DepartmentId"]) | null;
+        };
         CreateEmployeeRequest: {
             fullName: string;
-            positionName: string;
+            positionId: components["schemas"]["PositionId"];
             /** Format: date */
             hiredOn: string;
             code: string | null;
+            departmentId: (string & components["schemas"]["DepartmentId"]) | null;
+            managerId: (string & components["schemas"]["EmployeeId"]) | null;
         };
-        EmployeeId: unknown;
+        CreatePositionRequest: {
+            name: string;
+        };
+        /** Format: uuid */
+        DepartmentId: string;
+        DepartmentNode: {
+            id: components["schemas"]["DepartmentId"];
+            name: string;
+            parentId: (string & components["schemas"]["DepartmentId"]) | null;
+            /** Format: int32 */
+            depth: number;
+            managerId: (string & components["schemas"]["EmployeeId"]) | null;
+            managerName: string | null;
+            /** Format: int32 */
+            employeeCount: number;
+            /** Format: int32 */
+            subtreeEmployeeCount: number;
+        };
+        /** Format: uuid */
+        EmployeeId: string;
         EmployeeImportColumn: {
             field: string;
             label: string;
@@ -288,6 +393,7 @@ export interface components {
             code: string | null;
             fullName: string;
             positionName: string;
+            departmentName: string | null;
             /** Format: date */
             hiredOn: string;
             isActive: boolean;
@@ -296,7 +402,12 @@ export interface components {
             id: components["schemas"]["EmployeeId"];
             code: string | null;
             fullName: string;
+            positionId: components["schemas"]["PositionId"];
             positionName: string;
+            departmentId: (string & components["schemas"]["DepartmentId"]) | null;
+            departmentName: string | null;
+            managerId: (string & components["schemas"]["EmployeeId"]) | null;
+            managerName: string | null;
             /** Format: date */
             hiredOn: string;
             /** Format: date */
@@ -330,6 +441,9 @@ export interface components {
             role: string;
             permissions: string[];
         };
+        MoveDepartmentRequest: {
+            parentId: (string & components["schemas"]["DepartmentId"]) | null;
+        };
         PagedResultOfEmployeeListItem: {
             items: components["schemas"]["EmployeeListItem"][];
             /** Format: int32 */
@@ -338,6 +452,14 @@ export interface components {
             page: number;
             /** Format: int32 */
             pageSize: number;
+        };
+        /** Format: uuid */
+        PositionId: string;
+        PositionResponse: {
+            id: components["schemas"]["PositionId"];
+            name: string;
+            /** Format: int32 */
+            employeeCount: number;
         };
         ProblemDetails: {
             type?: string | null;
@@ -371,9 +493,18 @@ export interface components {
             /** Format: date */
             terminatedOn: string;
         };
+        UpdateDepartmentRequest: {
+            name: string;
+            managerId: (string & components["schemas"]["EmployeeId"]) | null;
+        };
         UpdateEmployeeRequest: {
             fullName: string;
-            positionName: string;
+            positionId: components["schemas"]["PositionId"];
+            departmentId: (string & components["schemas"]["DepartmentId"]) | null;
+            managerId: (string & components["schemas"]["EmployeeId"]) | null;
+        };
+        UpdatePositionRequest: {
+            name: string;
         };
     };
     responses: never;
@@ -556,6 +687,7 @@ export interface operations {
                 includeInactive?: boolean;
                 page?: number;
                 pageSize?: number;
+                departmentId?: string;
             };
             header?: never;
             path?: never;
@@ -805,6 +937,243 @@ export interface operations {
                     "application/json": components["schemas"]["EmployeeImportResult"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listDepartments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentNode"][];
+                };
+            };
+        };
+    };
+    createDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDepartmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentNode"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDepartmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    moveDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveDepartmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listPositions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionResponse"][];
+                };
+            };
+        };
+    };
+    createPosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePositionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updatePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePositionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deletePosition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             /** @description Bad Request */
             400: {
                 headers: {

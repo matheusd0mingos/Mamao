@@ -1,4 +1,5 @@
 using Mamao.People.Contracts.Events;
+using Mamao.People.Application.Organization;
 using Mamao.People.Domain.Employees;
 using Mamao.SharedKernel.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public sealed class EmployeeImportService(
     IPeopleDbContext dbContext,
     IPeopleOutbox outbox,
     ITenantContext tenantContext,
+    PositionService positions,
     TimeProvider timeProvider)
 {
     private readonly EmployeeCsvParser _parser = new();
@@ -55,9 +57,19 @@ public sealed class EmployeeImportService(
         var agora = timeProvider.GetUtcNow();
         var importadas = 0;
 
+        // Cargo do arquivo e texto; aqui vira cargo de verdade, criando o que faltar.
+        // Criar na importacao e o que permite trazer a planilha sem cadastrar cargo antes —
+        // e a mesma tolerancia que faz o leitor aceitar arquivo sujo. O cache carrega os
+        // existentes de uma vez: sem ele seria uma consulta por linha.
+        var cargos = await positions.LoadCacheAsync(ct);
+
         foreach (var linha in prontas)
         {
-            var criacao = Employee.Hire(linha.FullName, linha.PositionName, linha.HiredOn!.Value, hoje, linha.Code);
+            var cargo = await positions.ResolveOrCreateAsync(linha.PositionName, cargos, ct);
+            if (cargo.IsFailure)
+                continue;
+
+            var criacao = Employee.Hire(linha.FullName, cargo.Value.Id, linha.HiredOn!.Value, hoje, linha.Code);
 
             // O dominio ja validou o mesmo na previa; se recusar aqui, e divergencia entre
             // os dois caminhos e nao pode passar em silencio.
@@ -73,7 +85,7 @@ public sealed class EmployeeImportService(
                 OccurredAt: agora,
                 EmployeeId: funcionario.Id,
                 FullName: funcionario.FullName,
-                PositionName: funcionario.PositionName,
+                PositionName: cargo.Value.Name,
                 HiredOn: funcionario.HiredOn));
 
             importadas++;

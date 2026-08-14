@@ -33,10 +33,14 @@ public static class PeopleEndpoints
             bool? includeInactive,
             int? page,
             int? pageSize,
+            Guid? departmentId,
             EmployeeService service,
             CancellationToken ct) =>
         {
-            var result = await service.ListAsync(search, includeInactive ?? false, page ?? 1, pageSize ?? 25, ct);
+            var result = await service.ListAsync(
+                search, includeInactive ?? false, page ?? 1, pageSize ?? 25,
+                departmentId is { } d ? new DepartmentId(d) : null, ct);
+
             return TypedResults.Ok(result);
         })
         .WithName("listEmployees")

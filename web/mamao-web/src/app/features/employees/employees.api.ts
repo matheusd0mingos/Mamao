@@ -24,11 +24,21 @@ export class EmployeesApi {
   private readonly http = inject(HttpClient);
   private readonly base = '/api/v1/employees';
 
-  list(search: string, includeInactive: boolean, page: number, pageSize: number): Promise<PagedEmployees> {
+  list(
+    search: string,
+    includeInactive: boolean,
+    page: number,
+    pageSize: number,
+    departmentId: string | null = null,
+  ): Promise<PagedEmployees> {
     let params = new HttpParams()
       .set('page', page)
       .set('pageSize', pageSize)
       .set('includeInactive', includeInactive);
+
+    if (departmentId) {
+      params = params.set('departmentId', departmentId);
+    }
 
     if (search.trim()) {
       params = params.set('search', search.trim());

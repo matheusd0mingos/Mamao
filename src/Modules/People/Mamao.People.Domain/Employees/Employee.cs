@@ -21,7 +21,21 @@ public sealed class Employee : ITenantOwned
     public string? Code { get; private set; }
 
     public string FullName { get; private set; } = null!;
-    public string PositionName { get; private set; } = null!;
+
+    /// <summary>Cargo. Referencia, nao texto: o Marco 4 pergunta "quantos vigilantes neste turno?".</summary>
+    public PositionId PositionId { get; private set; }
+
+    /// <summary>
+    /// Setor. OPCIONAL, e isso diverge do modelo de dominio original de proposito: exigir
+    /// que o cliente monte a taxonomia antes de cadastrar a primeira pessoa e atrito no
+    /// exato momento em que ele esta avaliando o produto. Ele organiza depois, quando o
+    /// setor passa a servir para alguma coisa (cobertura, filtro, aprovacao).
+    /// </summary>
+    public DepartmentId? DepartmentId { get; private set; }
+
+    /// <summary>Gestor direto. Opcional pelo mesmo motivo do setor.</summary>
+    public EmployeeId? ManagerId { get; private set; }
+
     public DateOnly HiredOn { get; private set; }
     public DateOnly? TerminatedOn { get; private set; }
 
@@ -32,22 +46,22 @@ public sealed class Employee : ITenantOwned
 
     public static Result<Employee> Hire(
         string fullName,
-        string positionName,
+        PositionId positionId,
         DateOnly hiredOn,
         DateOnly today,
-        string? code = null)
+        string? code = null,
+        DepartmentId? departmentId = null)
     {
         fullName = fullName?.Trim() ?? string.Empty;
-        positionName = positionName?.Trim() ?? string.Empty;
         code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
 
         if (fullName.Length < 2)
             return Result.Failure<Employee>(new Error(
                 "employee.name_required", "Informe o nome do funcionario.", nameof(FullName)));
 
-        if (positionName.Length < 2)
+        if (positionId.Value == Guid.Empty)
             return Result.Failure<Employee>(new Error(
-                "employee.position_required", "Informe o cargo do funcionario.", nameof(PositionName)));
+                "employee.position_required", "Informe o cargo do funcionario.", nameof(PositionId)));
 
         // Admissao futura e legitima (contratacao ja acertada); um limite evita erro de
         // digitacao de ano, que e o engano real.
@@ -59,7 +73,8 @@ public sealed class Employee : ITenantOwned
         {
             Id = EmployeeId.New(),
             FullName = fullName,
-            PositionName = positionName,
+            PositionId = positionId,
+            DepartmentId = departmentId,
             HiredOn = hiredOn,
             Code = code,
         });
@@ -76,14 +91,26 @@ public sealed class Employee : ITenantOwned
         return Result.Success();
     }
 
-    public Result ChangePosition(string positionName)
+    public Result ChangePosition(PositionId positionId)
     {
-        positionName = positionName?.Trim() ?? string.Empty;
+        if (positionId.Value == Guid.Empty)
+            return Result.Failure("employee.position_required", "Informe o cargo do funcionario.", nameof(PositionId));
 
-        if (positionName.Length < 2)
-            return Result.Failure("employee.position_required", "Informe o cargo do funcionario.", nameof(PositionName));
+        PositionId = positionId;
+        return Result.Success();
+    }
 
-        PositionName = positionName;
+    public void MoveToDepartment(DepartmentId? departmentId) => DepartmentId = departmentId;
+
+    public Result AssignManager(EmployeeId? managerId)
+    {
+        // Chefe de si mesmo quebra qualquer travessia de hierarquia depois — e o unico
+        // ciclo que da para barrar sem carregar a cadeia inteira. Ciclo mais longo
+        // (A chefia B, B chefia A) e verificado no servico, que enxerga os dois.
+        if (managerId == Id)
+            return Result.Failure("employee.self_manager", "Uma pessoa não pode ser gestora de si mesma.", nameof(ManagerId));
+
+        ManagerId = managerId;
         return Result.Success();
     }
 

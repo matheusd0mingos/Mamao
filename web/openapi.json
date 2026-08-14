@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:35055"
+      "url": "http://127.0.0.1:33191"
     }
   ],
   "paths": {
@@ -238,6 +238,14 @@
             "schema": {
               "format": "int32",
               "type": "integer"
+            }
+          },
+          {
+            "name": "departmentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -562,6 +570,319 @@
           }
         }
       }
+    },
+    "/api/v1/departments": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "listDepartments",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentNode"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "createDepartment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDepartmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentNode"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/departments/{id}": {
+      "put": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "updateDepartment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepartmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "deleteDepartment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/departments/{id}/move": {
+      "post": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "moveDepartment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveDepartmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "listPositions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PositionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "createPosition",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePositionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{id}": {
+      "put": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "updatePosition",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePositionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Organization"
+        ],
+        "operationId": "deletePosition",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -606,20 +927,43 @@
           }
         }
       },
+      "CreateDepartmentRequest": {
+        "required": [
+          "name",
+          "parentId"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentId"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
       "CreateEmployeeRequest": {
         "required": [
           "fullName",
-          "positionName",
+          "positionId",
           "hiredOn",
-          "code"
+          "code",
+          "departmentId",
+          "managerId"
         ],
         "type": "object",
         "properties": {
           "fullName": {
             "type": "string"
           },
-          "positionName": {
-            "type": "string"
+          "positionId": {
+            "$ref": "#/components/schemas/PositionId"
           },
           "hiredOn": {
             "type": "string",
@@ -628,10 +972,101 @@
           "code": {
             "type": "string",
             "nullable": true
+          },
+          "departmentId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentId"
+              }
+            ],
+            "nullable": true
+          },
+          "managerId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeId"
+              }
+            ],
+            "nullable": true
           }
         }
       },
-      "EmployeeId": {},
+      "CreatePositionRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "DepartmentId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "DepartmentNode": {
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "depth",
+          "managerId",
+          "managerName",
+          "employeeCount",
+          "subtreeEmployeeCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DepartmentId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentId"
+              }
+            ],
+            "nullable": true
+          },
+          "depth": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "managerId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeId"
+              }
+            ],
+            "nullable": true
+          },
+          "managerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "employeeCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "subtreeEmployeeCount": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "EmployeeId": {
+        "type": "string",
+        "format": "uuid"
+      },
       "EmployeeImportColumn": {
         "required": [
           "field",
@@ -818,6 +1253,7 @@
           "code",
           "fullName",
           "positionName",
+          "departmentName",
           "hiredOn",
           "isActive"
         ],
@@ -836,6 +1272,10 @@
           "positionName": {
             "type": "string"
           },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
           "hiredOn": {
             "type": "string",
             "format": "date"
@@ -850,7 +1290,12 @@
           "id",
           "code",
           "fullName",
+          "positionId",
           "positionName",
+          "departmentId",
+          "departmentName",
+          "managerId",
+          "managerName",
           "hiredOn",
           "terminatedOn",
           "isActive",
@@ -868,8 +1313,37 @@
           "fullName": {
             "type": "string"
           },
+          "positionId": {
+            "$ref": "#/components/schemas/PositionId"
+          },
           "positionName": {
             "type": "string"
+          },
+          "departmentId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentId"
+              }
+            ],
+            "nullable": true
+          },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "managerId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeId"
+              }
+            ],
+            "nullable": true
+          },
+          "managerName": {
+            "type": "string",
+            "nullable": true
           },
           "hiredOn": {
             "type": "string",
@@ -989,6 +1463,23 @@
           }
         }
       },
+      "MoveDepartmentRequest": {
+        "required": [
+          "parentId"
+        ],
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentId"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
       "PagedResultOfEmployeeListItem": {
         "required": [
           "items",
@@ -1013,6 +1504,30 @@
             "type": "integer"
           },
           "pageSize": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "PositionId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "PositionResponse": {
+        "required": [
+          "id",
+          "name",
+          "employeeCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PositionId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "employeeCount": {
             "format": "int32",
             "type": "integer"
           }
@@ -1129,17 +1644,69 @@
           }
         }
       },
+      "UpdateDepartmentRequest": {
+        "required": [
+          "name",
+          "managerId"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "managerId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeId"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
       "UpdateEmployeeRequest": {
         "required": [
           "fullName",
-          "positionName"
+          "positionId",
+          "departmentId",
+          "managerId"
         ],
         "type": "object",
         "properties": {
           "fullName": {
             "type": "string"
           },
-          "positionName": {
+          "positionId": {
+            "$ref": "#/components/schemas/PositionId"
+          },
+          "departmentId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentId"
+              }
+            ],
+            "nullable": true
+          },
+          "managerId": {
+            "type": "string",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EmployeeId"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "UpdatePositionRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
             "type": "string"
           }
         }
@@ -1152,6 +1719,9 @@
     },
     {
       "name": "Employees"
+    },
+    {
+      "name": "Organization"
     }
   ]
 }

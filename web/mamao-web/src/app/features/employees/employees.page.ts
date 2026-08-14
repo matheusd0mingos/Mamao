@@ -18,6 +18,7 @@ import { EmployeesStore } from './employees.store';
       </div>
 
       <div *mamaoHasPermission="'people.write'" class="head__acoes">
+        <a class="btn btn--ghost" routerLink="/estrutura">Estrutura</a>
         <a class="btn btn--ghost" routerLink="/pessoas/importar">Importar planilha</a>
         <a class="btn btn--primary" routerLink="/pessoas/nova">Cadastrar funcionário</a>
       </div>
@@ -25,6 +26,19 @@ import { EmployeesStore } from './employees.store';
 
     <div class="filtros">
       <input [formControl]="busca" placeholder="Buscar por nome, cargo ou matrícula" aria-label="Buscar" />
+      @if (store.departments().length > 0) {
+        <select
+          [value]="store.departmentId() ?? ''"
+          (change)="store.setDepartment($any($event.target).value || null)"
+          aria-label="Filtrar por setor"
+        >
+          <option value="">Todos os setores</option>
+          @for (setor of store.departments(); track setor.id) {
+            <option [value]="setor.id">{{ '— '.repeat(setor.depth) }}{{ setor.name }}</option>
+          }
+        </select>
+      }
+
       <label class="inativos">
         <input type="checkbox" [checked]="store.includeInactive()" (change)="store.toggleInactive()" />
         Mostrar desligados
@@ -63,6 +77,7 @@ import { EmployeesStore } from './employees.store';
               <tr>
                 <th>Nome</th>
                 <th>Cargo</th>
+                <th>Setor</th>
                 <th>Matrícula</th>
                 <th>Admissão</th>
                 <th>Situação</th>
@@ -73,6 +88,7 @@ import { EmployeesStore } from './employees.store';
                 <tr>
                   <td><a [routerLink]="['/pessoas', pessoa.id]">{{ pessoa.fullName }}</a></td>
                   <td>{{ pessoa.positionName }}</td>
+                  <td class="muted">{{ pessoa.departmentName ?? '—' }}</td>
                   <td class="muted">{{ pessoa.code ?? '—' }}</td>
                   <td>{{ pessoa.hiredOn | date: 'dd/MM/yyyy' }}</td>
                   <td>
@@ -114,6 +130,10 @@ import { EmployeesStore } from './employees.store';
       align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4);
       margin-bottom: var(--space-4);
     }
+    .filtros select {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font: inherit; padding: var(--space-2) var(--space-3);
+    }
     .filtros input[type='text'], .filtros input:not([type]) {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
       flex: 1 1 240px; font: inherit; max-width: 380px; min-width: 0;
@@ -148,5 +168,6 @@ export class EmployeesPage implements OnInit {
 
   ngOnInit(): void {
     void this.store.load();
+    void this.store.loadDepartments();
   }
 }

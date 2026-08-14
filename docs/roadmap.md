@@ -53,7 +53,9 @@ não no mês 4, quando vira um projeto próprio.
 
 ## Marco 1 — Pessoas de verdade (1 a 2 semanas)
 
-- [ ] Setores em árvore, equipes, cargos, gestor
+- [x] **Setores em árvore** (caminho materializado: "tudo abaixo de Operações" em uma
+      consulta) e **cargos** como entidade. Equipes e gestor: parcial — `ManagerId` existe
+      no modelo, falta a tela
 - [ ] `EmploymentContract`: tipo de jornada (12×36, 5×2, 6×1, ADM), carga semanal,
       registro de acordo de compensação
 - [x] **Importação CSV** com mapeamento de coluna, pré-visualização e erro por linha

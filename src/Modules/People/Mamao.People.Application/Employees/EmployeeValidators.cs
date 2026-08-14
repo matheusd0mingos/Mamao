@@ -12,7 +12,7 @@ public sealed class CreateEmployeeRequestValidator : AbstractValidator<CreateEmp
     {
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200)
             .WithMessage("Informe o nome do funcionario.");
-        RuleFor(x => x.PositionName).NotEmpty().MaximumLength(120)
+        RuleFor(x => x.PositionId).Must(id => id.Value != Guid.Empty)
             .WithMessage("Informe o cargo do funcionario.");
         RuleFor(x => x.Code).MaximumLength(50);
         RuleFor(x => x.HiredOn).NotEqual(default(DateOnly))
@@ -25,8 +25,35 @@ public sealed class UpdateEmployeeRequestValidator : AbstractValidator<UpdateEmp
     public UpdateEmployeeRequestValidator()
     {
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.PositionName).NotEmpty().MaximumLength(120);
+        RuleFor(x => x.PositionId).Must(id => id.Value != Guid.Empty)
+            .WithMessage("Informe o cargo do funcionario.");
     }
+}
+
+public sealed class CreateDepartmentRequestValidator : AbstractValidator<Organization.CreateDepartmentRequest>
+{
+    public CreateDepartmentRequestValidator()
+        => RuleFor(x => x.Name).NotEmpty().MaximumLength(120)
+            .WithMessage("Informe o nome do setor.");
+}
+
+public sealed class UpdateDepartmentRequestValidator : AbstractValidator<Organization.UpdateDepartmentRequest>
+{
+    public UpdateDepartmentRequestValidator()
+        => RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
+}
+
+public sealed class CreatePositionRequestValidator : AbstractValidator<Organization.CreatePositionRequest>
+{
+    public CreatePositionRequestValidator()
+        => RuleFor(x => x.Name).NotEmpty().MaximumLength(120)
+            .WithMessage("Informe o nome do cargo.");
+}
+
+public sealed class UpdatePositionRequestValidator : AbstractValidator<Organization.UpdatePositionRequest>
+{
+    public UpdatePositionRequestValidator()
+        => RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
 }
 
 public sealed class TerminateEmployeeRequestValidator : AbstractValidator<TerminateEmployeeRequest>

@@ -2,7 +2,13 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import type { ApiProblem, EmployeeResponse } from '../../core/http/api.types';
+import type {
+  ApiProblem,
+  DepartmentNode,
+  EmployeeResponse,
+  PositionResponse,
+} from '../../core/http/api.types';
+import { OrganizationApi } from '../organization/organization.api';
 import { EmployeesApi } from './employees.api';
 import { EmployeesStore } from './employees.store';
 
@@ -33,12 +39,54 @@ import { EmployeesStore } from './employees.store';
           }
         </div>
 
-        <div class="field" [class.field--invalid]="!!erroDoCampo('positionName')">
-          <label for="positionName">Cargo</label>
-          <input id="positionName" formControlName="positionName" />
-          @if (erroDoCampo('positionName'); as msg) {
+        <div class="field" [class.field--invalid]="!!erroDoCampo('positionId')">
+          <label for="positionId">Cargo</label>
+
+          <!--
+            Lista e nao texto livre: o Marco 4 pergunta "quantos vigilantes cobrem este
+            turno?", e essa conta nao existe em cima de texto onde "Vigilante" e
+            "vigilante " sao dois cargos. Criar na hora fica logo ao lado para que a
+            escolha nao vire um beco quando o cargo ainda nao existe.
+          -->
+          <div class="cargo">
+            <select id="positionId" formControlName="positionId">
+              <option value="">Selecione…</option>
+              @for (cargo of cargos(); track cargo.id) {
+                <option [value]="cargo.id">{{ cargo.name }}</option>
+              }
+            </select>
+            <button type="button" class="btn btn--ghost" (click)="alternarNovoCargo()">
+              {{ criandoCargo() ? 'Cancelar' : 'Novo cargo' }}
+            </button>
+          </div>
+
+          @if (criandoCargo()) {
+            <div class="cargo">
+              <input
+                [value]="nomeDoNovoCargo()"
+                (input)="nomeDoNovoCargo.set($any($event.target).value)"
+                placeholder="Ex.: Vigilante noturno"
+                aria-label="Nome do novo cargo"
+              />
+              <button type="button" class="btn btn--primary" (click)="salvarNovoCargo()">
+                Criar e usar
+              </button>
+            </div>
+          }
+
+          @if (erroDoCampo('positionId'); as msg) {
             <span class="field__error">{{ msg }}</span>
           }
+        </div>
+
+        <div class="field">
+          <label for="departmentId">Setor <span class="muted">(opcional)</span></label>
+          <select id="departmentId" formControlName="departmentId">
+            <option value="">Sem setor</option>
+            @for (setor of setores(); track setor.id) {
+              <option [value]="setor.id">{{ '— '.repeat(setor.depth) }}{{ setor.name }}</option>
+            }
+          </select>
         </div>
 
         @if (!id()) {
@@ -89,20 +137,31 @@ import { EmployeesStore } from './employees.store';
     .linha { display: grid; gap: var(--space-4); grid-template-columns: 1fr 1fr; }
     .acoes { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
     .eco { font-size: 13px; }
+    .cargo { display: flex; gap: var(--space-2); }
+    .cargo select, .cargo input { flex: 1 1 auto; min-width: 0; }
+    .cargo .btn { flex: 0 0 auto; white-space: nowrap; }
     @media (max-width: 640px) { .linha { grid-template-columns: 1fr; } }
   `,
 })
 export class EmployeeFormPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(EmployeesApi);
+  private readonly organizacao = inject(OrganizationApi);
   private readonly store = inject(EmployeesStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   readonly id = signal<string | null>(null);
+
+  /** Preservado na edicao: o gestor e definido em outra tela, e o PUT nao pode zera-lo. */
+  private readonly managerId = signal<string | null>(null);
   private readonly admissao = signal(new Date().toISOString().slice(0, 10));
   readonly salvando = signal(false);
   readonly erro = signal<ApiProblem | null>(null);
+  readonly cargos = signal<PositionResponse[]>([]);
+  readonly setores = signal<DepartmentNode[]>([]);
+  readonly criandoCargo = signal(false);
+  readonly nomeDoNovoCargo = signal('');
 
   /** Data que o formulario realmente vai enviar, escrita por extenso em pt-BR. */
   readonly dataInterpretada = computed(() => {
@@ -118,7 +177,8 @@ export class EmployeeFormPage implements OnInit {
 
   readonly form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required]],
-    positionName: ['', [Validators.required]],
+    positionId: ['', [Validators.required]],
+    departmentId: [''],
     hiredOn: [new Date().toISOString().slice(0, 10), [Validators.required]],
     code: [''],
   });
@@ -131,11 +191,48 @@ export class EmployeeFormPage implements OnInit {
   }
 
   ngOnInit(): void {
+    void this.carregarOpcoes();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
 
     this.id.set(id);
     void this.carregar(id);
+  }
+
+  alternarNovoCargo(): void {
+    this.criandoCargo.update((aberto) => !aberto);
+    this.nomeDoNovoCargo.set('');
+  }
+
+  /** Cria o cargo e ja o deixa selecionado — senao a pessoa cria e tem que procurar na lista. */
+  async salvarNovoCargo(): Promise<void> {
+    const nome = this.nomeDoNovoCargo().trim();
+    if (nome.length < 2) return;
+
+    try {
+      const criado = await this.organizacao.createPosition({ name: nome });
+      this.cargos.update((atuais) => [...atuais, criado].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')));
+      this.form.controls.positionId.setValue(criado.id);
+      this.criandoCargo.set(false);
+      this.nomeDoNovoCargo.set('');
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    }
+  }
+
+  private async carregarOpcoes(): Promise<void> {
+    try {
+      const [cargos, setores] = await Promise.all([
+        this.organizacao.listPositions(),
+        this.organizacao.listDepartments(),
+      ]);
+
+      this.cargos.set(cargos);
+      this.setores.set(setores);
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    }
   }
 
   erroDoCampo(campo: string): string | null {
@@ -160,13 +257,26 @@ export class EmployeeFormPage implements OnInit {
     this.erro.set(null);
 
     try {
-      const { fullName, positionName, hiredOn, code } = this.form.getRawValue();
+      const { fullName, positionId, departmentId, hiredOn, code } = this.form.getRawValue();
       const id = this.id();
+      const setor = departmentId || null;
 
       if (id) {
-        await this.api.update(id, { fullName, positionName });
+        await this.api.update(id, {
+          fullName,
+          positionId,
+          departmentId: setor,
+          managerId: this.managerId(),
+        });
       } else {
-        await this.api.create({ fullName, positionName, hiredOn, code: code.trim() || null });
+        await this.api.create({
+          fullName,
+          positionId,
+          hiredOn,
+          code: code.trim() || null,
+          departmentId: setor,
+          managerId: null,
+        });
       }
 
       await this.store.load();
@@ -181,9 +291,11 @@ export class EmployeeFormPage implements OnInit {
   private async carregar(id: string): Promise<void> {
     try {
       const pessoa: EmployeeResponse = await this.api.get(id);
+      this.managerId.set(pessoa.managerId);
       this.form.patchValue({
         fullName: pessoa.fullName,
-        positionName: pessoa.positionName,
+        positionId: pessoa.positionId,
+        departmentId: pessoa.departmentId ?? '',
         hiredOn: pessoa.hiredOn,
         code: pessoa.code ?? '',
       });

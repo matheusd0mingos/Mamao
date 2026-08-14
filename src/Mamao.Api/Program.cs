@@ -55,7 +55,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddSchemaTransformer<StronglyTypedIdSchemaTransformer>());
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<Mamao.Identity.Persistence.MamaoIdentityDbContext>(
         name: "postgres", tags: [ServiceDefaultsExtensions.ReadyTag])
@@ -97,6 +97,7 @@ app.UseAuthorization();
 app.MapDefaultEndpoints();
 app.MapAuthEndpoints();
 app.MapPeopleEndpoints();
+app.MapOrganizationEndpoints();
 
 // Geracao do documento OpenAPI sem subir servidor nem tocar no banco. Usado pelo CI
 // para gerar o cliente TypeScript. Ver docs/adr/0009-cliente-gerado-do-openapi.md.

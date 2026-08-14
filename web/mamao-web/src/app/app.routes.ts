@@ -47,6 +47,12 @@ export const routes: Routes = [
           import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),
       },
       {
+        path: 'estrutura',
+        canMatch: [permissionGuard('people.read')],
+        loadComponent: () =>
+          import('./features/organization/organization.page').then((m) => m.OrganizationPage),
+      },
+      {
         // Antes de 'pessoas/:id': senao "importar" seria lido como um id de funcionario.
         path: 'pessoas/importar',
         canMatch: [permissionGuard('people.write')],

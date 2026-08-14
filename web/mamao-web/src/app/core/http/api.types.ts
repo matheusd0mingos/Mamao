@@ -21,6 +21,12 @@ export type UpdateEmployeeRequest = Schemas['UpdateEmployeeRequest'];
 export type TerminateEmployeeRequest = Schemas['TerminateEmployeeRequest'];
 export type PagedEmployees = Schemas['PagedResultOfEmployeeListItem'];
 
+export type DepartmentNode = Schemas['DepartmentNode'];
+export type CreateDepartmentRequest = Schemas['CreateDepartmentRequest'];
+export type UpdateDepartmentRequest = Schemas['UpdateDepartmentRequest'];
+export type PositionResponse = Schemas['PositionResponse'];
+export type CreatePositionRequest = Schemas['CreatePositionRequest'];
+
 export type EmployeeImportFormat = Schemas['EmployeeImportFormat'];
 export type EmployeeImportPreview = Schemas['EmployeeImportPreview'];
 export type EmployeeImportColumn = Schemas['EmployeeImportColumn'];

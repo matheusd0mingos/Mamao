@@ -1,4 +1,5 @@
 using Mamao.People.Domain.Employees;
+using Mamao.People.Domain.Organization;
 using Mamao.SharedKernel.Messaging;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,8 @@ namespace Mamao.People.Application;
 public interface IPeopleDbContext
 {
     DbSet<Employee> Employees { get; }
+    DbSet<Department> Departments { get; }
+    DbSet<Position> Positions { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
 

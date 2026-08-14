@@ -1,3 +1,4 @@
+using Mamao.SharedKernel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -9,7 +10,7 @@ namespace Mamao.People.Contracts;
 /// Serializa como string simples no JSON, nao como objeto.
 /// </summary>
 [JsonConverter(typeof(EmployeeIdJsonConverter))]
-public readonly record struct EmployeeId(Guid Value)
+public readonly record struct EmployeeId(Guid Value) : IStronglyTypedId
 {
     public static EmployeeId New() => new(Guid.CreateVersion7());
     public override string ToString() => Value.ToString();

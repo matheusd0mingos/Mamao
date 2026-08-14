@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Mamao.SharedKernel.Tenancy;
 
@@ -31,6 +32,20 @@ public abstract class TenantDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         ApplyTenancyConventions(modelBuilder);
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        // O EF cria, por convencao, um indice de coluna unica para cada chave estrangeira.
+        // Num banco multi-tenant esse indice e pior que inutil: toda consulta filtra por
+        // tenant_id primeiro, entao o Postgres prefere o indice composto — e o de coluna
+        // unica fica so custando escrita e espaco. Pior, ele burla a regra "todo indice
+        // comeca por tenant_id", que existe para o banco nao varrer dados de todos os
+        // clientes. Cada FK que precisa de indice ganha um explicito, com tenant_id na
+        // frente. Ver docs/adr/0003-multi-tenancy.md.
+        configurationBuilder.Conventions.Remove(typeof(ForeignKeyIndexConvention));
     }
 
     private void ApplyTenancyConventions(ModelBuilder modelBuilder)

@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { ApiProblem, EmployeeListItem } from '../../core/http/api.types';
+import type { ApiProblem, DepartmentNode, EmployeeListItem } from '../../core/http/api.types';
+import { OrganizationApi } from '../organization/organization.api';
 import { EmployeesApi } from './employees.api';
 
 /**
@@ -9,6 +10,7 @@ import { EmployeesApi } from './employees.api';
 @Injectable({ providedIn: 'root' })
 export class EmployeesStore {
   private readonly api = inject(EmployeesApi);
+  private readonly organizacao = inject(OrganizationApi);
 
   readonly items = signal<EmployeeListItem[]>([]);
   readonly total = signal(0);
@@ -16,6 +18,13 @@ export class EmployeesStore {
   readonly pageSize = signal(25);
   readonly search = signal('');
   readonly includeInactive = signal(false);
+  readonly departmentId = signal<string | null>(null);
+
+  /**
+   * Setores ficam aqui e nao na pagina porque o filtro precisa deles antes da primeira
+   * pintura. Carregam uma vez: e um cadastro de dezenas de linhas que quase nunca muda.
+   */
+  readonly departments = signal<DepartmentNode[]>([]);
   readonly loading = signal(false);
   readonly error = signal<ApiProblem | null>(null);
 
@@ -32,6 +41,7 @@ export class EmployeesStore {
         this.includeInactive(),
         this.page(),
         this.pageSize(),
+        this.departmentId(),
       );
 
       this.items.set(result.items ?? []);
@@ -40,6 +50,21 @@ export class EmployeesStore {
       this.error.set(problem as ApiProblem);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async setDepartment(id: string | null): Promise<void> {
+    this.departmentId.set(id);
+    this.page.set(1);
+    await this.load();
+  }
+
+  /** Chamado uma vez pela tela; falha aqui nao pode derrubar a listagem. */
+  async loadDepartments(): Promise<void> {
+    try {
+      this.departments.set(await this.organizacao.listDepartments());
+    } catch {
+      this.departments.set([]);
     }
   }
 
