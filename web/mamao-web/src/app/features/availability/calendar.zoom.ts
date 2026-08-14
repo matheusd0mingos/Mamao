@@ -11,6 +11,13 @@ export type Zoom = 'mes' | 'trimestre' | 'semestre' | 'ano';
 export interface Balde {
   /** Rótulo da coluna: "12", "S3", "mar". */
   readonly rotulo: string;
+
+  /**
+   * Linha de cima do cabeçalho. No mês é o dia da semana — sem ele, "17" obriga a contar
+   * nos dedos para saber se cai numa quarta, que é a primeira coisa que se pergunta ao
+   * marcar folga. Vazio quando a coluna não é um dia.
+   */
+  readonly sub: string;
   readonly inicio: Date;
   readonly fim: Date;
   /** Um dia só — é quando a célula mostra a letra do motivo em vez da contagem. */
@@ -26,6 +33,14 @@ export const ZOOMS: ReadonlyArray<{ valor: Zoom; rotulo: string }> = [
 ];
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/**
+ * Uma letra por dia da semana, como em qualquer calendário brasileiro. Ambíguo lido
+ * isolado (S serve para segunda, sexta e sábado), e mesmo assim é o certo: numa coluna de
+ * 24px não cabe mais, e ninguém lê a letra sozinha — lê a posição na semana, com o fim de
+ * semana sombreado ao lado.
+ */
+const DIAS_DA_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 /** Início do período que contém a data, na escala pedida. */
 export function inicioDoPeriodo(d: Date, zoom: Zoom): Date {
@@ -85,6 +100,7 @@ export function baldes(inicio: Date, zoom: Zoom): Balde[] {
       const semana = dia.getDay();
       return {
         rotulo: String(i + 1),
+        sub: DIAS_DA_SEMANA[semana],
         inicio: dia,
         fim: dia,
         unico: true,
@@ -96,6 +112,7 @@ export function baldes(inicio: Date, zoom: Zoom): Balde[] {
   if (zoom === 'ano') {
     return Array.from({ length: 12 }, (_, i) => ({
       rotulo: MESES[i],
+      sub: '',
       inicio: new Date(inicio.getFullYear(), i, 1),
       fim: new Date(inicio.getFullYear(), i + 1, 0),
       unico: false,
@@ -115,7 +132,9 @@ export function baldes(inicio: Date, zoom: Zoom): Balde[] {
     fimDaSemana.setDate(fimDaSemana.getDate() + 6);
 
     lista.push({
+      // Semana identificada pela segunda-feira: "17/8" e a semana que comeca ali.
       rotulo: `${cursor.getDate()}/${cursor.getMonth() + 1}`,
+      sub: 'seg',
       inicio: new Date(cursor),
       fim: fimDaSemana,
       unico: false,

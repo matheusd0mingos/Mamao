@@ -154,7 +154,12 @@ interface Linha {
               <tr>
                 <th class="pessoa">Pessoa</th>
                 @for (coluna of colunas(); track coluna.rotulo) {
-                  <th [class.fds]="coluna.fimDeSemana">{{ coluna.rotulo }}</th>
+                  <th [class.fds]="coluna.fimDeSemana">
+                    @if (coluna.sub) {
+                      <span class="semana">{{ coluna.sub }}</span>
+                    }
+                    {{ coluna.rotulo }}
+                  </th>
                 }
               </tr>
             </thead>
@@ -231,6 +236,7 @@ interface Linha {
     .grade { border-collapse: collapse; font-size: 12px; width: 100%; }
     .grade th, .grade td { border: 1px solid var(--border); padding: 3px; text-align: center; min-width: 24px; }
     .grade th { color: var(--text-secondary); font-weight: 500; }
+    .semana { display: block; font-size: 10px; letter-spacing: .04em; opacity: .7; }
     .grade .pessoa { min-width: 150px; text-align: left; white-space: nowrap; font-size: 13px; padding: 4px 8px; }
     .grade .fds { background: var(--surface-sunken); }
     .grade tfoot td { color: var(--text-secondary); font-weight: 600; }
