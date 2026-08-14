@@ -193,6 +193,8 @@ Escopo reduzido de propósito: neste segmento o dia gira em torno do turno.
 - [ ] Checklist de segurança completo ([segurança](arquitetura/multi-tenancy-e-seguranca.md#6-checklist-de-segurança-antes-do-primeiro-cliente))
 - [ ] Cobrança (assinatura, trial, limite de funcionários)
 - [ ] Política de privacidade, termos de uso, minuta de DPA
+- [ ] **Inventário de dado pessoal** conferido contra o schema, e exclusão de conta
+      testada ([inventário](arquitetura/multi-tenancy-e-seguranca.md#inventario))
 - [ ] Landing page em `mamao.tech` com preço e cadastro self-service
 - [ ] Rotina de suporte
 - [ ] Runbook: restaurar backup, subir versão, rollback, investigar erro de cliente

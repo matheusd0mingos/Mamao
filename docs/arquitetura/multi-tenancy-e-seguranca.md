@@ -195,6 +195,38 @@ Para acesso a **um** recurso, use autorização baseada em recurso do ASP.NET Co
 (`IAuthorizationHandler<Requirement, Document>`), que consegue perguntar "este
 documento é de alguém da minha equipe?".
 
+### <a name="inventario"></a>Inventário de dado pessoal
+
+A LGPD exige registro das operações de tratamento (art. 37), e a rotina de exclusão do
+checklist abaixo é impossível de escrever sem saber **o que** existe. Este inventário é
+mantido **junto com o código**, não montado no Marco 8 por arqueologia:
+
+> **Regra:** todo campo novo que identifique uma pessoa entra nesta tabela **no mesmo
+> commit** que o cria. É a única forma de ela não ficar desatualizada — e uma tabela
+> desatualizada é pior que nenhuma, porque dá falsa segurança.
+
+| Campo | Onde | Natureza | Na exclusão da conta |
+|---|---|---|---|
+| Nome completo | `people.employees` | Pessoal | Apagado |
+| Matrícula | `people.employees` | Pessoal (identificador interno) | Apagado |
+| **E-mail** | `people.employees` | Pessoal · **é chave de contato e de convite** | Apagado |
+| Cargo, setor, gestor | `people.employees` | Pessoal (dado funcional) | Apagado |
+| Admissão, desligamento | `people.employees` | Pessoal (dado funcional) | Apagado |
+| E-mail e nome do usuário | `identity.users` | Pessoal | Ver nota sobre `User` global |
+| *(previstos)* CPF, RG, foto | `people.employees` | Pessoal | Apagado |
+| *(previstos)* ASO, atestado, licença | `documents` | **Sensível — saúde** | Apagado com o prefixo do tenant ([ADR-0010](../adr/0010-armazenamento-de-arquivos.md)) |
+
+**Nota sobre `User` global:** a mesma pessoa pode ter `Membership` em várias empresas
+([ADR-0006](../adr/0006-identidade.md)). Excluir um tenant apaga os vínculos daquele
+tenant, **não** o `User` — que ainda pertence às outras. Apagar o `User` só é correto
+quando o último vínculo cai. Errar isso derruba o acesso de alguém a uma empresa que
+não pediu exclusão nenhuma.
+
+**Nota sobre `Employee.Email`:** ele é opcional e permanece opcional, mas quando existe
+é o endereço por onde saem avisos e, na V1.5, o convite de login. Numa exclusão parcial
+("remova meus dados mas mantenha o histórico"), este é o primeiro campo a ir — é o único
+que permite **contatar** a pessoa.
+
 ### Dados sensíveis
 
 Documento de saúde (ASO, atestado, licença médica) merece tratamento além do papel:
@@ -251,6 +283,10 @@ gera retroativamente.
 - [ ] Backup criptografado, **restore testado de verdade**
 - [ ] CSP, HSTS e cabeçalhos de segurança no Caddy
 - [ ] Dependabot/`dotnet list package --vulnerable` e `npm audit` no CI
-- [ ] Política de retenção e rotina de exclusão de dados (LGPD)
+- [ ] [Inventário de dado pessoal](#inventario) conferido contra o schema real — cada
+      coluna do banco que identifica alguém está na tabela, e vice-versa
+- [ ] Política de retenção e rotina de exclusão de dados (LGPD), **derivada do inventário**
+- [ ] Exclusão de conta testada de verdade, incluindo o caso do `User` com vínculo em
+      outra empresa
 - [ ] Registro do papel de operador/controlador e minuta de DPA para o cliente
   (ver [riscos](../riscos-e-pontos-de-atencao.md))
