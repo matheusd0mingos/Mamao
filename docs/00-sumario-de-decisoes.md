@@ -72,6 +72,9 @@ Legenda de status: **Firme** (mudar custa caro) · **Provisória** (revisitar na
 | F5 | Um único componente **`TimeGrid`** próprio (CSS Grid + CDK) serve a grade de escala e a timeline de férias | Firme | Mesma estrutura (linhas = pessoas, colunas = dias); construir duas vezes seria erro. Nenhuma biblioteca de scheduler entrega a linha de cobertura. [Detalhe](produto/ux-telas-criticas.md) |
 | F6 | Strings de UI atrás de chave de i18n desde o commit 1, mas só pt-BR publicado | Firme | Custo marginal hoje, retrofit caro depois. [ADR-0012](adr/0012-idioma.md) |
 | F7 | Código, tabelas e API em inglês; produto em pt-BR | Firme | [ADR-0012](adr/0012-idioma.md) |
+| F8 | **Enum trafega como texto no JSON**, nunca como número (`JsonStringEnumConverter` global) | Firme | `status: 2` obriga o frontend a manter tabela de números e faz reordenar o enum virar quebra silenciosa. Texto se explica sozinho no log e no DevTools. |
+| F9 | **`InvariantGlobalization` desligado.** O produto é pt-BR e precisa de ICU | Firme | Esteve ligado e custou caro: `string.Normalize` virou no-op e toda planilha com a coluna "Admissão" era recusada sem erro visível. As imagens Debian do .NET já trazem libicu — a economia era zero. |
+| F10 | Leitura de arquivo do cliente **não depende de configuração de runtime** (dobra de acento por tabela explícita, formatos de data fechados) | Firme | O parser é a porta de entrada do arquivo sujo; se ele se comportar diferente em dev e em produção, o bug aparece no cliente. |
 
 ## Infraestrutura
 

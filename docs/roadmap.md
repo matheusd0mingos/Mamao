@@ -48,7 +48,9 @@ não no mês 4, quando vira um projeto próprio.
 - [ ] Setores em árvore, equipes, cargos, gestor
 - [ ] `EmploymentContract`: tipo de jornada (12×36, 5×2, 6×1, ADM), carga semanal,
       registro de acordo de compensação
-- [ ] **Importação CSV/XLSX** com mapeamento de coluna, pré-visualização e erro por linha
+- [x] **Importação CSV** com mapeamento de coluna, pré-visualização e erro por linha
+      (XLSX fica para depois: exige biblioteca nova e o Excel exporta CSV em dois cliques —
+      a tela ensina como)
 - [ ] Perfil do funcionário
 - [ ] Papéis e permissões ([ADR-0007](adr/0007-autorizacao.md))
 - [ ] Auditoria gravando

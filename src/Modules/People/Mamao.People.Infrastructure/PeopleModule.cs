@@ -1,6 +1,7 @@
 using FluentValidation;
 using Mamao.People.Application;
 using Mamao.People.Application.Employees;
+using Mamao.People.Application.Employees.Import;
 using Mamao.People.Contracts;
 using Mamao.People.Infrastructure.Persistence;
 using Mamao.SharedKernel.Messaging;
@@ -41,6 +42,7 @@ public static class PeopleModule
         services.AddScoped<IPeopleOutbox>(sp => new PeopleOutbox(sp.GetRequiredService<PeopleDbContext>()));
         services.AddScoped<IEmployeeDirectory, EmployeeDirectory>();
         services.AddScoped<EmployeeService>();
+        services.AddScoped<EmployeeImportService>();
 
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestValidator>(includeInternalTypes: true);
 

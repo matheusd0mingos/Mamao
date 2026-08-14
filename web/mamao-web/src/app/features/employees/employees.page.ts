@@ -17,9 +17,10 @@ import { EmployeesStore } from './employees.store';
         <p class="muted">{{ resumo() }}</p>
       </div>
 
-      <button *mamaoHasPermission="'people.write'" class="btn btn--primary" routerLink="/pessoas/nova">
-        Cadastrar funcionário
-      </button>
+      <div *mamaoHasPermission="'people.write'" class="head__acoes">
+        <a class="btn btn--ghost" routerLink="/pessoas/importar">Importar planilha</a>
+        <a class="btn btn--primary" routerLink="/pessoas/nova">Cadastrar funcionário</a>
+      </div>
     </header>
 
     <div class="filtros">
@@ -44,10 +45,15 @@ import { EmployeesStore } from './employees.store';
             <p>Nenhum funcionário encontrado para "{{ store.search() }}".</p>
           } @else {
             <p><strong>Sua equipe ainda não está aqui.</strong></p>
-            <p>Cadastre a primeira pessoa para o Mamão começar a fazer sentido.</p>
-            <button *mamaoHasPermission="'people.write'" class="btn btn--primary" routerLink="/pessoas/nova">
-              Cadastrar funcionário
-            </button>
+            <!--
+              Importar vem primeiro de proposito: quem esta avaliando o Mamao ja tem a
+              equipe numa planilha e nao vai digitar 40 pessoas para experimentar.
+            -->
+            <p>Traga a planilha que você já usa — leva menos de um minuto.</p>
+            <div *mamaoHasPermission="'people.write'" class="empty-state__acoes">
+              <a class="btn btn--primary" routerLink="/pessoas/importar">Importar planilha</a>
+              <a class="btn btn--ghost" routerLink="/pessoas/nova">Cadastrar uma pessoa</a>
+            </div>
           }
         </div>
       } @else {
@@ -115,7 +121,11 @@ import { EmployeesStore } from './employees.store';
     }
     .inativos { align-items: center; color: var(--text-secondary); display: flex; font-size: 14px; gap: var(--space-2); white-space: nowrap; }
     .paginacao { align-items: center; display: flex; gap: var(--space-4); justify-content: center; padding: var(--space-4); }
-    .empty-state .btn { margin-top: var(--space-4); }
+    .head__acoes { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+    .empty-state__acoes {
+      display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: center;
+      margin-top: var(--space-4);
+    }
   `,
 })
 export class EmployeesPage implements OnInit {

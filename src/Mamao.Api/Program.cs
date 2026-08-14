@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.DataProtection;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Mamao.Api;
 using Mamao.Identity;
@@ -44,6 +45,13 @@ builder.Services
         connectionString,
         runPublisher: false, // publicacao e do Worker: job longo nao compete com request HTTP
         typeof(EmployeeHired).Assembly);
+
+// Enum vai como TEXTO no JSON, nunca como numero. Um `status: 2` no contrato obriga o
+// frontend a manter uma tabela de numeros e transforma reordenar o enum em quebra
+// silenciosa; `status: "DuplicadaNoArquivo"` se explica sozinho no log e no DevTools.
+// Vale para todo enum que vier depois (tipo de ausencia, turno, situacao de documento).
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();

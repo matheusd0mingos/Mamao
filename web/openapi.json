@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:43715"
+      "url": "http://127.0.0.1:35055"
     }
   ],
   "paths": {
@@ -433,6 +433,135 @@
           }
         }
       }
+    },
+    "/api/v1/employees/import/format": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "getImportFormat",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeImportFormat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/employees/import/template": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "downloadImportTemplate",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/employees/import/preview": {
+      "post": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "previewEmployeeImport",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "arquivo"
+                ],
+                "type": "object",
+                "properties": {
+                  "arquivo": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeImportPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/employees/import": {
+      "post": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "importEmployees",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "arquivo"
+                ],
+                "type": "object",
+                "properties": {
+                  "arquivo": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -503,6 +632,186 @@
         }
       },
       "EmployeeId": {},
+      "EmployeeImportColumn": {
+        "required": [
+          "field",
+          "label",
+          "header",
+          "required",
+          "acceptedNames"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "header": {
+            "type": "string",
+            "nullable": true
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "acceptedNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "EmployeeImportFormat": {
+        "required": [
+          "columns",
+          "example",
+          "maxRows"
+        ],
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmployeeImportColumn"
+            }
+          },
+          "example": {
+            "type": "string"
+          },
+          "maxRows": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "EmployeeImportPreview": {
+        "required": [
+          "columns",
+          "rows",
+          "summary",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmployeeImportColumn"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmployeeImportRow"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/EmployeeImportSummary"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "EmployeeImportResult": {
+        "required": [
+          "imported",
+          "skipped"
+        ],
+        "type": "object",
+        "properties": {
+          "imported": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "skipped": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "EmployeeImportRow": {
+        "required": [
+          "lineNumber",
+          "code",
+          "fullName",
+          "positionName",
+          "hiredOn",
+          "status",
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "lineNumber": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "code": {
+            "type": "string",
+            "nullable": true
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "positionName": {
+            "type": "string"
+          },
+          "hiredOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/EmployeeImportRowStatus"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "EmployeeImportRowStatus": {
+        "enum": [
+          "Pronta",
+          "Invalida",
+          "DuplicadaNoArquivo",
+          "DuplicadaNoCadastro"
+        ]
+      },
+      "EmployeeImportSummary": {
+        "required": [
+          "total",
+          "ready",
+          "invalid",
+          "duplicates"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "ready": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "invalid": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "duplicates": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
       "EmployeeListItem": {
         "required": [
           "id",
@@ -589,6 +898,10 @@
             "type": "string"
           }
         }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
       },
       "LoginRequest": {
         "required": [

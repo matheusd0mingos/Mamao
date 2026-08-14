@@ -3,6 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type {
   CreateEmployeeRequest,
+  EmployeeImportFormat,
+  EmployeeImportPreview,
+  EmployeeImportResult,
   EmployeeResponse,
   PagedEmployees,
   TerminateEmployeeRequest,
@@ -49,4 +52,42 @@ export class EmployeesApi {
   terminate(id: string, request: TerminateEmployeeRequest): Promise<EmployeeResponse> {
     return firstValueFrom(this.http.post<EmployeeResponse>(`${this.base}/${id}/terminate`, request));
   }
+
+  /** O formato esperado vem do servidor: os nomes de coluna aceitos tem uma verdade so. */
+  importFormat(): Promise<EmployeeImportFormat> {
+    return firstValueFrom(this.http.get<EmployeeImportFormat>(`${this.base}/import/format`));
+  }
+
+  /**
+   * O modelo passa pelo HttpClient (e nao por um <a href>) porque o endpoint exige o
+   * bearer, que so o interceptor sabe anexar.
+   */
+  downloadTemplate(): Promise<Blob> {
+    return firstValueFrom(
+      this.http.get(`${this.base}/import/template`, { responseType: 'blob' }),
+    );
+  }
+
+  previewImport(arquivo: File): Promise<EmployeeImportPreview> {
+    return firstValueFrom(
+      this.http.post<EmployeeImportPreview>(`${this.base}/import/preview`, corpo(arquivo)),
+    );
+  }
+
+  import(arquivo: File): Promise<EmployeeImportResult> {
+    return firstValueFrom(
+      this.http.post<EmployeeImportResult>(`${this.base}/import`, corpo(arquivo)),
+    );
+  }
+}
+
+/**
+ * FormData de proposito: o arquivo sobe como multipart, sem base64. O nome do campo tem
+ * que ser "arquivo" — e o nome do parametro IFormFile no endpoint.
+ * Nao definimos Content-Type: o navegador precisa gerar o boundary.
+ */
+function corpo(arquivo: File): FormData {
+  const dados = new FormData();
+  dados.append('arquivo', arquivo, arquivo.name);
+  return dados;
 }

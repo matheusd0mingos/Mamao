@@ -148,6 +148,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/import/format": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getImportFormat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/import/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["previewEmployeeImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["importEmployees"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -171,6 +235,54 @@ export interface components {
             code: string | null;
         };
         EmployeeId: unknown;
+        EmployeeImportColumn: {
+            field: string;
+            label: string;
+            header: string | null;
+            required: boolean;
+            acceptedNames: string[];
+        };
+        EmployeeImportFormat: {
+            columns: components["schemas"]["EmployeeImportColumn"][];
+            example: string;
+            /** Format: int32 */
+            maxRows: number;
+        };
+        EmployeeImportPreview: {
+            columns: components["schemas"]["EmployeeImportColumn"][];
+            rows: components["schemas"]["EmployeeImportRow"][];
+            summary: components["schemas"]["EmployeeImportSummary"];
+            warnings: string[];
+        };
+        EmployeeImportResult: {
+            /** Format: int32 */
+            imported: number;
+            /** Format: int32 */
+            skipped: number;
+        };
+        EmployeeImportRow: {
+            /** Format: int32 */
+            lineNumber: number;
+            code: string | null;
+            fullName: string;
+            positionName: string;
+            /** Format: date */
+            hiredOn: string | null;
+            status: components["schemas"]["EmployeeImportRowStatus"];
+            errors: string[];
+        };
+        /** @enum {unknown} */
+        EmployeeImportRowStatus: "Pronta" | "Invalida" | "DuplicadaNoArquivo" | "DuplicadaNoCadastro";
+        EmployeeImportSummary: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            ready: number;
+            /** Format: int32 */
+            invalid: number;
+            /** Format: int32 */
+            duplicates: number;
+        };
         EmployeeListItem: {
             id: components["schemas"]["EmployeeId"];
             code: string | null;
@@ -195,6 +307,8 @@ export interface components {
         ForgotPasswordRequest: {
             email: string;
         };
+        /** Format: binary */
+        IFormFile: string;
         LoginRequest: {
             email: string;
             password: string;
@@ -581,6 +695,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EmployeeResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getImportFormat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeImportFormat"];
+                };
+            };
+        };
+    };
+    downloadImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    previewEmployeeImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    arquivo: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeImportPreview"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    importEmployees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    arquivo: components["schemas"]["IFormFile"];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeImportResult"];
                 };
             };
             /** @description Bad Request */

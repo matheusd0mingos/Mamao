@@ -26,6 +26,13 @@
     <PackageVersion Include="MailKit" Version="4.17.0" />
   </ItemGroup>
 
+  <ItemGroup Label="Importacao">
+    <!-- CsvHelper faz o parsing de baixo nivel (aspas, delimitador dentro de campo).
+         O mapeamento de cabecalho e a coercao de valores sao nossos: e ali que mora a
+         tolerancia a arquivo sujo, que e o diferencial. Licenca MS-PL/Apache-2.0. -->
+    <PackageVersion Include="CsvHelper" Version="33.1.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Extensions">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />

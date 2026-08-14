@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Modules/People/Mamao.People.Domain/Mamao.People.Domain.csproj" />
+    <ProjectReference Include="../../src/Modules/People/Mamao.People.Application/Mamao.People.Application.csproj" />
   </ItemGroup>
 </Project>

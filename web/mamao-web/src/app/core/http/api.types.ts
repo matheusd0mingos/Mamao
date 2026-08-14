@@ -21,6 +21,14 @@ export type UpdateEmployeeRequest = Schemas['UpdateEmployeeRequest'];
 export type TerminateEmployeeRequest = Schemas['TerminateEmployeeRequest'];
 export type PagedEmployees = Schemas['PagedResultOfEmployeeListItem'];
 
+export type EmployeeImportFormat = Schemas['EmployeeImportFormat'];
+export type EmployeeImportPreview = Schemas['EmployeeImportPreview'];
+export type EmployeeImportColumn = Schemas['EmployeeImportColumn'];
+export type EmployeeImportRow = Schemas['EmployeeImportRow'];
+export type EmployeeImportRowStatus = Schemas['EmployeeImportRowStatus'];
+export type EmployeeImportSummary = Schemas['EmployeeImportSummary'];
+export type EmployeeImportResult = Schemas['EmployeeImportResult'];
+
 /**
  * Forma unica de erro vinda do backend. O `code` e estavel e serve para o frontend
  * decidir; `fieldErrors` alimenta o formulario direto, sem codigo por tela.

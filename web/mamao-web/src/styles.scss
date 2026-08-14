@@ -135,10 +135,14 @@ a {
   gap: var(--space-2);
   justify-content: center;
   padding: var(--space-2) var(--space-4);
+
+  /* Um botao que navega e um <a>, e ai herdaria o sublinhado de link. */
+  text-decoration: none;
   transition: background 120ms ease, border-color 120ms ease;
 }
 
-.btn:disabled {
+.btn:disabled,
+.btn[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -212,6 +216,16 @@ a {
   color: var(--status-success-fg);
 }
 
+.badge--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
+}
+
+.badge--danger {
+  background: var(--status-danger-bg);
+  color: var(--status-danger-fg);
+}
+
 .badge--neutral {
   background: var(--status-neutral-bg);
   color: var(--status-neutral-fg);
@@ -226,6 +240,12 @@ a {
 .alert--danger {
   background: var(--status-danger-bg);
   color: var(--status-danger-fg);
+}
+
+/* Atencao, nao falha: o arquivo foi lido, mas tem algo que o usuario precisa conferir. */
+.alert--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-fg);
 }
 
 /* Tabela larga rola dentro do proprio container; o body nunca rola na horizontal. */

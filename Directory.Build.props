@@ -1,4 +1,11 @@
 <Project>
+  <!--
+    NAO ligue InvariantGlobalization aqui. Ja esteve ligado e custou caro: sem ICU,
+    string.Normalize vira no-op silencioso e "Admissão" deixa de casar com "admissao",
+    ou seja, toda planilha brasileira era recusada sem erro visivel. Alem disso
+    new CultureInfo("pt-BR") passa a lancar. Este e um produto pt-BR: precisa de ICU.
+    As imagens Debian do .NET ja trazem libicu — a economia seria zero e o risco, real.
+  -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -7,7 +14,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <InvariantGlobalization>true</InvariantGlobalization>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 

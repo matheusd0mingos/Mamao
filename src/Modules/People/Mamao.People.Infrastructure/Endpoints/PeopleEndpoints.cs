@@ -1,5 +1,6 @@
 using FluentValidation;
 using Mamao.People.Application.Employees;
+using Mamao.People.Application.Employees.Import;
 using Mamao.People.Contracts;
 using Mamao.SharedKernel.Authorization;
 using Mamao.SharedKernel.Results;
@@ -112,6 +113,104 @@ public static class PeopleEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .RequireAuthorization(Permissions.PeopleWrite);
 
+        MapImportEndpoints(group);
+
         return app;
+    }
+
+    /// <summary>
+    /// Importacao em dois passos: /import/preview mostra o que vai acontecer, /import grava.
+    /// Ver docs/produto/mvp-e-posicionamento.md#p3.
+    /// </summary>
+    private static void MapImportEndpoints(RouteGroupBuilder group)
+    {
+        // 5 MB cobre com folga uma planilha de milhares de linhas. O limite existe para
+        // que um arquivo errado (um PDF, um ZIP) pare aqui e nao no parser.
+        const long TamanhoMaximo = 5 * 1024 * 1024;
+
+        group.MapGet("/import/format", () => TypedResults.Ok(EmployeeCsvParser.DescribeFormat()))
+            .WithName("getImportFormat")
+            .Produces<EmployeeImportFormat>()
+            .RequireAuthorization(Permissions.PeopleRead);
+
+        group.MapGet("/import/template", () =>
+        {
+            // Ponto e virgula e BOM: e assim que o Excel em portugues abre sem estragar
+            // acento, e o cliente vai abrir no Excel.
+            return TypedResults.File(
+                EmployeeCsvParser.BuildTemplate(),
+                contentType: "text/csv; charset=utf-8",
+                fileDownloadName: "modelo-funcionarios-mamao.csv");
+        })
+        .WithName("downloadImportTemplate")
+        .RequireAuthorization(Permissions.PeopleRead);
+
+        group.MapPost("/import/preview", async Task<IResult> (
+            IFormFile arquivo,
+            EmployeeImportService service,
+            CancellationToken ct) =>
+        {
+            var invalido = ValidarArquivo(arquivo, TamanhoMaximo);
+            if (invalido is not null)
+                return invalido;
+
+            await using var conteudo = arquivo.OpenReadStream();
+            return TypedResults.Ok(await service.PreviewAsync(conteudo, ct));
+        })
+        .WithName("previewEmployeeImport")
+        .Produces<EmployeeImportPreview>()
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .DisableAntiforgery()
+        .RequireAuthorization(Permissions.PeopleWrite);
+
+        group.MapPost("/import", async Task<IResult> (
+            IFormFile arquivo,
+            EmployeeImportService service,
+            CancellationToken ct) =>
+        {
+            var invalido = ValidarArquivo(arquivo, TamanhoMaximo);
+            if (invalido is not null)
+                return invalido;
+
+            await using var conteudo = arquivo.OpenReadStream();
+            return TypedResults.Ok(await service.ImportAsync(conteudo, ct));
+        })
+        .WithName("importEmployees")
+        .Produces<EmployeeImportResult>()
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .DisableAntiforgery()
+        .RequireAuthorization(Permissions.PeopleWrite);
+    }
+
+    private static IResult? ValidarArquivo(IFormFile arquivo, long tamanhoMaximo)
+    {
+        if (arquivo.Length == 0)
+            return HttpResultsExtensions.Problem(new Error("import.empty_file", "O arquivo está vazio."));
+
+        if (arquivo.Length > tamanhoMaximo)
+        {
+            return HttpResultsExtensions.Problem(new Error(
+                "import.file_too_large",
+                $"Arquivo acima de {tamanhoMaximo / 1024 / 1024} MB. Divida a planilha e importe em partes."));
+        }
+
+        var extensao = Path.GetExtension(arquivo.FileName).ToLowerInvariant();
+
+        // XLSX ganha mensagem propria: mandar um .xlsx e o engano mais provavel, e
+        // "arquivo invalido" nao diria o que fazer.
+        if (extensao is ".xlsx" or ".xls")
+        {
+            return HttpResultsExtensions.Problem(new Error(
+                "import.excel_not_supported",
+                "Por enquanto aceitamos CSV. No Excel: Arquivo → Salvar como → CSV."));
+        }
+
+        if (extensao is not (".csv" or ".txt" or ""))
+        {
+            return HttpResultsExtensions.Problem(new Error(
+                "import.unsupported_format", $"Formato {extensao} não suportado. Envie um arquivo CSV."));
+        }
+
+        return null;
     }
 }
