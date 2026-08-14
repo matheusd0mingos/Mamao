@@ -16,21 +16,29 @@ meses de infraestrutura antes da primeira tela.
 
 O objetivo não é código bonito. É fechar o circuito inteiro com o mínimo dentro.
 
-- [ ] Solução .NET 10 com a estrutura de módulos ([visão geral](arquitetura/visao-geral.md))
-- [ ] `Mamao.AppHost` (Aspire) subindo Postgres + API + Worker + Angular
-- [ ] `Identity`: cadastro de empresa, primeiro usuário, login, JWT com `tenant_id`
+- [x] Solução .NET 10 com a estrutura de módulos ([visão geral](arquitetura/visao-geral.md))
+- [x] `Mamao.AppHost` (Aspire) subindo Postgres + API + Worker
+      (Angular fora: o hosting de Node ainda não acompanha esta versão do Aspire —
+      `npm start` com proxy resolve, ver [ADR-0011](adr/0011-aspire-e-deploy.md))
+- [x] `Identity`: cadastro de empresa, primeiro usuário, login, JWT com `tenant_id`
 - [x] `People`: `Employee` com 5 campos, CRUD, filtro de tenant, **RLS verificada**
-- [ ] Angular: shell, sidebar, login, lista e formulário de funcionário
-- [ ] OpenAPI → cliente TypeScript gerado
-- [ ] Outbox + `OutboxPublisher` publicando um evento de verdade (`EmployeeHired`)
-- [ ] CI: build, testes, imagem
+- [x] Angular: shell, sidebar, login, lista e formulário de funcionário
+- [x] OpenAPI → cliente TypeScript gerado (CI quebra se o contrato sair de dia)
+- [x] Outbox + `OutboxPublisher` publicando um evento de verdade (`EmployeeHired`)
+- [ ] CI: build ✅, testes ✅, **imagem ainda não** — não adianta publicar imagem antes de
+      existir servidor que a consuma; entra junto com o deploy
 - [ ] **Deploy no VPS**: Caddy + compose + `mamao.tech` + TLS (`deploy/deploy.sh` pronto, falta executar)
-- [ ] `/healthz`, `/healthz/ready`, OTel exportando
+- [x] `/healthz`, `/healthz/ready`, OTel exportando
 - [ ] **Backup diário + restore testado**
-- [ ] Teste de integração de vazamento cross-tenant
+- [x] Teste de integração de vazamento cross-tenant (roda no CI, com Postgres de verdade)
 
 **Pronto quando:** você cria uma empresa em produção, faz login, cadastra um
 funcionário, e o trace aparece no coletor.
+
+> **Situação:** o circuito inteiro está fechado e verificado **localmente** — empresa,
+> login, funcionário, RLS provada contra banco real, evento na outbox consumido pelo
+> Worker. Falta a palavra **produção**: os três itens abertos (imagem, deploy, backup)
+> dependem de um servidor existir, e é a única coisa que trava o marco.
 
 Este marco parece caro para o que entrega. Ele existe para que nenhum marco seguinte
 precise mexer em infraestrutura — e para que o primeiro deploy aconteça na semana 2,
@@ -52,7 +60,9 @@ não no mês 4, quando vira um projeto próprio.
       (XLSX fica para depois: exige biblioteca nova e o Excel exporta CSV em dois cliques —
       a tela ensina como)
 - [ ] Perfil do funcionário
-- [ ] Papéis e permissões ([ADR-0007](adr/0007-autorizacao.md))
+- [x] Papéis e permissões ([ADR-0007](adr/0007-autorizacao.md)) — antecipado no Marco 0:
+      `Owner`/`Hr`/`Manager`/`Employee`, policies geradas de `Permissions.All`.
+      Falta a **tela** de gerenciar quem tem qual papel
 - [ ] Auditoria gravando
 
 **Pronto quando:** o cadastro real de um piloto entra em menos de 15 minutos.
