@@ -10,6 +10,8 @@ public sealed record OccupancyResponse(
     OccupancyId Id,
     EmployeeId EmployeeId,
     string EmployeeName,
+    string? DepartmentName,
+    string? PositionName,
     OccupancyKind Kind,
     OccupancySource Source,
     DateOnly StartsOn,
@@ -102,8 +104,14 @@ public sealed class AvailabilityService(IPeopleDbContext dbContext, IAuditLog au
 
         return await consulta
             .OrderBy(o => o.StartsOn)
+            // Secao e funcao vem junto porque o calendario filtra por elas. Uma consulta a
+            // mais por linha seria N+1; uma chamada a mais da tela seria duas fontes de
+            // verdade para a mesma pergunta.
             .Join(dbContext.Employees, o => o.EmployeeId, e => e.Id, (o, e) => new OccupancyResponse(
-                o.Id, o.EmployeeId, e.FullName, o.Kind, o.Source,
+                o.Id, o.EmployeeId, e.FullName,
+                dbContext.Departments.Where(d => d.Id == e.DepartmentId).Select(d => d.Name).FirstOrDefault(),
+                dbContext.Positions.Where(c => c.Id == e.PositionId).Select(c => c.Name).FirstOrDefault(),
+                o.Kind, o.Source,
                 o.StartsOn, o.EndsOn, o.StartsAt, o.EndsAt, o.Note))
             .ToListAsync(ct);
     }
@@ -135,7 +143,8 @@ public sealed class AvailabilityService(IPeopleDbContext dbContext, IAuditLog au
         await dbContext.SaveChangesAsync(ct);
 
         return Result.Success(new OccupancyResponse(
-            ocupacao.Id, ocupacao.EmployeeId, funcionario.FullName, ocupacao.Kind, ocupacao.Source,
+            ocupacao.Id, ocupacao.EmployeeId, funcionario.FullName, null, null,
+            ocupacao.Kind, ocupacao.Source,
             ocupacao.StartsOn, ocupacao.EndsOn, ocupacao.StartsAt, ocupacao.EndsAt, ocupacao.Note));
     }
 

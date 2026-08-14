@@ -905,6 +905,8 @@ export interface components {
             id: components["schemas"]["OccupancyId"];
             employeeId: components["schemas"]["EmployeeId"];
             employeeName: string;
+            departmentName: string | null;
+            positionName: string | null;
             kind: components["schemas"]["OccupancyKind"];
             source: components["schemas"]["OccupancySource"];
             /** Format: date */

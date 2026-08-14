@@ -68,10 +68,56 @@ interface Linha {
         </span>
       </div>
 
+      <div class="filtros">
+        <label>
+          <span>Seção</span>
+          <select [(ngModel)]="secao" name="secao">
+            <option value="">Todas</option>
+            @for (s of secoes(); track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+        </label>
+
+        <label>
+          <span>Função</span>
+          <select [(ngModel)]="funcao" name="funcao">
+            <option value="">Todas</option>
+            @for (f of funcoes(); track f) { <option [value]="f">{{ f }}</option> }
+          </select>
+        </label>
+
+        <label>
+          <span>Motivo</span>
+          <select [(ngModel)]="tipo" name="tipo">
+            <option value="">Todos</option>
+            @for (t of tipos(); track t) { <option [value]="t">{{ MOTIVOS[t] }}</option> }
+          </select>
+        </label>
+
+        <label class="alternador">
+          <input type="checkbox" [(ngModel)]="soCoincidencias" name="soCoincidencias" />
+          <span>Só quem coincide com alguém</span>
+        </label>
+      </div>
+
+      @if (coincidencias().length > 0) {
+        <p class="aviso">
+          <strong>{{ coincidencias().length }}</strong>
+          {{ coincidencias().length === 1 ? 'dia com sobreposição' : 'dias com sobreposição' }}:
+          {{ coincidencias().join(', ') }}
+          @if (secao() === '') { <span class="muted"> — filtre por seção para ver o que realmente conflita.</span> }
+        </p>
+      }
+
       @if (carregando()) {
         <p class="empty-state">Carregando…</p>
       } @else if (linhas().length === 0) {
-        <p class="empty-state">Ninguém de folga, férias ou serviço neste mês.</p>
+        <p class="empty-state">
+          @if (blocos().length === 0) {
+            Ninguém de folga, férias ou serviço neste mês.
+          } @else {
+            Nenhuma ausência com esses filtros.
+          }
+        </p>
       } @else {
         <div class="rolagem">
           <table class="grade">
@@ -145,6 +191,12 @@ interface Linha {
 
     .marca { border-radius: 4px; display: inline-block; font-weight: 700; line-height: 18px; width: 18px; }
     .nota { font-size: 13px; margin-top: var(--space-3); }
+
+    .filtros { align-items: end; display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+    .filtros label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; min-width: 150px; }
+    .filtros .alternador { align-items: center; flex-direction: row; gap: 8px; min-width: 0; }
+
+    .aviso { background: #fdf1d8; border-radius: var(--radius-sm); color: #8a5a08; font-size: 14px; margin-bottom: var(--space-3); padding: var(--space-2) var(--space-3); }
   `,
 })
 export class CalendarPage implements OnInit {
@@ -157,9 +209,33 @@ export class CalendarPage implements OnInit {
     .map((tipo) => ({ tipo, sigla: SIGLAS[tipo], rotulo: MOTIVOS[tipo] }));
 
   private readonly referencia = signal(primeiroDiaDoMes(new Date()));
+
+  // Filtros como signal (e nao campo simples) porque tudo abaixo deriva deles: mudar a
+  // secao recalcula linhas, totais e coincidencias sem nenhuma chamada ao servidor.
+  protected readonly secao = signal('');
+  protected readonly funcao = signal('');
+  protected readonly tipo = signal('');
+  protected readonly soCoincidencias = signal(false);
   protected readonly blocos = signal<OccupancyResponse[]>([]);
   protected readonly carregando = signal(true);
   protected readonly erro = signal<ApiProblem | null>(null);
+
+  /** Opcoes tiradas do proprio mes: filtro que oferece o que nao existe so atrapalha. */
+  protected readonly secoes = computed(() => distintos(this.blocos().map((b) => b.departmentName)));
+  protected readonly funcoes = computed(() => distintos(this.blocos().map((b) => b.positionName)));
+  protected readonly tipos = computed(
+    () => distintos(this.blocos().map((b) => b.kind)) as OccupancyKind[],
+  );
+
+  /** O que sobra depois dos filtros. Tudo daqui para baixo enxerga so isto. */
+  private readonly filtrados = computed(() =>
+    this.blocos().filter(
+      (b) =>
+        (this.secao() === '' || b.departmentName === this.secao()) &&
+        (this.funcao() === '' || b.positionName === this.funcao()) &&
+        (this.tipo() === '' || b.kind === this.tipo()),
+    ),
+  );
 
   protected readonly dias = computed(() => {
     const total = diasNoMes(this.referencia());
@@ -181,7 +257,7 @@ export class CalendarPage implements OnInit {
     const mes = this.referencia().getMonth();
     const porPessoa = new Map<string, Linha>();
 
-    for (const bloco of this.blocos()) {
+    for (const bloco of this.filtrados()) {
       let linha = porPessoa.get(bloco.employeeId);
       if (!linha) {
         linha = { employeeId: bloco.employeeId, nome: bloco.employeeName, dias: Array(total).fill(null) };
@@ -199,8 +275,23 @@ export class CalendarPage implements OnInit {
       }
     }
 
-    return [...porPessoa.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    let linhas = [...porPessoa.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    // "So quem coincide": esconde quem esta fora sozinho. E o corte que responde
+    // "as ferias de quem batem com as de quem" sem obrigar a varrer a grade com o olho.
+    if (this.soCoincidencias()) {
+      const total = this.dias().length;
+      const contagem = Array.from({ length: total }, (_, i) => linhas.filter((l) => l.dias[i] !== null).length);
+      linhas = linhas.filter((l) => l.dias.some((d, i) => d !== null && contagem[i] > 1));
+    }
+
+    return linhas;
   });
+
+  /** Dias em que duas ou mais pessoas do recorte atual estao fora ao mesmo tempo. */
+  protected readonly coincidencias = computed(() =>
+    this.dias().filter((_, i) => this.linhas().filter((l) => l.dias[i] !== null).length > 1),
+  );
 
   protected readonly totais = computed(() =>
     this.dias().map((_, i) => this.linhas().filter((l) => l.dias[i] !== null).length),
@@ -236,6 +327,11 @@ export class CalendarPage implements OnInit {
     const d = new Date(this.referencia().getFullYear(), this.referencia().getMonth(), dia).getDay();
     return d === 0 || d === 6;
   }
+}
+
+/** Valores distintos, sem vazios, em ordem — para popular um filtro. */
+function distintos(valores: readonly (string | null | undefined)[]): string[] {
+  return [...new Set(valores.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 
 function primeiroDiaDoMes(d: Date): Date {

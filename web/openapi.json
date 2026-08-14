@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:44785"
+      "url": "http://127.0.0.1:37945"
     }
   ],
   "paths": {
@@ -2994,6 +2994,8 @@
           "id",
           "employeeId",
           "employeeName",
+          "departmentName",
+          "positionName",
           "kind",
           "source",
           "startsOn",
@@ -3012,6 +3014,14 @@
           },
           "employeeName": {
             "type": "string"
+          },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "positionName": {
+            "type": "string",
+            "nullable": true
           },
           "kind": {
             "$ref": "#/components/schemas/OccupancyKind"
