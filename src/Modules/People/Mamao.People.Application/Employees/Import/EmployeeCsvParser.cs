@@ -39,6 +39,7 @@ public sealed class EmployeeCsvParser
         ["positionName"] = ["cargo", "funcao", "posto", "cargo/funcao", "ocupacao"],
         ["hiredOn"] = ["admissao", "data de admissao", "data admissao", "dt admissao", "entrada"],
         ["code"] = ["matricula", "codigo", "registro", "chapa", "id"],
+        ["email"] = ["email", "e mail", "correio eletronico", "endereco de email"],
     };
 
     private static readonly string[] Obrigatorios = ["fullName", "positionName", "hiredOn"];
@@ -97,6 +98,7 @@ public sealed class EmployeeCsvParser
 
         var linhas = new List<EmployeeImportRow>();
         var matriculasVistas = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var emailsVistos = new Dictionary<string, int>(StringComparer.Ordinal);
 
         while (csv.Read())
         {
@@ -112,7 +114,7 @@ public sealed class EmployeeCsvParser
                 break;
             }
 
-            var linha = LerLinha(csv, mapeamento, numeroDaLinha, hoje, matriculasVistas);
+            var linha = LerLinha(csv, mapeamento, numeroDaLinha, hoje, matriculasVistas, emailsVistos);
             if (linha is not null)
                 linhas.Add(linha);
         }
@@ -125,7 +127,8 @@ public sealed class EmployeeCsvParser
         IReadOnlyList<EmployeeImportColumn> mapeamento,
         int numeroDaLinha,
         DateOnly hoje,
-        Dictionary<string, int> matriculasVistas)
+        Dictionary<string, int> matriculasVistas,
+        Dictionary<string, int> emailsVistos)
     {
         string? Campo(string nome)
         {
@@ -141,10 +144,16 @@ public sealed class EmployeeCsvParser
         var matricula = Campo("code");
         matricula = string.IsNullOrWhiteSpace(matricula) ? null : matricula.Trim();
 
+        var email = Campo("email");
+        email = string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
+
         // Linha inteiramente vazia (comum no fim de planilha exportada) e ignorada em
         // silencio: reportar como erro so assustaria sem motivo.
-        if (nome.Length == 0 && cargo.Length == 0 && admissaoBruta.Length == 0 && matricula is null)
+        if (nome.Length == 0 && cargo.Length == 0 && admissaoBruta.Length == 0
+            && matricula is null && email is null)
+        {
             return null;
+        }
 
         var erros = new List<string>();
 
@@ -178,6 +187,32 @@ public sealed class EmployeeCsvParser
             ? EmployeeImportRowStatus.Invalida
             : EmployeeImportRowStatus.Pronta;
 
+        // DEPOIS de decidir a situacao, e de proposito: e-mail torto nao invalida a linha.
+        // O cadastro da pessoa vale mais que o endereco dela — ela entra sem e-mail, com o
+        // aviso visivel na previa, e alguem corrige na tela depois. Se este bloco subisse
+        // duas linhas, uma letra errada no e-mail derrubaria a admissao inteira.
+        if (email is not null && !EmailPlausivel(email))
+        {
+            erros.Add($"E-mail \"{email}\" não parece válido; a pessoa entra sem e-mail.");
+            email = null;
+        }
+
+        // E-mail repetido no arquivo: o primeiro fica com ele, os seguintes entram sem.
+        // Resolver aqui e nao na gravacao e o que mantem a previa honesta — ela precisa
+        // mostrar o que VAI acontecer, e nao um e-mail que sera descartado depois.
+        if (email is not null)
+        {
+            if (emailsVistos.TryGetValue(email, out var linhaAnterior))
+            {
+                erros.Add($"E-mail {email} já aparece na linha {linhaAnterior}; esta pessoa entra sem e-mail.");
+                email = null;
+            }
+            else
+            {
+                emailsVistos[email] = numeroDaLinha;
+            }
+        }
+
         // Duplicidade DENTRO do arquivo. A checagem contra o cadastro e feita depois,
         // no servico, que e quem tem banco.
         if (matricula is not null && situacao == EmployeeImportRowStatus.Pronta)
@@ -193,7 +228,7 @@ public sealed class EmployeeCsvParser
             }
         }
 
-        return new EmployeeImportRow(numeroDaLinha, matricula, nome, cargo, admissao, situacao, erros);
+        return new EmployeeImportRow(numeroDaLinha, matricula, nome, cargo, admissao, email, situacao, erros);
     }
 
     private static IReadOnlyList<EmployeeImportColumn> Mapear(IEnumerable<string> cabecalhos)
@@ -223,6 +258,7 @@ public sealed class EmployeeCsvParser
         "positionName" => "Cargo",
         "hiredOn" => "Admissão",
         "code" => "Matrícula",
+        "email" => "E-mail",
         _ => campo,
     };
 
@@ -271,6 +307,18 @@ public sealed class EmployeeCsvParser
     /// com CultureInfo("pt-BR") tornaria a leitura da data refem da configuracao do host —
     /// e a mesma planilha poderia ser lida diferente em dev e em producao.
     /// </summary>
+    /// <summary>Mesma checagem fraca do dominio, e pelo mesmo motivo: recusar endereco valido e pior.</summary>
+    private static bool EmailPlausivel(string valor)
+    {
+        var partes = valor.Split('@');
+
+        return partes.Length == 2
+            && partes[0].Length > 0
+            && partes[1].Length > 2
+            && partes[1].Contains('.', StringComparison.Ordinal)
+            && !valor.Any(char.IsWhiteSpace);
+    }
+
     private static bool TentarLerData(string valor, out DateOnly data)
     {
         string[] formatos =
@@ -341,10 +389,10 @@ public sealed class EmployeeCsvParser
         new(Mapear([]), TemplateTexto, MaxRows);
 
     private const string TemplateTexto = """
-        Nome;Cargo;Admissão;Matrícula
-        Carlos Mendes;Vigilante;11/03/2024;V-001
-        Ana Lima;Vigilante noturno;02/07/2023;V-002
-        Beatriz Costa;Supervisora de operações;04/05/2021;
+        Nome;Cargo;Admissão;Matrícula;E-mail
+        Carlos Mendes;Vigilante;11/03/2024;V-001;carlos.mendes@empresa.com.br
+        Ana Lima;Vigilante noturno;02/07/2023;V-002;
+        Beatriz Costa;Supervisora de operações;04/05/2021;;beatriz@empresa.com.br
 
         """;
 

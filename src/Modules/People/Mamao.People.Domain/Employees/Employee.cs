@@ -36,6 +36,17 @@ public sealed class Employee : ITenantOwned
     /// <summary>Gestor direto. Opcional pelo mesmo motivo do setor.</summary>
     public EmployeeId? ManagerId { get; private set; }
 
+    /// <summary>
+    /// E-mail de contato. Opcional e assim permanece — boa parte do efetivo deste segmento
+    /// nao tem e-mail, e exigir um travaria o cadastro logo na primeira pessoa (P1).
+    ///
+    /// Guardado em minusculas e sem espaco porque ele e o ENDERECO DE CONVITE do login
+    /// futuro (V1.5): quando o funcionario for convidado, e por ele que o <c>User</c> global
+    /// vai ser encontrado ou criado. Duas grafias do mesmo endereco criariam duas contas.
+    /// Ver docs/adr/0006-identidade.md.
+    /// </summary>
+    public string? Email { get; private set; }
+
     public DateOnly HiredOn { get; private set; }
     public DateOnly? TerminatedOn { get; private set; }
 
@@ -50,10 +61,15 @@ public sealed class Employee : ITenantOwned
         DateOnly hiredOn,
         DateOnly today,
         string? code = null,
-        DepartmentId? departmentId = null)
+        DepartmentId? departmentId = null,
+        string? email = null)
     {
         fullName = fullName?.Trim() ?? string.Empty;
         code = string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+
+        var endereco = NormalizarEmail(email);
+        if (endereco.IsFailure)
+            return Result.Failure<Employee>(endereco.Error!);
 
         if (fullName.Length < 2)
             return Result.Failure<Employee>(new Error(
@@ -77,7 +93,47 @@ public sealed class Employee : ITenantOwned
             DepartmentId = departmentId,
             HiredOn = hiredOn,
             Code = code,
+            Email = endereco.Value,
         });
+    }
+
+    public Result ChangeEmail(string? email)
+    {
+        var endereco = NormalizarEmail(email);
+        if (endereco.IsFailure)
+            return Result.Failure(endereco.Error!.Code, endereco.Error.Message, nameof(Email));
+
+        Email = endereco.Value;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Vazio vira nulo (para nao colidir no indice unico) e o resto vira minusculas sem
+    /// espaco.
+    ///
+    /// A validacao e DELIBERADAMENTE fraca: uma so arroba, com texto dos dois lados e sem
+    /// espaco. Regex "completa" de e-mail recusa endereco valido — e recusar o e-mail real
+    /// de um funcionario para provar rigor e um mau negocio. Quem diz se o endereco existe
+    /// e a entrega, nao o formulario.
+    /// </summary>
+    private static Result<string?> NormalizarEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return Result.Success<string?>(null);
+
+        var normalizado = email.Trim().ToLowerInvariant();
+        var partes = normalizado.Split('@');
+
+        var valido = partes.Length == 2
+            && partes[0].Length > 0
+            && partes[1].Length > 2
+            && partes[1].Contains('.', StringComparison.Ordinal)
+            && !normalizado.Any(char.IsWhiteSpace);
+
+        return valido
+            ? Result.Success<string?>(normalizado)
+            : Result.Failure<string?>(new Error(
+                "employee.invalid_email", $"E-mail \"{email.Trim()}\" não parece válido.", nameof(Email)));
     }
 
     public Result Rename(string fullName)

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:33191"
+      "url": "http://127.0.0.1:41709"
     }
   ],
   "paths": {
@@ -955,7 +955,8 @@
           "hiredOn",
           "code",
           "departmentId",
-          "managerId"
+          "managerId",
+          "email"
         ],
         "type": "object",
         "properties": {
@@ -989,6 +990,10 @@
                 "$ref": "#/components/schemas/EmployeeId"
               }
             ],
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
             "nullable": true
           }
         }
@@ -1177,6 +1182,7 @@
           "fullName",
           "positionName",
           "hiredOn",
+          "email",
           "status",
           "errors"
         ],
@@ -1199,6 +1205,10 @@
           "hiredOn": {
             "type": "string",
             "format": "date",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
             "nullable": true
           },
           "status": {
@@ -1296,6 +1306,7 @@
           "departmentName",
           "managerId",
           "managerName",
+          "email",
           "hiredOn",
           "terminatedOn",
           "isActive",
@@ -1342,6 +1353,10 @@
             "nullable": true
           },
           "managerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
             "type": "string",
             "nullable": true
           },
@@ -1670,7 +1685,8 @@
           "fullName",
           "positionId",
           "departmentId",
-          "managerId"
+          "managerId",
+          "email"
         ],
         "type": "object",
         "properties": {
@@ -1696,6 +1712,10 @@
                 "$ref": "#/components/schemas/EmployeeId"
               }
             ],
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
             "nullable": true
           }
         }

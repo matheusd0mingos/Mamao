@@ -93,6 +93,66 @@ public class AdmissaoDeFuncionarioTests
     }
 }
 
+public class EmailDoFuncionarioTests
+{
+    private static readonly DateOnly Hoje = new(2026, 8, 14);
+    private static readonly PositionId Cargo = PositionId.New();
+
+    private static Employee Admitido(string? email) =>
+        Employee.Hire("Carlos Mendes", Cargo, Hoje, Hoje, null, null, email).Value;
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Sem_email_e_o_caso_normal_e_vira_nulo(string? entrada)
+    {
+        // Boa parte do efetivo deste segmento nao tem e-mail. Exigir travaria o cadastro
+        // na primeira pessoa. Vazio precisa virar NULO para nao colidir no indice unico.
+        Admitido(entrada).Email.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Guarda_em_minusculas_e_sem_espaco_porque_e_a_chave_do_convite()
+    {
+        Admitido("  Carlos.Mendes@Empresa.COM.br  ").Email.ShouldBe("carlos.mendes@empresa.com.br");
+    }
+
+    [Theory]
+    [InlineData("carlos")]
+    [InlineData("carlos@")]
+    [InlineData("@empresa.com")]
+    [InlineData("carlos@empresa")]
+    [InlineData("carlos @empresa.com")]
+    public void Recusa_endereco_que_nao_tem_como_ser_email(string entrada)
+    {
+        var resultado = Employee.Hire("Carlos Mendes", Cargo, Hoje, Hoje, null, null, entrada);
+
+        resultado.IsFailure.ShouldBeTrue($"Deveria recusar: {entrada}");
+        resultado.Error!.Code.ShouldBe("employee.invalid_email");
+    }
+
+    [Theory]
+    [InlineData("carlos+turno.a@empresa.com.br")]
+    [InlineData("c.mendes_2@sub.dominio.gov.br")]
+    [InlineData("41999998888@operadora.com")]
+    public void Aceita_endereco_incomum_porque_recusar_valido_e_pior(string entrada)
+    {
+        // Regex "completa" de e-mail recusa endereco real. Quem diz se existe e a entrega.
+        Admitido(entrada).Email.ShouldBe(entrada);
+    }
+
+    [Fact]
+    public void Trocar_por_vazio_limpa_o_email()
+    {
+        var funcionario = Admitido("carlos@empresa.com");
+
+        funcionario.ChangeEmail("  ").IsSuccess.ShouldBeTrue();
+
+        funcionario.Email.ShouldBeNull();
+    }
+}
+
 public class DesligamentoDeFuncionarioTests
 {
     private static readonly DateOnly Admissao = new(2026, 1, 10);

@@ -319,6 +319,7 @@ export interface components {
             code: string | null;
             departmentId: (string & components["schemas"]["DepartmentId"]) | null;
             managerId: (string & components["schemas"]["EmployeeId"]) | null;
+            email: string | null;
         };
         CreatePositionRequest: {
             name: string;
@@ -373,6 +374,7 @@ export interface components {
             positionName: string;
             /** Format: date */
             hiredOn: string | null;
+            email: string | null;
             status: components["schemas"]["EmployeeImportRowStatus"];
             errors: string[];
         };
@@ -408,6 +410,7 @@ export interface components {
             departmentName: string | null;
             managerId: (string & components["schemas"]["EmployeeId"]) | null;
             managerName: string | null;
+            email: string | null;
             /** Format: date */
             hiredOn: string;
             /** Format: date */
@@ -502,6 +505,7 @@ export interface components {
             positionId: components["schemas"]["PositionId"];
             departmentId: (string & components["schemas"]["DepartmentId"]) | null;
             managerId: (string & components["schemas"]["EmployeeId"]) | null;
+            email: string | null;
         };
         UpdatePositionRequest: {
             name: string;

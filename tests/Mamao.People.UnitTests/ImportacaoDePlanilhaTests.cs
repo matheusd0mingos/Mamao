@@ -205,6 +205,47 @@ public class ImportacaoDePlanilhaTests
     }
 
     [Fact]
+    public void Le_email_quando_a_coluna_existe()
+    {
+        var previa = Ler("""
+            Nome;Cargo;Admissão;E-mail
+            Carlos Mendes;Vigilante;11/03/2024;Carlos.Mendes@Empresa.com.BR
+            Ana Lima;Vigilante;02/07/2023;
+            """);
+
+        previa.Summary.Ready.ShouldBe(2);
+        previa.Rows[0].Email.ShouldBe("carlos.mendes@empresa.com.br", "Guardado em minúsculas: é a chave do convite.");
+        previa.Rows[1].Email.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Email_torto_nao_derruba_a_admissao()
+    {
+        // O cadastro da pessoa vale mais que o endereco dela.
+        var previa = Ler("Nome;Cargo;Admissão;E-mail\nCarlos Mendes;Vigilante;11/03/2024;carlos arroba empresa");
+
+        previa.Rows[0].Status.ShouldBe(EmployeeImportRowStatus.Pronta);
+        previa.Rows[0].Email.ShouldBeNull();
+        previa.Rows[0].Errors.ShouldContain(e => e.Contains("entra sem e-mail"));
+    }
+
+    [Fact]
+    public void Email_repetido_no_arquivo_fica_com_o_primeiro()
+    {
+        // A previa nao pode prometer um e-mail que a gravacao vai descartar.
+        var previa = Ler("""
+            Nome;Cargo;Admissão;E-mail
+            Pedro Alves;Vigilante;11/03/2024;pedro@empresa.com
+            Vera Dias;Zeladora;09/09/2021;PEDRO@empresa.com
+            """);
+
+        previa.Rows[0].Email.ShouldBe("pedro@empresa.com");
+        previa.Rows[1].Email.ShouldBeNull();
+        previa.Rows[1].Status.ShouldBe(EmployeeImportRowStatus.Pronta, "Repetir e-mail não impede a admissão.");
+        previa.Rows[1].Errors.ShouldContain(e => e.Contains("linha 2"));
+    }
+
+    [Fact]
     public void Formato_anunciado_na_tela_e_o_mesmo_que_o_parser_aceita()
     {
         // A tela explica o formato com ESTE objeto. Se ele divergisse do parser,
@@ -212,7 +253,7 @@ public class ImportacaoDePlanilhaTests
         var formato = EmployeeCsvParser.DescribeFormat();
 
         formato.Columns.Select(c => c.Field)
-            .ShouldBe(["fullName", "positionName", "hiredOn", "code"], ignoreOrder: true);
+            .ShouldBe(["fullName", "positionName", "hiredOn", "code", "email"], ignoreOrder: true);
         formato.Columns.Where(c => c.Required).Select(c => c.Label)
             .ShouldBe(["Nome", "Cargo", "Admissão"], ignoreOrder: true);
         formato.Columns.ShouldAllBe(c => c.Header == null && c.AcceptedNames.Count > 0);
@@ -232,5 +273,6 @@ public class ImportacaoDePlanilhaTests
         previa.Summary.Total.ShouldBe(3);
         previa.Summary.Ready.ShouldBe(3);
         previa.Warnings.ShouldBeEmpty();
+        previa.Rows.Count(l => l.Email is not null).ShouldBe(2, "O modelo mostra e-mail preenchido e vazio.");
     }
 }

@@ -28,6 +28,7 @@ public sealed class EmployeeImportService(
         var previa = _parser.Parse(arquivo, hoje);
 
         var linhas = await MarcarDuplicadasNoCadastroAsync(previa.Rows, ct);
+        linhas = await LimparEmailsJaUsadosAsync(linhas, ct);
 
         return previa with
         {
@@ -63,13 +64,23 @@ public sealed class EmployeeImportService(
         // existentes de uma vez: sem ele seria uma consulta por linha.
         var cargos = await positions.LoadCacheAsync(ct);
 
+        var emailsVistos = await dbContext.Employees
+            .Where(e => e.Email != null)
+            .Select(e => e.Email!)
+            .ToHashSetAsync(ct);
+
         foreach (var linha in prontas)
         {
             var cargo = await positions.ResolveOrCreateAsync(linha.PositionName, cargos, ct);
             if (cargo.IsFailure)
                 continue;
 
-            var criacao = Employee.Hire(linha.FullName, cargo.Value.Id, linha.HiredOn!.Value, hoje, linha.Code);
+            // A previa ja resolveu repetido e ja usado. O conjunto aqui e rede de
+            // seguranca para duas importacoes simultaneas, que a previa nao enxerga.
+            var email = linha.Email is not null && emailsVistos.Add(linha.Email) ? linha.Email : null;
+
+            var criacao = Employee.Hire(
+                linha.FullName, cargo.Value.Id, linha.HiredOn!.Value, hoje, linha.Code, null, email);
 
             // O dominio ja validou o mesmo na previa; se recusar aqui, e divergencia entre
             // os dois caminhos e nao pode passar em silencio.
@@ -95,6 +106,35 @@ public sealed class EmployeeImportService(
         await dbContext.SaveChangesAsync(ct);
 
         return new EmployeeImportResult(importadas, previa.Rows.Count - importadas);
+    }
+
+    /// <summary>
+    /// Tira das linhas o e-mail que JA pertence a alguem no cadastro. Nao invalida a
+    /// linha — a pessoa entra sem e-mail, e a previa diz isso antes de gravar. Sem este
+    /// passo, o indice unico derrubaria a transacao inteira por causa de um endereco.
+    /// </summary>
+    private async Task<IReadOnlyList<EmployeeImportRow>> LimparEmailsJaUsadosAsync(
+        IReadOnlyList<EmployeeImportRow> linhas, CancellationToken ct)
+    {
+        var enderecos = linhas.Where(l => l.Email is not null).Select(l => l.Email!).Distinct().ToList();
+        if (enderecos.Count == 0)
+            return linhas;
+
+        var jaUsados = (await dbContext.Employees
+            .Where(e => e.Email != null && enderecos.Contains(e.Email))
+            .Select(e => e.Email!)
+            .ToListAsync(ct)).ToHashSet(StringComparer.Ordinal);
+
+        if (jaUsados.Count == 0)
+            return linhas;
+
+        return [.. linhas.Select(linha => linha.Email is not null && jaUsados.Contains(linha.Email)
+            ? linha with
+            {
+                Email = null,
+                Errors = [.. linha.Errors, $"O e-mail {linha.Email} já é de outro funcionário; esta pessoa entra sem e-mail."],
+            }
+            : linha)];
     }
 
     private async Task<IReadOnlyList<EmployeeImportRow>> MarcarDuplicadasNoCadastroAsync(

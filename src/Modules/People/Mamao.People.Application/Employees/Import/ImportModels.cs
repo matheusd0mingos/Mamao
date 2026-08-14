@@ -25,6 +25,7 @@ public sealed record EmployeeImportRow(
     string FullName,
     string PositionName,
     DateOnly? HiredOn,
+    string? Email,
     EmployeeImportRowStatus Status,
     IReadOnlyList<string> Errors);
 

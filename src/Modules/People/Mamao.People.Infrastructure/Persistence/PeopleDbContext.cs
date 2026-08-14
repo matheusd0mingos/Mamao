@@ -64,12 +64,20 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.Property(e => e.FullName).HasMaxLength(200).IsRequired();
         builder.Property(e => e.Code).HasMaxLength(50);
+        builder.Property(e => e.Email).HasMaxLength(200);
 
         // Todo indice de tabela tenant-owned comeca por tenant_id, senao o Postgres varre
         // os dados de todos os tenants para filtrar depois.
         builder.HasIndex(e => new { e.TenantId, e.Code })
             .IsUnique()
             .HasFilter("code IS NOT NULL");
+
+        // Unico quando informado, pelo mesmo motivo da matricula — e porque este endereco
+        // vira a chave do convite de login. Dois funcionarios com o mesmo e-mail dariam
+        // dois vinculos para um unico User.
+        builder.HasIndex(e => new { e.TenantId, e.Email })
+            .IsUnique()
+            .HasFilter("email IS NOT NULL");
 
         builder.HasIndex(e => new { e.TenantId, e.FullName });
         builder.HasIndex(e => new { e.TenantId, e.PositionId });

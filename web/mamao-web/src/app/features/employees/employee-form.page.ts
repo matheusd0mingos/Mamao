@@ -121,6 +121,21 @@ import { EmployeesStore } from './employees.store';
           </div>
         }
 
+        <div class="field" [class.field--invalid]="!!erroDoCampo('email')">
+          <label for="email">E-mail <span class="muted">(opcional)</span></label>
+          <input id="email" type="email" formControlName="email" autocomplete="off" />
+          <!--
+            Diz para que serve, senao vira campo que ninguem preenche: e por ele que sai
+            aviso de escala e documento vencendo, e e o endereco do convite de login (V1.5).
+          -->
+          <span class="muted eco">
+            Usado para avisar a pessoa e, mais adiante, para convidá-la a acessar o Mamão.
+          </span>
+          @if (erroDoCampo('email'); as msg) {
+            <span class="field__error">{{ msg }}</span>
+          }
+        </div>
+
         <div class="acoes">
           <button type="submit" class="btn btn--primary" [disabled]="salvando()">
             {{ salvando() ? 'Salvando…' : 'Salvar' }}
@@ -181,6 +196,7 @@ export class EmployeeFormPage implements OnInit {
     departmentId: [''],
     hiredOn: [new Date().toISOString().slice(0, 10), [Validators.required]],
     code: [''],
+    email: [''],
   });
 
   constructor() {
@@ -257,9 +273,10 @@ export class EmployeeFormPage implements OnInit {
     this.erro.set(null);
 
     try {
-      const { fullName, positionId, departmentId, hiredOn, code } = this.form.getRawValue();
+      const { fullName, positionId, departmentId, hiredOn, code, email } = this.form.getRawValue();
       const id = this.id();
       const setor = departmentId || null;
+      const endereco = email.trim() || null;
 
       if (id) {
         await this.api.update(id, {
@@ -267,6 +284,7 @@ export class EmployeeFormPage implements OnInit {
           positionId,
           departmentId: setor,
           managerId: this.managerId(),
+          email: endereco,
         });
       } else {
         await this.api.create({
@@ -276,6 +294,7 @@ export class EmployeeFormPage implements OnInit {
           code: code.trim() || null,
           departmentId: setor,
           managerId: null,
+          email: endereco,
         });
       }
 
@@ -298,6 +317,7 @@ export class EmployeeFormPage implements OnInit {
         departmentId: pessoa.departmentId ?? '',
         hiredOn: pessoa.hiredOn,
         code: pessoa.code ?? '',
+        email: pessoa.email ?? '',
       });
     } catch (problema) {
       this.erro.set(problema as ApiProblem);

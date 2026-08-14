@@ -37,7 +37,7 @@ observabilidade, migrations e testes.
 | Angular 22: login, cadastro, shell, pessoas | ✅ build de 79 kB gzip inicial |
 | Importação de planilha (formato na tela + prévia linha a linha) | ✅ |
 | Setores em árvore e cargos, com filtro por subárvore | ✅ Marco 1 em andamento |
-| Testes | ✅ 57 unitários + 9 de arquitetura + 10 de integração |
+| Testes | ✅ 73 unitários + 9 de arquitetura + 10 de integração |
 | CI (GitHub Actions) | ✅ |
 | Deploy (`deploy.sh` com provisionamento + Compose + Caddy + backup) | ✅ escrito e lintado, ainda não executado contra um servidor |
 

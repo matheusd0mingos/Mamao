@@ -8,13 +8,15 @@ public sealed record CreateEmployeeRequest(
     DateOnly HiredOn,
     string? Code,
     DepartmentId? DepartmentId,
-    EmployeeId? ManagerId);
+    EmployeeId? ManagerId,
+    string? Email);
 
 public sealed record UpdateEmployeeRequest(
     string FullName,
     PositionId PositionId,
     DepartmentId? DepartmentId,
-    EmployeeId? ManagerId);
+    EmployeeId? ManagerId,
+    string? Email);
 
 public sealed record TerminateEmployeeRequest(DateOnly TerminatedOn);
 
@@ -33,6 +35,7 @@ public sealed record EmployeeResponse(
     string? DepartmentName,
     EmployeeId? ManagerId,
     string? ManagerName,
+    string? Email,
     DateOnly HiredOn,
     DateOnly? TerminatedOn,
     bool IsActive,

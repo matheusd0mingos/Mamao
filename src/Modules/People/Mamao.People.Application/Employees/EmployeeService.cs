@@ -99,6 +99,7 @@ public sealed class EmployeeService(
                 dbContext.Departments.Where(d => d.Id == e.DepartmentId).Select(d => d.Name).FirstOrDefault(),
                 e.ManagerId,
                 dbContext.Employees.Where(m => m.Id == e.ManagerId).Select(m => m.FullName).FirstOrDefault(),
+                e.Email,
                 e.HiredOn,
                 e.TerminatedOn,
                 e.TerminatedOn == null,
@@ -121,8 +122,18 @@ public sealed class EmployeeService(
 
         var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
 
+        if (await EmailIsTakenAsync(request.Email, null, ct))
+        {
+            return Result.Failure<EmployeeResponse>(new Error(
+                "employee.duplicate_email",
+                $"Já existe um funcionário com o e-mail {request.Email!.Trim()}. " +
+                "Se as duas pessoas usam o mesmo endereço, deixe este campo em branco.",
+                nameof(request.Email)));
+        }
+
         var creation = Employee.Hire(
-            request.FullName, request.PositionId, request.HiredOn, today, request.Code, request.DepartmentId);
+            request.FullName, request.PositionId, request.HiredOn, today, request.Code,
+            request.DepartmentId, request.Email);
         if (creation.IsFailure)
             return Result.Failure<EmployeeResponse>(creation.Error!);
 
@@ -176,9 +187,21 @@ public sealed class EmployeeService(
                 nameof(request.ManagerId)));
         }
 
+        if (await EmailIsTakenAsync(request.Email, id, ct))
+        {
+            return Result.Failure<EmployeeResponse>(new Error(
+                "employee.duplicate_email",
+                $"Já existe outro funcionário com o e-mail {request.Email!.Trim()}.",
+                nameof(request.Email)));
+        }
+
         var rename = employee.Rename(request.FullName);
         if (rename.IsFailure)
             return Result.Failure<EmployeeResponse>(rename.Error!);
+
+        var email = employee.ChangeEmail(request.Email);
+        if (email.IsFailure)
+            return Result.Failure<EmployeeResponse>(email.Error!);
 
         var position = employee.ChangePosition(request.PositionId);
         if (position.IsFailure)
@@ -268,6 +291,22 @@ public sealed class EmployeeService(
 
         return await dbContext.Employees.AnyAsync(
             e => e.Code == normalized && (excluding == null || e.Id != excluding.Value), ct);
+    }
+
+    /// <summary>
+    /// Compara em minusculas porque e assim que o dominio guarda: sem isto, "Joao@x.com"
+    /// passaria pela checagem e so quebraria no indice unico, com erro de banco na cara
+    /// do usuario.
+    /// </summary>
+    private async Task<bool> EmailIsTakenAsync(string? email, EmployeeId? excluding, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        var normalized = email.Trim().ToLowerInvariant();
+
+        return await dbContext.Employees.AnyAsync(
+            e => e.Email == normalized && (excluding == null || e.Id != excluding.Value), ct);
     }
 
     private static Error NotFound(EmployeeId id) =>
