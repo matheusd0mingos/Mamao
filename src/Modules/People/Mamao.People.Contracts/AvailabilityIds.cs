@@ -39,3 +39,21 @@ public sealed class AbsenceRequestIdJsonConverter : JsonConverter<AbsenceRequest
     public override void Write(Utf8JsonWriter writer, AbsenceRequestId value, JsonSerializerOptions options)
         => writer.WriteStringValue(value.Value);
 }
+
+/// <summary>Identificador de missao.</summary>
+[JsonConverter(typeof(MissionIdJsonConverter))]
+public readonly record struct MissionId(Guid Value) : IStronglyTypedId
+{
+    public static MissionId New() => new(Guid.CreateVersion7());
+    public override string ToString() => Value.ToString();
+    public static MissionId Parse(string value) => new(Guid.Parse(value));
+}
+
+public sealed class MissionIdJsonConverter : JsonConverter<MissionId>
+{
+    public override MissionId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => new(reader.GetGuid());
+
+    public override void Write(Utf8JsonWriter writer, MissionId value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value.Value);
+}

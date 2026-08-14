@@ -63,6 +63,16 @@ public abstract class TenantDbContext : DbContext
         {
             apply.MakeGenericMethod(entityType.ClrType).Invoke(this, [modelBuilder]);
             modelBuilder.Entity(entityType.ClrType).HasIndex(nameof(ITenantOwned.TenantId));
+
+            // Nossos ids sao gerados em codigo (Guid.CreateVersion7), nunca pelo banco. Sem
+            // dizer isso ao EF, ele assume chave gerada na insercao e usa "chave preenchida"
+            // como sinal de linha JA EXISTENTE — entao um filho criado dentro do agregado e
+            // descoberto por navegacao entra como Modified em vez de Added. O efeito e um
+            // UPDATE numa linha que nunca existiu, barrado pelo interceptor de tenancy com
+            // uma mensagem sobre tenant zerado que nao aponta para a causa.
+            var chave = modelBuilder.Entity(entityType.ClrType).Metadata.FindPrimaryKey();
+            if (chave is { Properties.Count: 1 })
+                modelBuilder.Entity(entityType.ClrType).Property(chave.Properties[0].Name).ValueGeneratedNever();
         }
     }
 

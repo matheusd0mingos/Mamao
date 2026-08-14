@@ -91,6 +91,9 @@ public static class AuditActions
     public const string AbsenceApproved = "availability.absence.approved";
     public const string AbsenceRejected = "availability.absence.rejected";
 
+    public const string MissionConfirmed = "mission.confirmed";
+    public const string MissionCancelled = "mission.cancelled";
+
     public const string InviteCreated = "invite.created";
     public const string InviteAccepted = "invite.accepted";
     public const string InviteRevoked = "invite.revoked";

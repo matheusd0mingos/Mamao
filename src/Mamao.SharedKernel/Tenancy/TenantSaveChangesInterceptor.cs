@@ -42,9 +42,12 @@ public sealed class TenantSaveChangesInterceptor(ITenantContext tenantContext) :
                 case EntityState.Modified or EntityState.Deleted:
                     if (entry.Entity.TenantId != tenantId)
                     {
+                        // O tipo e o estado entram na mensagem porque, sem eles, a unica
+                        // pista e um GUID zerado — e descobrir QUAL entidade escapou da
+                        // marcacao vira arqueologia no ChangeTracker.
                         throw new InvalidOperationException(
-                            $"Tentativa de alterar dado do tenant {entry.Entity.TenantId} " +
-                            $"a partir do tenant {tenantId}. Operacao bloqueada.");
+                            $"Tentativa de {entry.State} em {entry.Entity.GetType().Name} do tenant " +
+                            $"{entry.Entity.TenantId} a partir do tenant {tenantId}. Operacao bloqueada.");
                     }
 
                     break;

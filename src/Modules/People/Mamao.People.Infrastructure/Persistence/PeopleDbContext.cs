@@ -1,6 +1,7 @@
 using Mamao.People.Application;
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Availability;
+using Mamao.People.Domain.Missions;
 using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Organization;
 using Mamao.SharedKernel.Messaging;
@@ -26,6 +27,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
     public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
     public DbSet<Occupancy> Occupancies => Set<Occupancy>();
     public DbSet<AbsenceRequest> AbsenceRequests => Set<AbsenceRequest>();
+    public DbSet<Mission> Missions => Set<Mission>();
+    public DbSet<MissionAssignment> MissionAssignments => Set<MissionAssignment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +39,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new EmploymentContractConfiguration());
         modelBuilder.ApplyConfiguration(new OccupancyConfiguration());
         modelBuilder.ApplyConfiguration(new AbsenceRequestConfiguration());
+        modelBuilder.ApplyConfiguration(new MissionConfiguration());
+        modelBuilder.ApplyConfiguration(new MissionAssignmentConfiguration());
 
         // Outbox e auditoria moram em schemas de outros donos (messaging e audit), que sao
         // quem gera as migrations delas. Aqui sao apenas MAPEADAS, para que o Enqueue e o
@@ -67,6 +72,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         configurationBuilder.Properties<PositionId>().HaveConversion<PositionIdConverter>();
         configurationBuilder.Properties<OccupancyId>().HaveConversion<OccupancyIdConverter>();
         configurationBuilder.Properties<AbsenceRequestId>().HaveConversion<AbsenceRequestIdConverter>();
+        configurationBuilder.Properties<MissionId>().HaveConversion<MissionIdConverter>();
         base.ConfigureConventions(configurationBuilder);
     }
 
@@ -266,6 +272,55 @@ public sealed class AbsenceRequestConfiguration : IEntityTypeConfiguration<Absen
         builder.HasOne<Employee>()
             .WithMany()
             .HasForeignKey(r => r.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class MissionIdConverter()
+    : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<MissionId, Guid>(
+        id => id.Value,
+        value => new MissionId(value));
+
+public sealed class MissionConfiguration : IEntityTypeConfiguration<Mission>
+{
+    public void Configure(EntityTypeBuilder<Mission> builder)
+    {
+        builder.ToTable("missions");
+        builder.HasKey(m => m.Id);
+
+        builder.Property(m => m.Name).HasMaxLength(Mission.MaxNome).IsRequired();
+        builder.Property(m => m.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(m => m.Notes).HasMaxLength(500);
+
+        // "O que tem pela frente" e "quantas vezes o fulano foi nos ultimos 90 dias" sao as
+        // duas consultas desta tabela, e as duas ordenam por data.
+        builder.HasIndex(m => new { m.TenantId, m.On });
+
+        builder.HasMany(m => m.Assignments)
+            .WithOne()
+            .HasForeignKey(a => a.MissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(m => m.Assignments).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+public sealed class MissionAssignmentConfiguration : IEntityTypeConfiguration<MissionAssignment>
+{
+    public void Configure(EntityTypeBuilder<MissionAssignment> builder)
+    {
+        builder.ToTable("mission_assignments");
+        builder.HasKey(a => a.Id);
+
+        // A mesma pessoa uma vez so por missao, garantido pelo banco.
+        builder.HasIndex(a => new { a.TenantId, a.MissionId, a.EmployeeId }).IsUnique();
+
+        // O historico de rodizio le por PESSOA: "quantas vezes o Pedro participou".
+        builder.HasIndex(a => new { a.TenantId, a.EmployeeId });
+
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(a => a.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
