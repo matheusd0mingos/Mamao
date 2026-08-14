@@ -56,6 +56,55 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
         { ToName = nome };
     }
 
+    /// <summary>
+    /// Convite de acesso. O nome de quem convidou e o da empresa estao no texto de
+    /// proposito: um link pedindo senha, vindo de remetente desconhecido, e indistinguivel
+    /// de phishing — e o funcionario vai perguntar ao RH antes de clicar, que e o
+    /// comportamento certo mas mata a ativacao.
+    /// </summary>
+    public EmailMessage Invite(string destinatario, string nome, string empresa, string quemConvidou, string token, int diasDeValidade)
+    {
+        var link = $"{_app.PublicOrigin.TrimEnd('/')}/aceitar-convite?token={WebUtility.UrlEncode(token)}";
+
+        var texto = $"""
+            Olá, {nome}.
+
+            {quemConvidou} convidou você para acessar o {_app.ProductName} pela empresa {empresa}.
+            Abra o endereço abaixo para criar sua senha e entrar:
+
+            {link}
+
+            O convite vale por {diasDeValidade} dias e só pode ser usado uma vez.
+
+            Se você não esperava este convite, fale com {quemConvidou} antes de abrir o link.
+
+            {_app.ProductName} — gestão sem complicação
+            """;
+
+        return new EmailMessage(
+            destinatario,
+            $"{quemConvidou} convidou você para o {_app.ProductName}",
+            Layout(
+                titulo: $"Seu acesso ao {_app.ProductName}",
+                corpo: $"""
+                    <p>Olá, {Escapar(nome)}.</p>
+                    <p>
+                      <strong>{Escapar(quemConvidou)}</strong> convidou você para acessar o
+                      {Escapar(_app.ProductName)} pela empresa <strong>{Escapar(empresa)}</strong>.
+                    </p>
+                    {Botao(link, "Criar minha senha e entrar")}
+                    <p style="color:#5b6661;font-size:14px">
+                      O convite vale por {diasDeValidade} dias e só pode ser usado uma vez.<br>
+                      Se você não esperava este convite, fale com {Escapar(quemConvidou)} antes de abrir o link.
+                    </p>
+                    <p style="color:#5b6661;font-size:13px;word-break:break-all">
+                      Se o botão não funcionar, copie e cole este endereço:<br>{Escapar(link)}
+                    </p>
+                    """),
+            texto)
+        { ToName = nome };
+    }
+
     public EmailMessage PasswordChanged(string destinatario, string nome)
     {
         var texto = $"""

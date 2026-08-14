@@ -22,6 +22,7 @@ public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbConte
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Invite> Invites => Set<Invite>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -57,6 +58,25 @@ public sealed class MamaoIdentityDbContext(DbContextOptions<MamaoIdentityDbConte
             b.HasKey(t => t.Id);
             b.Property(t => t.Name).HasMaxLength(200).IsRequired();
             b.Property(t => t.TimeZoneId).HasMaxLength(60).IsRequired();
+        });
+
+        builder.Entity<Invite>(b =>
+        {
+            b.ToTable("invites");
+            b.HasKey(i => i.Id);
+            b.Property(i => i.Email).HasMaxLength(200).IsRequired();
+            b.Property(i => i.FullName).HasMaxLength(200).IsRequired();
+            b.Property(i => i.Role).HasMaxLength(50).IsRequired();
+            b.Property(i => i.TokenHash).HasMaxLength(120).IsRequired();
+
+            // Busca do aceite e por hash: precisa ser unica e indexada.
+            b.HasIndex(i => i.TokenHash).IsUnique();
+            b.HasIndex(i => new { i.TenantId, i.Email });
+
+            b.HasOne<Tenant>()
+                .WithMany()
+                .HasForeignKey(i => i.TenantId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<RefreshToken>(b =>

@@ -96,6 +96,7 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapAuthEndpoints();
+app.MapInviteEndpoints();
 app.MapPeopleEndpoints();
 app.MapOrganizationEndpoints();
 

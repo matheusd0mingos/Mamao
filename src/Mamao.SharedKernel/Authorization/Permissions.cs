@@ -27,6 +27,9 @@ public static class Permissions
     public const string ScheduleRead = "schedule.read";
     public const string ScheduleWrite = "schedule.write";
 
+    /// <summary>Convidar pessoas para acessar o sistema, reenviar e cancelar convite.</summary>
+    public const string UsersInvite = "users.invite";
+
     public const string AuditRead = "audit.read";
     public const string SettingsWrite = "settings.write";
     public const string BillingManage = "billing.manage";
@@ -38,7 +41,7 @@ public static class Permissions
         DocumentsRead, DocumentsUpload, DocumentsApprove,
         WorkRead, WorkAssign,
         ScheduleRead, ScheduleWrite,
-        AuditRead, SettingsWrite, BillingManage,
+        UsersInvite, AuditRead, SettingsWrite, BillingManage,
     ];
 }
 
@@ -67,6 +70,7 @@ public static class Roles
             Permissions.DocumentsRead, Permissions.DocumentsUpload, Permissions.DocumentsApprove,
             Permissions.TimeOffRequest, Permissions.TimeOffApprove,
             Permissions.WorkRead, Permissions.ScheduleRead,
+            Permissions.UsersInvite,
             Permissions.AuditRead,
         ],
         Manager =>
