@@ -31,7 +31,10 @@
 {$PUBLIC_HOST:app.mamao.tech} {
 	encode zstd gzip
 
-	handle_path /api/* {
+	# handle, NAO handle_path: a API publica as rotas em /api/v1/..., entao o prefixo
+	# tem que chegar nela. handle_path remove o trecho casado antes de encaminhar, e a
+	# API responderia 404 em tudo — sem exceção no log, porque 404 nao e erro.
+	handle /api/* {
 		reverse_proxy api:8080
 	}
 
