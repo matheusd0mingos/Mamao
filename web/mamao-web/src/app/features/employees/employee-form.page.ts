@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type {
   ApiProblem,
+  ContractResponse,
   DepartmentNode,
   EmployeeResponse,
   PositionResponse,
@@ -144,6 +145,72 @@ import { EmployeesStore } from './employees.store';
         </div>
       </form>
     </div>
+
+    @if (id()) {
+      <div class="card form">
+        <h2>Contrato</h2>
+        <p class="muted dica">
+          O regime decide qual lei se aplica a férias e jornada desta pessoa. Numa mesma
+          empresa pode haver regimes diferentes.
+        </p>
+
+        <!--
+          Alertas, nunca bloqueios: a operação real tem exceção e nós não conhecemos a
+          convenção coletiva do cliente. Ver docs/adr/0015 e 0017.
+        -->
+        @for (alerta of alertas(); track alerta.code) {
+          <div class="alert alert--warning">{{ alerta.message }}</div>
+        }
+
+        <form [formGroup]="contrato" (ngSubmit)="salvarContrato()">
+          <div class="linha">
+            <div class="field">
+              <label for="regime">Regime de vínculo</label>
+              <select id="regime" formControlName="regime">
+                @for (opcao of regimes; track opcao.valor) {
+                  <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="scheduleType">Jornada</label>
+              <select id="scheduleType" formControlName="scheduleType">
+                @for (opcao of jornadas; track opcao.valor) {
+                  <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="linha">
+            <div class="field">
+              <label for="weeklyHours">Carga semanal (horas)</label>
+              <input id="weeklyHours" type="number" step="0.5" min="1" max="84" formControlName="weeklyHours" />
+            </div>
+
+            @if (pedeAcordo()) {
+              <div class="field">
+                <label for="compensationAgreementOn">Data do acordo de compensação</label>
+                <input id="compensationAgreementOn" type="date" formControlName="compensationAgreementOn" />
+                <span class="muted eco">Acordo individual escrito ou norma coletiva.</span>
+              </div>
+            }
+          </div>
+
+          <div class="field">
+            <label for="notes">Observações <span class="muted">(opcional)</span></label>
+            <input id="notes" formControlName="notes" maxlength="500" />
+          </div>
+
+          <div class="acoes">
+            <button type="submit" class="btn btn--primary" [disabled]="salvandoContrato()">
+              {{ salvandoContrato() ? 'Salvando…' : 'Salvar contrato' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
   `,
   styles: `
     .volta { margin-bottom: var(--space-3); }
@@ -152,6 +219,12 @@ import { EmployeesStore } from './employees.store';
     .linha { display: grid; gap: var(--space-4); grid-template-columns: 1fr 1fr; }
     .acoes { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
     .eco { font-size: 13px; }
+    .form h2 { font-size: 16px; margin: 0 0 var(--space-2); }
+    .dica { font-size: 13px; margin: 0 0 var(--space-4); }
+    .form select, .form input[type='number'] {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font: inherit; padding: var(--space-2) var(--space-3); width: 100%;
+    }
     .cargo { display: flex; gap: var(--space-2); }
     .cargo select, .cargo input { flex: 1 1 auto; min-width: 0; }
     .cargo .btn { flex: 0 0 auto; white-space: nowrap; }
@@ -177,6 +250,38 @@ export class EmployeeFormPage implements OnInit {
   readonly setores = signal<DepartmentNode[]>([]);
   readonly criandoCargo = signal(false);
   readonly nomeDoNovoCargo = signal('');
+  readonly salvandoContrato = signal(false);
+  readonly alertas = signal<ContractResponse['warnings']>([]);
+
+  readonly regimes = [
+    { valor: 'Clt', rotulo: 'CLT' },
+    { valor: 'EstatutarioFederal', rotulo: 'Estatutário federal (Lei 8.112)' },
+    { valor: 'EstatutarioLocal', rotulo: 'Estatutário estadual/municipal' },
+    { valor: 'Militar', rotulo: 'Militar' },
+    { valor: 'Outro', rotulo: 'Outro (PJ, estágio, voluntário)' },
+  ];
+
+  readonly jornadas = [
+    { valor: 'Administrativo', rotulo: 'Administrativo (seg–sex)' },
+    { valor: 'CincoDois', rotulo: '5×2' },
+    { valor: 'SeisUm', rotulo: '6×1' },
+    { valor: 'DozePorTrintaESeis', rotulo: '12×36' },
+    { valor: 'Rodizio', rotulo: 'Rodízio (escala de serviço)' },
+    { valor: 'Outro', rotulo: 'Outro' },
+  ];
+
+  readonly contrato = this.fb.nonNullable.group({
+    regime: ['Clt'],
+    scheduleType: ['CincoDois'],
+    weeklyHours: [44],
+    compensationAgreementOn: [''],
+    notes: [''],
+  });
+
+  /** O acordo só faz sentido em 12×36 sob CLT — pedir em militar seria ruído. */
+  readonly pedeAcordo = computed(() => this.jornadaAtual() === 'DozePorTrintaESeis' && this.regimeAtual() === 'Clt');
+  private readonly jornadaAtual = signal('CincoDois');
+  private readonly regimeAtual = signal('Clt');
 
   /** Data que o formulario realmente vai enviar, escrita por extenso em pt-BR. */
   readonly dataInterpretada = computed(() => {
@@ -204,6 +309,14 @@ export class EmployeeFormPage implements OnInit {
     this.form.controls.hiredOn.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((valor) => this.admissao.set(valor));
+
+    this.contrato.controls.scheduleType.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((valor) => this.jornadaAtual.set(valor));
+
+    this.contrato.controls.regime.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((valor) => this.regimeAtual.set(valor));
   }
 
   ngOnInit(): void {
@@ -214,6 +327,56 @@ export class EmployeeFormPage implements OnInit {
 
     this.id.set(id);
     void this.carregar(id);
+    void this.carregarContrato(id);
+  }
+
+  async salvarContrato(): Promise<void> {
+    const id = this.id();
+    if (!id) return;
+
+    this.salvandoContrato.set(true);
+    this.erro.set(null);
+
+    try {
+      const valores = this.contrato.getRawValue();
+      const salvo = await this.api.saveContract(id, {
+        regime: valores.regime as ContractResponse['regime'],
+        scheduleType: valores.scheduleType as ContractResponse['scheduleType'],
+        weeklyHours: Number(valores.weeklyHours),
+        // Vazio vira a data de admissão, resolvido no servidor: perguntar a mesma data
+        // duas vezes no cadastro é atrito sem retorno.
+        startsOn: '0001-01-01',
+        compensationAgreementOn: valores.compensationAgreementOn || null,
+        notes: valores.notes.trim() || null,
+      });
+
+      this.alertas.set(salvo.warnings);
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    } finally {
+      this.salvandoContrato.set(false);
+    }
+  }
+
+  private async carregarContrato(id: string): Promise<void> {
+    try {
+      const atual = await this.api.getContract(id);
+
+      this.contrato.patchValue({
+        regime: atual.regime,
+        scheduleType: atual.scheduleType,
+        weeklyHours: atual.weeklyHours,
+        compensationAgreementOn: atual.compensationAgreementOn ?? '',
+        notes: atual.notes ?? '',
+      });
+
+      this.jornadaAtual.set(atual.scheduleType);
+      this.regimeAtual.set(atual.regime);
+      this.alertas.set(atual.warnings);
+    } catch {
+      // Sem contrato ainda é o caso normal de quem acabou de ser cadastrado ou importado:
+      // o formulário abre nos padrões e a pessoa preenche.
+    }
   }
 
   alternarNovoCargo(): void {

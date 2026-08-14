@@ -117,6 +117,30 @@ public static class PeopleEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .RequireAuthorization(Permissions.PeopleWrite);
 
+        group.MapGet("/{id:guid}/contract", async Task<IResult> (
+            Guid id, ContractService service, CancellationToken ct) =>
+        {
+            var contrato = await service.GetAsync(new EmployeeId(id), ct);
+            return contrato is null
+                ? HttpResultsExtensions.Problem(new Error("contract.not_found", "Contrato ainda não preenchido."))
+                : TypedResults.Ok(contrato);
+        })
+        .WithName("getEmploymentContract")
+        .Produces<ContractResponse>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .RequireAuthorization(Permissions.PeopleRead);
+
+        group.MapPut("/{id:guid}/contract", async Task<IResult> (
+            Guid id, SaveContractRequest request, ContractService service, CancellationToken ct) =>
+        {
+            var result = await service.SaveAsync(new EmployeeId(id), request, ct);
+            return result.ToHttpResult(value => TypedResults.Ok(value));
+        })
+        .WithName("saveEmploymentContract")
+        .Produces<ContractResponse>()
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(Permissions.PeopleWrite);
+
         MapImportEndpoints(group);
 
         return app;

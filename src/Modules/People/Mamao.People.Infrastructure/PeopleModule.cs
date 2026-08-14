@@ -43,6 +43,7 @@ public static class PeopleModule
         services.AddScoped<IPeopleOutbox>(sp => new PeopleOutbox(sp.GetRequiredService<PeopleDbContext>()));
         services.AddScoped<IEmployeeDirectory, EmployeeDirectory>();
         services.AddScoped<EmployeeService>();
+        services.AddScoped<ContractService>();
         services.AddScoped<EmployeeImportService>();
         services.AddScoped<DepartmentService>();
         services.AddScoped<PositionService>();

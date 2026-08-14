@@ -16,6 +16,7 @@ public interface IPeopleDbContext
     DbSet<Employee> Employees { get; }
     DbSet<Department> Departments { get; }
     DbSet<Position> Positions { get; }
+    DbSet<EmploymentContract> EmploymentContracts { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
 

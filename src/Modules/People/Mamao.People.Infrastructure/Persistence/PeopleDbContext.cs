@@ -22,6 +22,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Department> Departments => Set<Department>();
     public DbSet<Position> Positions => Set<Position>();
+    public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +30,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
         modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
         modelBuilder.ApplyConfiguration(new PositionConfiguration());
+        modelBuilder.ApplyConfiguration(new EmploymentContractConfiguration());
 
         // A outbox mora no schema "messaging" e pertence ao MessagingDbContext, que e quem
         // gera a migration dela. Aqui ela e apenas mapeada para que o Enqueue participe da
@@ -101,6 +103,32 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .WithMany()
             .HasForeignKey(e => e.ManagerId)
             .OnDelete(DeleteBehavior.SetNull);
+    }
+}
+
+public sealed class EmploymentContractConfiguration : IEntityTypeConfiguration<EmploymentContract>
+{
+    public void Configure(EntityTypeBuilder<EmploymentContract> builder)
+    {
+        builder.ToTable("employment_contracts");
+        builder.HasKey(c => c.Id);
+
+        // Enum como TEXTO no banco, nao inteiro: `regime = 'Militar'` e legivel num SELECT
+        // de suporte, e reordenar o enum deixa de reescrever silenciosamente o significado
+        // das linhas ja gravadas. Mesma razao do enum como texto no JSON.
+        builder.Property(c => c.Regime).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(c => c.ScheduleType).HasConversion<string>().HasMaxLength(30).IsRequired();
+
+        builder.Property(c => c.WeeklyHours).HasPrecision(4, 1);
+        builder.Property(c => c.Notes).HasMaxLength(500);
+
+        // Um contrato por funcionario, garantido pelo banco e nao so pelo servico.
+        builder.HasIndex(c => new { c.TenantId, c.EmployeeId }).IsUnique();
+
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(c => c.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

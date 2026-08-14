@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/{id}/contract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getEmploymentContract"];
+        put: operations["saveEmploymentContract"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/import/format": {
         parameters: {
             query?: never;
@@ -391,6 +407,23 @@ export interface components {
             role: string;
             permissions: string[];
         };
+        ContractResponse: {
+            employeeId: components["schemas"]["EmployeeId"];
+            regime: components["schemas"]["EmploymentRegime"];
+            scheduleType: components["schemas"]["WorkScheduleType"];
+            /** Format: double */
+            weeklyHours: number;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            compensationAgreementOn: string | null;
+            notes: string | null;
+            warnings: components["schemas"]["ContractWarning"][];
+        };
+        ContractWarning: {
+            code: string;
+            message: string;
+        };
         CreateDepartmentRequest: {
             name: string;
             parentId: (string & components["schemas"]["DepartmentId"]) | null;
@@ -510,6 +543,8 @@ export interface components {
             isActive: boolean;
             hasLogin: boolean;
         };
+        /** @enum {unknown} */
+        EmploymentRegime: "Clt" | "EstatutarioFederal" | "EstatutarioLocal" | "Militar" | "Outro";
         ForgotPasswordRequest: {
             email: string;
         };
@@ -593,6 +628,17 @@ export interface components {
             token: string;
             newPassword: string;
         };
+        SaveContractRequest: {
+            regime: components["schemas"]["EmploymentRegime"];
+            scheduleType: components["schemas"]["WorkScheduleType"];
+            /** Format: double */
+            weeklyHours: number;
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            compensationAgreementOn: string | null;
+            notes: string | null;
+        };
         TerminateEmployeeRequest: {
             /** Format: date */
             terminatedOn: string;
@@ -611,6 +657,8 @@ export interface components {
         UpdatePositionRequest: {
             name: string;
         };
+        /** @enum {unknown} */
+        WorkScheduleType: "Administrativo" | "CincoDois" | "SeisUm" | "DozePorTrintaESeis" | "Rodizio" | "Outro";
     };
     responses: never;
     parameters: never;
@@ -1102,6 +1150,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EmployeeResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getEmploymentContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    saveEmploymentContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveContractRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractResponse"];
                 };
             };
             /** @description Bad Request */

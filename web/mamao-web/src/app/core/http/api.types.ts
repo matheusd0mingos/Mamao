@@ -25,6 +25,11 @@ export type UpdateDepartmentRequest = Schemas['UpdateDepartmentRequest'];
 export type PositionResponse = Schemas['PositionResponse'];
 export type CreatePositionRequest = Schemas['CreatePositionRequest'];
 
+export type ContractResponse = Schemas['ContractResponse'];
+export type SaveContractRequest = Schemas['SaveContractRequest'];
+export type EmploymentRegime = Schemas['EmploymentRegime'];
+export type WorkScheduleType = Schemas['WorkScheduleType'];
+
 export type InviteResponse = Schemas['InviteResponse'];
 export type InviteStatus = Schemas['InviteStatus'];
 export type InvitePreview = Schemas['InvitePreview'];

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:43171"
+      "url": "http://127.0.0.1:43205"
     }
   ],
   "paths": {
@@ -655,6 +655,96 @@
         }
       }
     },
+    "/api/v1/employees/{id}/contract": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "getEmploymentContract",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "saveEmploymentContract",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveContractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/employees/import/format": {
       "get": {
         "tags": [
@@ -1155,6 +1245,68 @@
           }
         }
       },
+      "ContractResponse": {
+        "required": [
+          "employeeId",
+          "regime",
+          "scheduleType",
+          "weeklyHours",
+          "startsOn",
+          "compensationAgreementOn",
+          "notes",
+          "warnings"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "regime": {
+            "$ref": "#/components/schemas/EmploymentRegime"
+          },
+          "scheduleType": {
+            "$ref": "#/components/schemas/WorkScheduleType"
+          },
+          "weeklyHours": {
+            "format": "double",
+            "type": "number"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "compensationAgreementOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContractWarning"
+            }
+          }
+        }
+      },
+      "ContractWarning": {
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "CreateDepartmentRequest": {
         "required": [
           "name",
@@ -1635,6 +1787,15 @@
           }
         }
       },
+      "EmploymentRegime": {
+        "enum": [
+          "Clt",
+          "EstatutarioFederal",
+          "EstatutarioLocal",
+          "Militar",
+          "Outro"
+        ]
+      },
       "ForgotPasswordRequest": {
         "required": [
           "email"
@@ -1925,6 +2086,42 @@
           }
         }
       },
+      "SaveContractRequest": {
+        "required": [
+          "regime",
+          "scheduleType",
+          "weeklyHours",
+          "startsOn",
+          "compensationAgreementOn",
+          "notes"
+        ],
+        "type": "object",
+        "properties": {
+          "regime": {
+            "$ref": "#/components/schemas/EmploymentRegime"
+          },
+          "scheduleType": {
+            "$ref": "#/components/schemas/WorkScheduleType"
+          },
+          "weeklyHours": {
+            "format": "double",
+            "type": "number"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "compensationAgreementOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "TerminateEmployeeRequest": {
         "required": [
           "terminatedOn"
@@ -2008,6 +2205,16 @@
             "type": "string"
           }
         }
+      },
+      "WorkScheduleType": {
+        "enum": [
+          "Administrativo",
+          "CincoDois",
+          "SeisUm",
+          "DozePorTrintaESeis",
+          "Rodizio",
+          "Outro"
+        ]
       }
     }
   },

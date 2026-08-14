@@ -3,10 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type {
   CreateEmployeeRequest,
+  ContractResponse,
   EmployeeImportFormat,
   EmployeeImportPreview,
   EmployeeImportResult,
   EmployeeResponse,
+  SaveContractRequest,
   PagedEmployees,
   TerminateEmployeeRequest,
   UpdateEmployeeRequest,
@@ -61,6 +63,15 @@ export class EmployeesApi {
 
   terminate(id: string, request: TerminateEmployeeRequest): Promise<EmployeeResponse> {
     return firstValueFrom(this.http.post<EmployeeResponse>(`${this.base}/${id}/terminate`, request));
+  }
+
+  /** Contrato: um por funcionário, criado ou atualizado pelo mesmo PUT. */
+  getContract(id: string): Promise<ContractResponse> {
+    return firstValueFrom(this.http.get<ContractResponse>(`${this.base}/${id}/contract`));
+  }
+
+  saveContract(id: string, request: SaveContractRequest): Promise<ContractResponse> {
+    return firstValueFrom(this.http.put<ContractResponse>(`${this.base}/${id}/contract`, request));
   }
 
   /** O formato esperado vem do servidor: os nomes de coluna aceitos tem uma verdade so. */

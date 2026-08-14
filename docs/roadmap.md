@@ -56,9 +56,10 @@ não no mês 4, quando vira um projeto próprio.
 - [x] **Setores em árvore** (caminho materializado: "tudo abaixo de Operações" em uma
       consulta) e **cargos** como entidade. Equipes e gestor: parcial — `ManagerId` existe
       no modelo, falta a tela
-- [ ] `EmploymentContract`: **regime de vínculo** (CLT, estatutário, militar, outro —
-      [ADR-0017](adr/0017-regime-de-vinculo.md)), tipo de jornada, carga semanal,
-      registro de acordo de compensação
+- [x] `EmploymentContract`: **regime de vínculo** (CLT, estatutário, militar, outro —
+      [ADR-0017](adr/0017-regime-de-vinculo.md)), tipo de jornada (incluindo **rodízio**),
+      carga semanal, acordo de compensação, e os primeiros **alertas em modo alerta**
+      — condicionados ao regime, nunca bloqueando
 - [ ] `Department` → **`OrgUnit` com `Kind`** (organização, setor, equipe), para o grupo
       com subordinadas caber na árvore que já existe ([ADR-0018](adr/0018-organizacoes-e-unidades.md))
 - [x] **Importação CSV** com mapeamento de coluna, pré-visualização e erro por linha
