@@ -205,6 +205,13 @@ fi
 
 docker compose --env-file .env up -d --remove-orphans
 
+# O Caddyfile entra por bind mount: mudar o arquivo NAO faz o compose recriar o
+# container, entao a configuracao nova ficaria no disco sem nunca valer — e o sintoma
+# e o pior possivel, porque tudo parece ter subido. Recarrega explicitamente; o reload
+# do Caddy troca a configuracao sem derrubar conexao. Se falhar, reinicia.
+docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 \
+    || docker compose restart caddy >/dev/null
+
 # /healthz/ready so responde 200 quando o banco esta acessivel E as migrations foram
 # aplicadas pelo Worker. E o unico sinal confiavel de que subiu de verdade.
 #

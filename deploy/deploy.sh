@@ -484,6 +484,12 @@ subir_e_verificar() {
     remoto_faz "TAG='$tag' docker compose --env-file .env pull --quiet"
     remoto_faz "TAG='$tag' docker compose --env-file .env up -d --remove-orphans"
 
+    # O Caddyfile entra por bind mount: reenvia-lo nao faz o compose recriar o container.
+    # Sem este reload, mudanca de rota fica no disco do servidor sem nunca valer, e tudo
+    # parece ter subido normalmente.
+    remoto_faz "docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile" \
+        >/dev/null 2>&1 || remoto_faz "docker compose restart caddy" >/dev/null
+
     aguardar_saude || return 1
 
     passo "Conferindo pela borda"
