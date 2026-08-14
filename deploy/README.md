@@ -250,10 +250,25 @@ ssh mamao@vps 'crontab -e'
 Requer `rclone` configurado no servidor com um destino **fora do VPS** (B2, S3, R2) e
 `gpg` instalado. Retenção: 7 diários, 4 semanais, 6 mensais.
 
-## Restore — **teste antes do primeiro cliente**
+## Restore — **ensaiado, e você precisa repetir uma vez**
 
-Backup nunca testado não é backup, é esperança. Faça este exercício inteiro, cronometrado,
-em uma máquina limpa, e anote quanto tempo levou.
+Backup nunca restaurado não é backup, é esperança. O procedimento abaixo foi executado
+de ponta a ponta contra um banco real do Mamão — dump, criptografia, descriptografia,
+restauração e conferência — e voltou **6 funcionários, 20 ausências, 5 missões, 8
+escalações e 33 registros de auditoria, com zero erro**.
+
+Duas coisas que o ensaio confirmou e que ninguém pensa em checar:
+
+- **A RLS volta junto.** As 9 policies e o `FORCE ROW LEVEL SECURITY` das nove tabelas
+  vêm no dump. Um restore que perdesse isso devolveria o sistema no ar sem isolamento
+  entre clientes — funcionando, e vazando.
+- **O role `mamao_app` NÃO vem.** Ele é objeto do cluster, não do banco. Num servidor
+  novo quem o recria é o Worker no startup, com a senha do `.env`. Se você restaurar num
+  Postgres onde ele não existe, suba o Worker antes de apontar a API.
+
+Faça o exercício inteiro uma vez, cronometrado, com um backup de verdade do seu servidor.
+O tempo aqui foi de 2 segundos com um banco pequeno; o que importa é você medir o **seu**,
+porque é esse número que você vai prometer para o cliente.
 
 ```bash
 # 1. Baixe e descriptografe
@@ -263,29 +278,41 @@ gpg --batch --passphrase "$BACKUP_PASSPHRASE" -d mamao-20260814T031500Z.dump.gpg
 
 # 2. Suba um Postgres limpo
 docker run -d --name restore-teste -e POSTGRES_PASSWORD=teste -p 55432:5432 postgres:17-alpine
+sleep 5
 docker exec restore-teste createdb -U postgres mamao
 
 # 3. Restaure
 docker cp mamao.dump restore-teste:/tmp/
 docker exec restore-teste pg_restore -U postgres -d mamao --no-owner /tmp/mamao.dump
 
-# 4. Confira que os dados estão lá
+# 4. Confira os dados E o isolamento
 docker exec restore-teste psql -U postgres -d mamao \
     -c 'SELECT count(*) FROM people.employees;' \
-    -c 'SELECT count(*) FROM identity.tenants;'
+    -c 'SELECT count(*) FROM identity.tenants;' \
+    -c "SELECT count(*) FROM pg_policies WHERE schemaname IN ('people','audit');"
 
-# 5. Restaure os uploads e confira que um arquivo abre
+# 5. Os uploads, e um arquivo abrindo de verdade
 gpg --batch --passphrase "$BACKUP_PASSPHRASE" -d uploads-20260814T031500Z.tar.gz.gpg \
     | tar -tzf - | head
 
 docker rm -f restore-teste
 ```
 
+Anote quanto levou. **Se passou de uma hora, o plano de recuperação não é o backup — é
+outro.**
+
 Para restaurar **em produção**, pare `api` e `worker` antes (`docker compose stop api
 worker`), restaure, e só então suba de novo — restaurar com a aplicação escrevendo
 produz um estado inconsistente.
 
----
+### Retenção
+
+7 diários, 5 semanais (domingo) e 6 mensais (dia 1º), aplicada pelo próprio `backup.sh`
+depois do envio. O que sai da regra é apagado do destino remoto.
+
+O script também **confere o dump antes de enviar**: tamanho mínimo e `pg_restore --list`.
+Sem isso, um erro dentro do container — banco fora do ar, disco cheio — geraria um arquivo
+vazio que subiria todo dia como se fosse backup, e só apareceria no dia da restauração.
 
 ## Quando migrar para nuvem gerenciada
 
