@@ -35,9 +35,18 @@ public sealed class SmtpEmailSender(
 
         using var cliente = new SmtpClient { Timeout = _options.TimeoutSeconds * 1000 };
 
+        // A porta manda mais que a configuracao. 465 e TLS implicito: o servidor comeca a
+        // falar TLS no primeiro byte e nunca anuncia STARTTLS. Pedir STARTTLS ali faz o
+        // cliente esperar um anuncio que nunca vem, ate estourar o timeout — e o sintoma
+        // ("o e-mail nao chegou") nao aponta para a porta em momento algum.
+        // Como UseStartTls e true por padrao, quem so trocasse a porta para 465 cairia
+        // exatamente nesse buraco.
+        const int PortaTlsImplicito = 465;
+
         var seguranca = _options switch
         {
             { UseSsl: true } => SecureSocketOptions.SslOnConnect,
+            { Port: PortaTlsImplicito } => SecureSocketOptions.SslOnConnect,
             { UseStartTls: true } => SecureSocketOptions.StartTls,
             _ => SecureSocketOptions.Auto,
         };

@@ -32,7 +32,7 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
 
             Se não foi você quem pediu, ignore esta mensagem: sua senha continua a mesma.
 
-            {_app.ProductName} — gestão sem complicação
+            {_app.ProductName} — a operação da sua equipe em um lugar só
             """;
 
         return new EmailMessage(
@@ -78,7 +78,7 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
 
             Se você não esperava este convite, fale com {quemConvidou} antes de abrir o link.
 
-            {_app.ProductName} — gestão sem complicação
+            {_app.ProductName} — a operação da sua equipe em um lugar só
             """;
 
         return new EmailMessage(
@@ -114,7 +114,7 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
 
             Se não foi você, procure o responsável pela conta da sua empresa imediatamente.
 
-            {_app.ProductName} — gestão sem complicação
+            {_app.ProductName} — a operação da sua equipe em um lugar só
             """;
 
         // Aviso de senha alterada e controle de seguranca, nao cortesia: e assim que a
@@ -158,7 +158,7 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
                     </tr>
                   </table>
                   <p style="color:#5b6661;font-size:12px;margin-top:16px">
-                    {Escapar(_app.ProductName)} — gestão sem complicação
+                    {Escapar(_app.ProductName)} — a operação da sua equipe em um lugar só
                   </p>
                 </td>
               </tr>

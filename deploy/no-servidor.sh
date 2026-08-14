@@ -117,9 +117,14 @@ LANDING_HOST=$landing
 # ── e-mail ────────────────────────────────────────────────────────────────────
 # Sem SMTP nao ha convite nem recuperacao de senha. A aplicacao sobe assim mesmo e
 # registra um CRITICAL no log. Preencha antes de abrir para o primeiro cliente.
+# 587 -> STARTTLS=true, SSL=false.  465 -> SSL=true, STARTTLS=false. Nao misture:
+# na 465 o TLS comeca no primeiro byte e pedir STARTTLS trava ate o timeout.
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USE_STARTTLS=true
+SMTP_USE_SSL=false
+# Usuario vazio = sem autenticacao, e o provedor recusa retransmitir. Em Zoho/Gmail o
+# usuario e o proprio endereco, e o FROM tem que ser ele ou um alias autorizado.
 SMTP_USERNAME=
 SMTP_PASSWORD=
 SMTP_FROM_ADDRESS=nao-responda@$dominio

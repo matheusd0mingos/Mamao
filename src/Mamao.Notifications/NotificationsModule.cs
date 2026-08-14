@@ -53,9 +53,29 @@ public static class NotificationsModule
 
         if (smtp.Configurado)
         {
+            // Modo de TLS e "vai autenticar?" entram no log porque foram exatamente as duas
+            // coisas invisiveis quando um envio falhou em producao: a porta 465 exige TLS
+            // implicito, e usuario vazio faz o cliente nem tentar autenticar — provedor
+            // nenhum aceita retransmitir assim. A senha, claro, nunca aparece.
+            var modo = (smtp.UseSsl, smtp.Port, smtp.UseStartTls) switch
+            {
+                (true, _, _) or (_, 465, _) => "TLS implicito (SSL)",
+                (_, _, true) => "STARTTLS",
+                _ => "automatico",
+            };
+
             logger.LogInformation(
-                "E-mail por SMTP em {Host}:{Porta} (STARTTLS={StartTls}), remetente {Remetente}.",
-                smtp.Host, smtp.Port, smtp.UseStartTls, smtp.FromAddress);
+                "E-mail por SMTP em {Host}:{Porta} · {Modo} · autenticacao {Autenticacao} · remetente {Remetente}.",
+                smtp.Host, smtp.Port, modo,
+                string.IsNullOrWhiteSpace(smtp.Username) ? "DESLIGADA (usuario vazio)" : $"como {smtp.Username}",
+                smtp.FromAddress);
+
+            if (string.IsNullOrWhiteSpace(smtp.Username))
+            {
+                logger.LogWarning(
+                    "Smtp:Username vazio: nenhuma autenticacao sera feita. Quase todo provedor " +
+                    "recusa retransmitir sem login, e a falha so aparece na hora de enviar.");
+            }
         }
         else if (services.GetRequiredService<IHostEnvironment>().IsDevelopment())
         {
