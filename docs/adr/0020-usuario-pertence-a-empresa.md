@@ -86,8 +86,55 @@ permitisse isso não protegeria nada. O que compensa:
 - Convite de funcionário (V1.5) fica direto: `Employee.Email` → cria `MamaoUser` no mesmo
   tenant. Sem procurar conta existente em outro lugar, sem fundir nada.
 
+## <a name="mesma-pessoa"></a>A mesma pessoa em duas empresas
+
+O caso é raro e vai acontecer: sócio de duas empresas, consultor, militar transferido de
+unidade. Três coisas a separar, porque só uma delas é problema.
+
+**Não é problema:** ser **funcionário** em duas empresas. `Employee` já é por tenant desde
+sempre; nada impede a mesma pessoa estar cadastrada nas duas. O que colide é só o **login**.
+
+**Também não é problema:** mudar de empresa. É criar o usuário no destino e desativar na
+origem. Nenhum dado precisa se mover.
+
+**O caso real:** precisar **acessar as duas ao mesmo tempo**.
+
+### Hoje: um segundo endereço
+
+O e-mail é único no sistema, então a segunda conta precisa de outro endereço. Na prática
+resolve-se com sufixo (`joao+aurora@gmail.com`, `joao+batalhao@gmail.com`), que a maior
+parte dos provedores entrega na mesma caixa. É contorno, e está assumido como tal.
+
+### Quando doer: desambiguação depois da senha
+
+Se aparecer **cliente pedindo** — não hipótese —, o caminho já está escolhido, e não é
+voltar ao usuário global:
+
+1. A unicidade do e-mail passa de global para **`(TenantId, NormalizedEmail)`**.
+2. O login procura o e-mail entre os tenants e verifica a senha contra **cada** candidato.
+3. Um candidato bate → entra direto, exatamente como hoje. Mais de um bate (mesma senha nas
+   duas) → **só aí** pergunta em qual empresa entrar.
+
+O caso comum não muda em nada. A pergunta extra só aparece para quem realmente tem duas
+contas, e **só depois de a senha ser conferida** — perguntar antes revelaria a quem digitasse
+um e-mail qualquer em quais empresas ele existe, que é justamente a enumeração que motivou
+esta ADR.
+
+Custo estimado: índice único trocado, um `IUserValidator` que valida por tenant (o padrão do
+Identity consulta o sistema inteiro) e a consulta de login escrita à mão em vez de
+`FindByEmailAsync`. Ordem de 100 linhas, nenhuma delas urgente.
+
+### Por que dá para adiar sem risco
+
+**Ir de restrito para permissivo é trocar um índice.** `UNIQUE (normalized_email)` vira
+`UNIQUE (tenant_id, normalized_email)` — sem migração de dado, sem fusão de conta, sem
+decidir de quem é o quê. É exatamente o contrário do que a [ADR-0006](0006-identidade.md)
+temia ao escolher o usuário global: lá, sair do global exigiria separar contas já
+compartilhadas. Aqui, o arrependimento é barato — e por isso a decisão certa hoje é a mais
+restrita.
+
 ## Quando revisitar
 
-Se aparecer demanda real — cliente pedindo, não hipótese — de uma pessoa operando duas
-empresas independentes. A resposta então é **alternar de conta**, não conta compartilhada:
-mais simples de construir e mais fácil de auditar do que voltar ao usuário global.
+Quando um cliente pedir acesso a duas empresas com o mesmo login. Aí executa-se o plano
+acima. Antes disso, construir a desambiguação seria complexidade permanente no caminho mais
+sensível do sistema para atender um caso que ainda não existe.
