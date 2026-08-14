@@ -115,6 +115,9 @@ planilha, e o sistema aponta uma violação de interjornada que a planilha não 
 
 - [ ] `VacationEntitlement` com regras CLT ([ADR-0014](adr/0014-regras-clt-de-ferias.md))
 - [ ] Solicitação com fracionamento e abono; validação das regras
+- [ ] **Divisões válidas calculadas do saldo real**, não menu fixo de 1×30/2×15/3×10 —
+      quem tem 18 dias não pode fracionar, e 3×10 é inválido
+      ([ADR-0014](adr/0014-regras-clt-de-ferias.md#fracionamento))
 - [ ] **`VacationRequest.RequestedBy` desde o primeiro commit** — o gestor lança pelo
       funcionário na V1, o próprio funcionário propõe na V1.5, **pelo mesmo fluxo**
       ([P1](produto/mvp-e-posicionamento.md#p1))

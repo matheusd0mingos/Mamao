@@ -30,7 +30,7 @@ Architecture — é aqui que está o valor.
 | Período aquisitivo: 12 meses a partir da admissão | art. 130 | `VacationEntitlement` gerado automaticamente no aniversário |
 | 30 dias corridos, reduzidos por faltas injustificadas: 6–14 → 24 dias; 15–23 → 18; 24–32 → 12; acima de 32 → sem direito | art. 130 | **Depende do módulo de ausências.** É a integração mais concreta do produto |
 | Período concessivo: 12 meses seguintes ao aquisitivo | art. 134 | Não conceder gera pagamento em dobro (art. 137). Vira pendência crítica no dashboard |
-| Fracionamento em até 3 períodos; um com ao menos 14 dias corridos, os demais com ao menos 5 dias cada | art. 134, §1º | Validação na solicitação |
+| Fracionamento em até 3 períodos; um com ao menos 14 dias corridos, os demais com ao menos 5 dias cada | art. 134, §1º | Validação na solicitação — ver [combinações](#fracionamento) |
 | Início vedado nos 2 dias que antecedem feriado ou dia de repouso semanal remunerado | art. 134, §3º | Validação; exige calendário de feriados por município |
 | Abono pecuniário: converter até 1/3 (10 dias) em dinheiro | art. 143 | Campo na solicitação; abate do saldo |
 | Comunicação ao empregado com ao menos 30 dias de antecedência | art. 135 | Alerta ao aprovar data próxima |
@@ -45,6 +45,46 @@ Notas de implementação:
   50) foi revogado pela reforma trabalhista de 2017. Não implemente essa restrição.
 - Contratos que não são CLT (PJ, estágio, intermitente) precisam de tratamento
   distinto ou de desativação das regras. Modele `EmploymentContract.Type` desde já.
+
+## <a name="fracionamento"></a>Fracionamento: por que não existe um menu fixo
+
+A tentação óbvia é oferecer três botões — 1×30, 2×15, 3×10 — e acabou. Dois problemas.
+
+**O primeiro:** 3×10 não é válido. O art. 134, §1º exige um período com **pelo menos 14
+dias corridos**; em 3×10 nenhum chega lá. Em três períodos o válido é 14+11+5, 14+10+6,
+16+9+5, 20+5+5 e assim por diante.
+
+**O segundo, mais grave:** *30 dias não é um dado, é um caso*. Faltas injustificadas
+reduzem o direito (art. 130) e a régua inteira muda junto:
+
+| Dias de direito | 1 período | 2 períodos | 3 períodos |
+|---|---|---|---|
+| 30 | 30 | 14+16 … 25+5 | 14+11+5 … 20+5+5 |
+| 24 (6–14 faltas) | 24 | 14+10 … 19+5 | **só** 14+5+5 |
+| 18 (15–23 faltas) | 18 | **impossível** (14+5 já são 19) | impossível |
+| 12 (24–32 faltas) | 12 | impossível | impossível |
+
+Quem tem 18 dias **não consegue fracionar de jeito nenhum** — e nenhum gestor sabe disso
+de cabeça. Um menu fixo mentiria para essa pessoa. O abono pecuniário (art. 143) mexe na
+tabela de novo: vender 10 dias de 30 deixa 20 para gozar, e aí três períodos deixam de
+caber.
+
+**Decisão:** a tela não tem menu fixo. Ela **calcula** as combinações válidas a partir do
+saldo real e das regras do tenant, oferece as duas ou três mais comuns como atalho de um
+clique, e mostra o resto. Quando uma divisão é recusada, o motivo vem junto com o número
+que falta ("faltam 4 dias no período mais longo"), nunca "divisão inválida".
+
+**Recusa com registro, não bloqueio mudo.** Convenção coletiva pode dispor diferente do
+que está aqui, e a operação real tem exceção. Então a divisão fora da regra é recusada
+por padrão, com o artigo citado, mas o tenant pode liberar — e a liberação fica gravada
+com autor, data e justificativa. Mesma filosofia do modo alerta das regras de jornada
+([ADR-0015](0015-regras-de-jornada-e-escala.md)): o sistema não finge que é normal, e
+também não trava a empresa.
+
+> **Pendente de validação jurídica:** se CCT/ACT pode afastar o mínimo de 14 dias do
+> art. 134, §1º. A reforma de 2017 ampliou o negociado sobre o legislado (art. 611-A),
+> mas fracionamento de férias não está entre os itens listados. Por isso a liberação
+> existe como configuração do cliente, e não como recurso que a gente anuncia.
 
 ## <a name="depois-da-aprovação"></a>Depois da aprovação: quem fica sabendo, e com que prazo
 
