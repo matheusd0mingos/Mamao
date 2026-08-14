@@ -72,6 +72,16 @@ else
         dominio="${dominio:-app.mamao.tech}"
     fi
 
+    # A landing mora no dominio raiz e o app no subdominio. Quando o app JA e o dominio
+    # raiz, nao sobra endereco para a landing — e dois sites no mesmo endereco fazem o
+    # Caddy recusar o arquivo inteiro ("ambiguous site definition") e reiniciar em laco.
+    landing="${dominio#app.}"
+    if [[ "$landing" == "$dominio" ]]; then
+        landing="landing.invalid"   # endereco interno que ninguem resolve
+        aviso "O app vai ocupar $dominio inteiro; a landing nao sera publicada."
+        aviso "Para publicar as duas, use app.$dominio aqui e aponte os dois no DNS."
+    fi
+
     # As senhas entram nas connection strings JA RESOLVIDAS: o compose nao expande
     # variavel de dentro do proprio .env, entao um "$POSTGRES_PASSWORD" ali viraria
     # senha literal e o banco recusaria a conexao.
@@ -98,7 +108,7 @@ JWT_SIGNING_KEY=$(openssl rand -base64 48)
 
 PUBLIC_ORIGIN=https://$dominio
 PUBLIC_HOST=$dominio
-LANDING_HOST=${dominio#app.}
+LANDING_HOST=$landing
 
 # ── e-mail ────────────────────────────────────────────────────────────────────
 # Sem SMTP nao ha convite nem recuperacao de senha. A aplicacao sobe assim mesmo e
@@ -181,6 +191,12 @@ cd "$DESTINO"
 # A saida vai para /dev/null: ela contem os segredos ja resolvidos.
 if ! docker compose --env-file .env config 2>/dev/null | grep -q 'Password=[^;"[:space:]]'; then
     morrer "As connection strings em $DESTINO/.env estao sem senha. Veja DB_CONNECTION_OWNER e DB_CONNECTION_APP."
+fi
+
+# .env antigo pode ter os dois iguais; o Caddy recusa e reinicia em laco.
+landing_atual="$(sed -n 's/^LANDING_HOST=//p' .env | head -1)"
+if [[ "$landing_atual" == "$PUBLIC_HOST" ]]; then
+    morrer "LANDING_HOST e PUBLIC_HOST sao iguais ($PUBLIC_HOST) em $DESTINO/.env. O Caddy recusa dois sites no mesmo endereco: troque LANDING_HOST por landing.invalid, ou mude PUBLIC_HOST para app.$PUBLIC_HOST."
 fi
 
 docker compose --env-file .env up -d --remove-orphans

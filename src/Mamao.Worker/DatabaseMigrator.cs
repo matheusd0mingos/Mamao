@@ -18,6 +18,7 @@ namespace Mamao.Worker;
 /// </summary>
 public sealed class DatabaseMigrator(
     IServiceScopeFactory scopeFactory,
+    IConfiguration configuration,
     IHostApplicationLifetime lifetime,
     ILogger<DatabaseMigrator> logger) : IHostedService
 {
@@ -30,7 +31,13 @@ public sealed class DatabaseMigrator(
 
         var identity = scope.ServiceProvider.GetRequiredService<MamaoIdentityDbContext>();
         var audit = scope.ServiceProvider.GetRequiredService<AuditDbContext>();
-        var connectionString = identity.Database.GetConnectionString()!;
+        // Da configuracao, NAO de identity.Database.GetConnectionString(): o Npgsql nao
+        // devolve a senha naquela propriedade (Persist Security Info e falso por padrao),
+        // entao a conexao aberta aqui iria sem senha. Contra um Postgres local em `trust`
+        // isso passa despercebido; contra um que exige SCRAM, o Worker nao sobe, nao
+        // migra, e a API fica eternamente sem /healthz/ready.
+        var connectionString = configuration.GetConnectionString("mamao")
+            ?? throw new InvalidOperationException("ConnectionStrings:mamao nao configurada.");
 
         await using var lockConnection = new NpgsqlConnection(connectionString);
         await lockConnection.OpenAsync(cancellationToken);
