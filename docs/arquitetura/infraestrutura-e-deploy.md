@@ -186,6 +186,37 @@ Detalhes que importam:
 - Deploy por SSH com chave dedicada e usuário sem root.
 - Escaneamento de imagem (Trivy) e secret scanning no PR.
 
+### `deploy/deploy.sh`
+
+O deploy em si é um script, não um passo enterrado no YAML do CI: você precisa
+conseguir subir e **voltar** da sua máquina, às 22h, sem depender do GitHub estar de
+pé. O workflow do CI pode chamá-lo depois; a ordem certa é essa, não a inversa.
+
+```bash
+./deploy/deploy.sh              # testes → imagens → push → envio → subida → readiness
+./deploy/deploy.sh --status     # o que está no ar
+./deploy/deploy.sh --rollback   # volta para a versão anterior registrada no servidor
+```
+
+Ele guarda no servidor a versão atual e a anterior (`.tag-atual`, `.tag-anterior`), e
+volta sozinho se a subida não passar no readiness. Procedimento completo, incluindo
+provisionamento e restore, em [`deploy/README.md`](../../deploy/README.md).
+
+### Readiness que significa alguma coisa
+
+A API e o Worker sobem juntos, mas quem aplica as migrations é o Worker. Sem cuidado,
+a API se declara pronta com o schema atrasado, o Caddy manda tráfego e o usuário recebe
+erro de coluna inexistente — durante o deploy, que é exatamente quando ninguém está
+olhando o log.
+
+Por isso `/healthz/ready` inclui uma checagem de **migrations pendentes**, e o endpoint
+responde 503 em `Degraded` (o padrão do ASP.NET Core é 200, que aqui seria mentira). O
+`deploy.sh` só considera a subida concluída quando esse endpoint fica verde.
+
+**Rollback volta código, não banco.** Migration aplicada continua aplicada. Consequência
+prática: mudança destrutiva de schema vai em duas etapas — adiciona o novo, migra os
+dados, remove o antigo num deploy posterior. Nunca de uma vez.
+
 ---
 
 ## Observabilidade

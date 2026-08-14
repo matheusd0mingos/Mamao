@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -89,6 +90,16 @@ public static class ServiceDefaultsExtensions
         app.MapHealthChecks(ReadinessEndpoint, new HealthCheckOptions
         {
             Predicate = check => check.Tags.Contains(ReadyTag),
+
+            // Degraded tem que reprovar o readiness. No padrao ele responde 200, e uma
+            // checagem que devolve Degraded (ex.: migrations pendentes) deixaria o
+            // processo receber trafego mesmo sem estar pronto.
+            ResultStatusCodes =
+            {
+                [HealthStatus.Healthy] = StatusCodes.Status200OK,
+                [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+                [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+            },
         }).AllowAnonymous();
 
         return app;

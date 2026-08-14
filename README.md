@@ -37,7 +37,7 @@ observabilidade, migrations e testes.
 | Angular 22: login, cadastro, shell, pessoas | ✅ build de 78 kB gzip inicial |
 | Testes | ✅ 13 unitários + 9 de arquitetura + 7 de integração |
 | CI (GitHub Actions) | ✅ |
-| Deploy (Compose + Caddy + backup) | ✅ arquivos escritos, ainda não implantados |
+| Deploy (`deploy.sh` + Compose + Caddy + backup) | ✅ escrito e lintado, ainda não executado |
 
 **Pendente do Marco 0:** primeiro deploy no VPS e a rotina de backup rodando com
 restore testado. Ver [roadmap](docs/roadmap.md).
@@ -121,6 +121,11 @@ dotnet ef migrations add <Nome> \
 # O CI verifica os dois lados e quebra se estiverem desatualizados.
 dotnet run --project src/Mamao.Api -- --generate-openapi "$PWD/web/openapi.json"
 cd web/mamao-web && npm run generate:api
+
+# Deploy (config em deploy/.env; procedimento em deploy/README.md)
+./deploy/deploy.sh
+./deploy/deploy.sh --status
+./deploy/deploy.sh --rollback
 ```
 
 ---
@@ -140,7 +145,7 @@ src/
   Modules/People/             Contracts | Domain | Application | Infrastructure
 tests/                        Unitarios | Arquitetura | Integracao
 web/mamao-web/                Angular 22
-deploy/                       Compose, Caddy, init do banco, backup
+deploy/                       deploy.sh, Compose, Caddy, init do banco, backup
 docs/                         Decisoes de produto e arquitetura
 ```
 

@@ -55,6 +55,12 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_ENDPOINT:-}
     volumes:
       - uploads:/var/mamao/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s        # o Worker aplica as migrations antes de responder
     mem_limit: 512m
     depends_on:
       postgres:

@@ -24,7 +24,7 @@ O objetivo não é código bonito. É fechar o circuito inteiro com o mínimo de
 - [ ] OpenAPI → cliente TypeScript gerado
 - [ ] Outbox + `OutboxPublisher` publicando um evento de verdade (`EmployeeHired`)
 - [ ] CI: build, testes, imagem
-- [ ] **Deploy no VPS**: Caddy + compose + `mamao.tech` + TLS
+- [ ] **Deploy no VPS**: Caddy + compose + `mamao.tech` + TLS (`deploy/deploy.sh` pronto, falta executar)
 - [ ] `/healthz`, `/healthz/ready`, OTel exportando
 - [ ] **Backup diário + restore testado**
 - [ ] Teste de integração de vazamento cross-tenant

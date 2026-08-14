@@ -2,7 +2,7 @@
 # Backup diario: dump do Postgres + uploads, criptografado, enviado para FORA do VPS.
 #
 # Backup nunca testado nao e backup, e esperanca. Agende o restore de verdade
-# (deploy/restore.md) antes do primeiro cliente pagante.
+# (deploy/README.md, secao Restore) antes do primeiro cliente pagante.
 # Ver docs/arquitetura/infraestrutura-e-deploy.md#backup
 #
 # cron:  15 3 * * *  /opt/mamao/deploy/backup.sh >> /var/log/mamao-backup.log 2>&1

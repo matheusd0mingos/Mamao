@@ -35,7 +35,9 @@ builder.Services.AddExceptionHandler<UnhandledExceptionHandler>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<Mamao.Identity.Persistence.MamaoIdentityDbContext>(
-        name: "postgres", tags: [ServiceDefaultsExtensions.ReadyTag]);
+        name: "postgres", tags: [ServiceDefaultsExtensions.ReadyTag])
+    .AddCheck<PendingMigrationsHealthCheck>(
+        PendingMigrationsHealthCheck.Name, tags: [ServiceDefaultsExtensions.ReadyTag]);
 
 builder.Services.AddRateLimiter(options =>
 {
