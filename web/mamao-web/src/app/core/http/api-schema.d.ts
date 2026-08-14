@@ -487,6 +487,7 @@ export interface components {
             fullName: string;
             positionName: string;
             departmentName: string | null;
+            email: string | null;
             /** Format: date */
             hiredOn: string;
             isActive: boolean;

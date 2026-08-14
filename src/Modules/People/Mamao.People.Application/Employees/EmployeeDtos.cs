@@ -41,12 +41,14 @@ public sealed record EmployeeResponse(
     bool IsActive,
     bool HasLogin);
 
+/// <param name="Email">Na listagem porque a tela de acessos decide por ele quem dá para convidar.</param>
 public sealed record EmployeeListItem(
     EmployeeId Id,
     string? Code,
     string FullName,
     string PositionName,
     string? DepartmentName,
+    string? Email,
     DateOnly HiredOn,
     bool IsActive);
 

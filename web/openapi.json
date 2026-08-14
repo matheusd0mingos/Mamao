@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:41309"
+      "url": "http://127.0.0.1:43171"
     }
   ],
   "paths": {
@@ -1517,6 +1517,7 @@
           "fullName",
           "positionName",
           "departmentName",
+          "email",
           "hiredOn",
           "isActive"
         ],
@@ -1536,6 +1537,10 @@
             "type": "string"
           },
           "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
             "type": "string",
             "nullable": true
           },

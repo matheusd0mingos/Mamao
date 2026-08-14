@@ -24,6 +24,12 @@ export const routes: Routes = [
       import('./features/auth/reset-password.page').then((m) => m.ResetPasswordPage),
   },
   {
+    // Publica: quem chega aqui ainda nao tem conta.
+    path: 'aceitar-convite',
+    loadComponent: () =>
+      import('./features/auth/accept-invite.page').then((m) => m.AcceptInvitePage),
+  },
+  {
     path: '',
     canMatch: [authGuard],
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),
@@ -45,6 +51,12 @@ export const routes: Routes = [
         canMatch: [permissionGuard('people.write')],
         loadComponent: () =>
           import('./features/employees/employee-form.page').then((m) => m.EmployeeFormPage),
+      },
+      {
+        path: 'acessos',
+        canMatch: [permissionGuard('users.invite')],
+        loadComponent: () =>
+          import('./features/access/access.page').then((m) => m.AccessPage),
       },
       {
         path: 'estrutura',

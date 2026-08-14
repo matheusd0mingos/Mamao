@@ -90,6 +90,14 @@ export class SessionService {
     void this.router.navigate(['/entrar']);
   }
 
+  /**
+   * Adota uma sessão emitida por outro caminho que não o login — hoje, o aceite de
+   * convite. Existe para que essa tela não precise conhecer o formato do armazenamento.
+   */
+  adopt(auth: AuthResponse): void {
+    this.store(auth);
+  }
+
   private store(auth: AuthResponse): void {
     const stored: StoredSession = {
       accessToken: auth.accessToken,

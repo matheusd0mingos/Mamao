@@ -18,6 +18,7 @@ import { EmployeesStore } from './employees.store';
       </div>
 
       <div *mamaoHasPermission="'people.write'" class="head__acoes">
+        <a class="btn btn--ghost" routerLink="/acessos">Acessos</a>
         <a class="btn btn--ghost" routerLink="/estrutura">Estrutura</a>
         <a class="btn btn--ghost" routerLink="/pessoas/importar">Importar planilha</a>
         <a class="btn btn--primary" routerLink="/pessoas/nova">Cadastrar funcionário</a>

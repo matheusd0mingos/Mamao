@@ -71,9 +71,9 @@ não no mês 4, quando vira um projeto próprio.
 - [ ] Auditoria gravando
 - [x] **`User` pertence à empresa** ([ADR-0020](adr/0020-usuario-pertence-a-empresa.md)):
       `Membership` removida, tela de escolher empresa removida
-- [ ] **Convite de acesso**: RH importa a planilha e convida as **pessoas-chave**
+- [x] **Convite de acesso**: RH importa a planilha e convida as **pessoas-chave**
       (coordenador, supervisor, auxiliar de RH). Token com prazo, uso único, e-mail faltante
-      preenchido no próprio convite
+      preenchido no próprio convite. Tela de acessos + página pública de aceite
 
 **Pronto quando:** o cadastro real de um piloto entra em menos de 15 minutos, e as
 pessoas-chave dele conseguem entrar sem você no meio.

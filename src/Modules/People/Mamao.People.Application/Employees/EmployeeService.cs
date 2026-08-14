@@ -72,6 +72,7 @@ public sealed class EmployeeService(
                 e.FullName,
                 dbContext.Positions.Where(p => p.Id == e.PositionId).Select(p => p.Name).FirstOrDefault()!,
                 dbContext.Departments.Where(d => d.Id == e.DepartmentId).Select(d => d.Name).FirstOrDefault(),
+                e.Email,
                 e.HiredOn,
                 e.TerminatedOn == null))
             .ToListAsync(ct);
