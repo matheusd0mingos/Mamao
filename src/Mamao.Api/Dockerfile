@@ -13,6 +13,13 @@ RUN dotnet publish src/Mamao.Api/Mamao.Api.csproj -c Release -o /app --no-restor
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
+# A imagem da Microsoft nao traz curl nem wget, e o healthcheck do compose roda DENTRO
+# do container. Sem isso o healthcheck falha sempre — e um container eternamente
+# "unhealthy" e pior que nenhum healthcheck: parece vigilancia e nao e.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Nunca rodar como root.
 RUN useradd --uid 64198 --create-home mamao
 USER 64198

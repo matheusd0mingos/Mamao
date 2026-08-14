@@ -461,7 +461,9 @@ aguardar_saude() {
     passo "Aguardando a API ficar pronta"
 
     for ((i = 1; i <= tentativas; i++)); do
-        if remoto_faz "docker compose exec -T api wget -qO- http://localhost:8080/healthz/ready >/dev/null 2>&1"; then
+        # curl, nao wget: a imagem base da Microsoft nao traz nenhum dos dois, e quem
+        # instalamos no Dockerfile foi o curl.
+        if remoto_faz "docker compose exec -T api curl -fsS http://localhost:8080/healthz/ready >/dev/null 2>&1"; then
             info "Pronta apos ${i}x${espera}s."
             return 0
         fi

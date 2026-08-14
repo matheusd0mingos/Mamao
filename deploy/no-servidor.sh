@@ -177,9 +177,19 @@ docker compose --env-file .env up -d --remove-orphans
 
 # /healthz/ready so responde 200 quando o banco esta acessivel E as migrations foram
 # aplicadas pelo Worker. E o unico sinal confiavel de que subiu de verdade.
+#
+# Duas formas de perguntar, porque a ferramenta pode nao existir no container: a imagem
+# da Microsoft nao traz curl (instalamos no Dockerfile) e uma imagem antiga em cache nao
+# teria. O Caddy e Alpine e sempre tem o wget do busybox — serve de segunda via, e
+# pergunta pela rede interna, que e como o proprio Caddy fala com a API.
+api_pronta() {
+    docker compose exec -T api curl -fsS http://localhost:8080/healthz/ready >/dev/null 2>&1 \
+        || docker compose exec -T caddy wget -qO- http://api:8080/healthz/ready >/dev/null 2>&1
+}
+
 passo "Esperando ficar pronto"
 for i in $(seq 1 60); do
-    if docker compose exec -T api wget -qO- http://localhost:8080/healthz/ready >/dev/null 2>&1; then
+    if api_pronta; then
         info "pronto (${i}x3s)"
         echo "$TAG" > "$DESTINO/.tag-atual"
         printf '\n%s  https://%s esta no ar (%s)%s\n\n' "$VERDE" "$PUBLIC_HOST" "$TAG" "$NEUTRO"

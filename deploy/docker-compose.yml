@@ -55,7 +55,7 @@ services:
       # persistir, todo restart invalida os links ja enviados.
       - keys:/var/mamao/keys
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz/ready"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz/ready"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -83,7 +83,7 @@ services:
     volumes:
       - uploads:/var/mamao/uploads
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
       interval: 15s
       timeout: 5s
       retries: 5

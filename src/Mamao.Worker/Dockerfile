@@ -13,6 +13,11 @@ RUN dotnet publish src/Mamao.Worker/Mamao.Worker.csproj -c Release -o /app --no-
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
+# Ver o Dockerfile da API: a imagem base nao traz curl, e o healthcheck precisa dele.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Nunca rodar como root.
 RUN useradd --uid 64198 --create-home mamao
 USER 64198
