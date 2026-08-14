@@ -29,6 +29,21 @@ public enum OccupancyKind
     Outro,
 }
 
+/// <summary>Nome do motivo como a pessoa fala. O nome do enum vaza "Ferias" sem acento.</summary>
+public static class OccupancyKindLabels
+{
+    public static string Of(OccupancyKind kind) => kind switch
+    {
+        OccupancyKind.Ferias => "férias",
+        OccupancyKind.Folga => "folga",
+        OccupancyKind.Falta => "falta",
+        OccupancyKind.Afastamento => "afastamento",
+        OccupancyKind.Servico => "serviço",
+        OccupancyKind.Missao => "missão",
+        _ => "ausência",
+    };
+}
+
 /// <summary>De onde o bloco veio. Decide quem pode apagá-lo e o que acontece se a origem sumir.</summary>
 public enum OccupancySource
 {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Mamao.Identity.Domain;
 using Mamao.People.Contracts;
+using Mamao.SharedKernel.Tenancy;
 using Mamao.Identity.Persistence;
 using Mamao.Identity.Tokens;
 using Mamao.Notifications.Email;
@@ -245,6 +246,7 @@ public static class InviteEndpoints
             UserManager<MamaoUser> userManager,
             TokenService tokens,
             IEmployeeDirectory employees,
+            ITenantContext tenantContext,
             ILoggerFactory loggerFactory,
             TimeProvider timeProvider,
             CancellationToken ct) =>
@@ -300,6 +302,12 @@ public static class InviteEndpoints
             {
                 try
                 {
+                    // A rota e anonima — quem aceita ainda nao tem token —, entao nenhum
+                    // tenant foi resolvido e o filtro global de People esconderia o
+                    // funcionario. O tenant vem do convite, que e o unico dado confiavel
+                    // aqui: ele foi criado por alguem autenticado daquela empresa.
+                    tenantContext.Set(convite.TenantId);
+
                     await employees.LinkUserAsync(new EmployeeId(funcionarioId), user.Id, ct);
                 }
                 catch (Exception ex)

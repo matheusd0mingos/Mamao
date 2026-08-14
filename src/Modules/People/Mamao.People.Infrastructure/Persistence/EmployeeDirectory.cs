@@ -45,9 +45,10 @@ public sealed class EmployeeDirectory(PeopleDbContext dbContext) : IEmployeeDire
 
     public async Task LinkUserAsync(EmployeeId employeeId, Guid userId, CancellationToken cancellationToken)
     {
-        var funcionario = await dbContext.Employees.FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
-        if (funcionario is null)
-            return;
+        var funcionario = await dbContext.Employees.FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Funcionario {employeeId} nao encontrado no tenant atual. " +
+                "Quem chama precisa ter o tenant resolvido: o filtro global esconde tudo sem ele.");
 
         funcionario.LinkUser(userId);
         await dbContext.SaveChangesAsync(cancellationToken);

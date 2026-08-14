@@ -192,7 +192,7 @@ public sealed class AbsenceRequestService(
         {
             await emails.SendAsync(
                 templates.AbsenceDecision(
-                    email, nome ?? email, pedido.Kind.ToString().ToLowerInvariant(), periodo, aprovada, nota),
+                    email, nome ?? email, OccupancyKindLabels.Of(pedido.Kind), periodo, aprovada, nota),
                 ct);
         }
         catch (Exception ex)
