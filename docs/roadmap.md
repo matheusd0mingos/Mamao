@@ -69,8 +69,18 @@ não no mês 4, quando vira um projeto próprio.
       `Owner`/`Hr`/`Manager`/`Employee`, policies geradas de `Permissions.All`.
       Falta a **tela** de gerenciar quem tem qual papel
 - [ ] Auditoria gravando
+- [ ] **`User` pertence à empresa** ([ADR-0020](adr/0020-usuario-pertence-a-empresa.md)):
+      `Membership` some, some a tela de escolher empresa
+- [ ] **Convite de acesso**: RH importa a planilha e convida as **pessoas-chave**
+      (coordenador, supervisor, auxiliar de RH). Token com prazo, uso único, e-mail faltante
+      preenchido no próprio convite
 
-**Pronto quando:** o cadastro real de um piloto entra em menos de 15 minutos.
+**Pronto quando:** o cadastro real de um piloto entra em menos de 15 minutos, e as
+pessoas-chave dele conseguem entrar sem você no meio.
+
+> **Onde P1 continua valendo:** convidar 3 pessoas-chave é ativação; convidar os 40 é
+> dependência. O produto tem que seguir 100% útil com o RH sozinho logado, mesmo que
+> ninguém aceite convite nenhum.
 
 ---
 
@@ -211,7 +221,7 @@ Escalas na V1 custa cerca de 3 semanas. Compensações, sem tocar em qualidade:
 | Geração automática de escala com otimização → V3 | ~2 semanas | Ciclo recorrente + edição manual cobre 90% do uso e é o que a planilha já faz, só que validado |
 | `Work` reduzido (sem quadro, recorrência, dependência, anexo, comentário) | ~1 semana | Reforço de [P2](produto/mvp-e-posicionamento.md#p2); no segmento, o turno importa mais que o quadro |
 | Banco de horas e apuração de extras fora de escopo | — | Porta de entrada para ponto eletrônico, recusado explicitamente |
-| Convites e autoatendimento do funcionário → V1.5 | ~1 semana | Consequência de [P1](produto/mvp-e-posicionamento.md#p1) |
+| ~~Convites e autoatendimento do funcionário → V1.5~~ · **convite entra na V1**, autoatendimento fica | ~4 dias, não 1 semana | O convite é o caminho de ativação definido pelo autor: RH importa a planilha e convida as pessoas-chave. O que fica para a V1.5 é convidar o efetivo inteiro e as telas de autoatendimento — que é o que [P1](produto/mvp-e-posicionamento.md#p1) protege |
 
 Saldo: a V1 fica ~1 a 2 semanas mais longa que a versão sem escalas, e passa a
 servir o segmento escolhido de verdade. É a troca certa.
