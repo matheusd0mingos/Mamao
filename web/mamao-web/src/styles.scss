@@ -1,4 +1,11 @@
 /*
+ * As fontes da marca sao self-hosted via @fontsource e entram pelo array `styles` do
+ * angular.json (o @use do Sass exige namespace e nao serve para CSS puro).
+ * Self-hosted e nao Google Fonts: uma requisicao a terceiro a menos e um dado a menos
+ * saindo do navegador do cliente.
+ */
+
+/*
  * Tokens do design system do Mamao.
  *
  * Angular CDK sim, Angular Material nao na camada visual: tematizar Material ate deixar de
@@ -73,6 +80,8 @@ body {
 }
 
 body {
+  /* O body nunca rola na horizontal: conteudo largo rola dentro do proprio container. */
+  overflow-x: clip;
   background: var(--surface-app);
   color: var(--text-primary);
   font-family: var(--font-ui);
@@ -222,6 +231,9 @@ a {
 /* Tabela larga rola dentro do proprio container; o body nunca rola na horizontal. */
 .table-wrap {
   overflow-x: auto;
+
+  /* Sem isto, um filho de grid/flex se recusa a encolher e empurra a pagina inteira. */
+  min-width: 0;
 }
 
 table.data {

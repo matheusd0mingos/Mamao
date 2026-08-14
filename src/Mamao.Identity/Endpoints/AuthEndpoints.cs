@@ -2,6 +2,8 @@ using System.Security.Claims;
 using Mamao.Identity.Domain;
 using Mamao.Identity.Persistence;
 using Mamao.Identity.Tokens;
+using Mamao.Notifications;
+using Mamao.Notifications.Email;
 using Mamao.SharedKernel.Authorization;
 using Mamao.SharedKernel.Results;
 using Mamao.SharedKernel.Web;
@@ -11,12 +13,15 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Mamao.Identity.Endpoints;
 
 public sealed record RegisterCompanyRequest(string CompanyName, string FullName, string Email, string Password);
 public sealed record LoginRequest(string Email, string Password, Guid? TenantId);
 public sealed record RefreshRequest(string RefreshToken);
+public sealed record ForgotPasswordRequest(string Email);
+public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
 
 public sealed record TenantOption(Guid TenantId, string Name, string Role);
 
@@ -189,6 +194,77 @@ public static class AuthEndpoints
         })
         .WithName("refreshToken")
         .Produces<AuthResponse>()
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .AllowAnonymous();
+
+        group.MapPost("/forgot-password", async Task<IResult> (
+            ForgotPasswordRequest request,
+            UserManager<MamaoUser> userManager,
+            IEmailSender emails,
+            EmailTemplates templates,
+            ILogger<MamaoUser> logger,
+            CancellationToken ct) =>
+        {
+            var email = request.Email.Trim().ToLowerInvariant();
+            var user = await userManager.FindByEmailAsync(email);
+
+            if (user is not null)
+            {
+                var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                await emails.SendAsync(templates.PasswordReset(email, user.FullName, token), ct);
+            }
+            else
+            {
+                logger.LogInformation("Pedido de recuperacao para e-mail inexistente.");
+            }
+
+            // Sempre 204, exista o usuario ou nao: responder diferente transforma este
+            // endpoint num verificador de quem tem conta no sistema.
+            return TypedResults.NoContent();
+        })
+        .WithName("forgotPassword")
+        .AllowAnonymous();
+
+        group.MapPost("/reset-password", async Task<IResult> (
+            ResetPasswordRequest request,
+            UserManager<MamaoUser> userManager,
+            TokenService tokens,
+            IEmailSender emails,
+            EmailTemplates templates,
+            TimeProvider timeProvider,
+            CancellationToken ct) =>
+        {
+            var email = request.Email.Trim().ToLowerInvariant();
+            var user = await userManager.FindByEmailAsync(email);
+
+            var invalido = HttpResultsExtensions.Problem(new Error(
+                "auth.invalid_reset_token",
+                "Este link expirou ou já foi usado. Peça um novo."));
+
+            if (user is null)
+                return invalido;
+
+            var resultado = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+
+            if (!resultado.Succeeded)
+            {
+                var falha = resultado.Errors.First();
+
+                // Senha fraca e erro do usuario e merece mensagem propria; token invalido
+                // nao diz mais do que precisa.
+                return falha.Code.Contains("Password", StringComparison.Ordinal)
+                    ? HttpResultsExtensions.Problem(new Error(
+                        $"auth.{falha.Code}", falha.Description, nameof(request.NewPassword)))
+                    : invalido;
+            }
+
+            // Trocar a senha derruba as sessoes: se o acesso foi indevido, o intruso sai junto.
+            await tokens.RevokeAllForUserAsync(user.Id, timeProvider.GetUtcNow(), ct);
+            await emails.SendAsync(templates.PasswordChanged(email, user.FullName), ct);
+
+            return TypedResults.NoContent();
+        })
+        .WithName("resetPassword")
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .AllowAnonymous();
 

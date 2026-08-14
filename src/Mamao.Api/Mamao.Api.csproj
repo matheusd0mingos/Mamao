@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="../Mamao.ServiceDefaults/Mamao.ServiceDefaults.csproj" />
     <ProjectReference Include="../Mamao.Identity/Mamao.Identity.csproj" />
+    <ProjectReference Include="../Mamao.Notifications/Mamao.Notifications.csproj" />
     <ProjectReference Include="../Mamao.Messaging/Mamao.Messaging.csproj" />
     <ProjectReference Include="../Modules/People/Mamao.People.Infrastructure/Mamao.People.Infrastructure.csproj" />
   </ItemGroup>

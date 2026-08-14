@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Threading.RateLimiting;
 using Mamao.Api;
 using Mamao.Identity;
 using Mamao.Identity.Endpoints;
 using Mamao.Messaging;
+using Mamao.Notifications;
 using Mamao.People.Contracts.Events;
 using Mamao.People.Infrastructure;
 using Mamao.People.Infrastructure.Endpoints;
@@ -21,7 +23,17 @@ var connectionString = builder.Configuration.GetConnectionString("mamao")
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
 
+// As chaves do Data Protection assinam os tokens de recuperacao de senha do Identity.
+// Sem persistir, cada restart do container invalida os links ja enviados — e o usuario
+// que pediu a recuperacao dez minutos antes fica sem entender por que nao funciona.
 builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(
+        builder.Configuration["DataProtection:KeysPath"] ?? "/var/mamao/keys"))
+    .SetApplicationName("mamao");
+
+builder.Services
+    .AddNotifications(builder.Configuration, builder.Environment)
     .AddMamaoIdentity(builder.Configuration, connectionString)
     .AddPeopleModule(connectionString)
     .AddOutbox(
@@ -56,6 +68,8 @@ builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy => poli
     .AllowAnyMethod()));
 
 var app = builder.Build();
+
+app.Services.LogEmailConfiguration();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

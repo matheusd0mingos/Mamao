@@ -1,12 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { rotuloDoPapel } from '../../core/auth/role-label';
 import { SessionService } from '../../core/auth/session.service';
 import type { ApiProblem, TenantOption } from '../../core/http/api.types';
 
 @Component({
   selector: 'mamao-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="wrap">
       <div class="card panel">
@@ -26,7 +27,7 @@ import type { ApiProblem, TenantOption } from '../../core/http/api.types';
           <p class="muted">Seu acesso vale para mais de uma empresa. Escolha uma:</p>
           @for (empresa of empresas(); track empresa.tenantId) {
             <button type="button" class="btn btn--ghost empresa" (click)="entrarNaEmpresa(empresa.tenantId)">
-              {{ empresa.name }} <span class="muted">· {{ empresa.role }}</span>
+              {{ empresa.name }} <span class="muted">· {{ rotuloDoPapel(empresa.role) }}</span>
             </button>
           }
         } @else {
@@ -53,6 +54,10 @@ import type { ApiProblem, TenantOption } from '../../core/http/api.types';
           </form>
 
           <p class="muted rodape">
+            <a routerLink="/esqueci-minha-senha">Esqueci minha senha</a>
+          </p>
+
+          <p class="muted rodape">
             Primeira vez? <a href="#" (click)="irParaCadastro($event)">Cadastre sua empresa</a>
           </p>
         }
@@ -67,7 +72,7 @@ import type { ApiProblem, TenantOption } from '../../core/http/api.types';
     .brand__name { font-family: var(--font-display); font-size: 26px; line-height: 1; }
     .full { width: 100%; }
     .empresa { margin-bottom: var(--space-2); width: 100%; }
-    .rodape { font-size: 13px; margin-bottom: 0; margin-top: var(--space-4); text-align: center; }
+    .rodape { font-size: 13px; margin-bottom: 0; margin-top: var(--space-3); text-align: center; }
   `,
 })
 export class LoginPage {
@@ -78,6 +83,7 @@ export class LoginPage {
   readonly enviando = signal(false);
   readonly erro = signal<ApiProblem | null>(null);
   readonly empresas = signal<TenantOption[]>([]);
+  readonly rotuloDoPapel = rotuloDoPapel;
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],

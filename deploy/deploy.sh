@@ -306,6 +306,19 @@ JWT_SIGNING_KEY=\$JWT_KEY
 PUBLIC_ORIGIN=$PUBLIC_ORIGIN
 PUBLIC_HOST=$PUBLIC_HOST
 
+# ── e-mail (SMTP) ─────────────────────────────────────────────────────────────
+# Preencha antes de abrir para clientes: sem SMTP nao ha recuperacao de senha, e
+# quem esquecer a senha fica sem acesso. A aplicacao sobe assim mesmo e registra
+# um log CRITICAL no startup.
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USE_STARTTLS=true
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM_ADDRESS=nao-responda@$PUBLIC_HOST
+SMTP_FROM_NAME=Mamao
+SMTP_REPLY_TO=
+
 # Coletor OTLP. Vazio desliga a exportacao.
 OTEL_ENDPOINT=
 
@@ -320,6 +333,7 @@ REMOTO
     criou "$REMOTE_DIR/.env com senhas geradas (modo 600)"
     aviso "Guarde uma copia do BACKUP_PASSPHRASE fora do servidor —"
     aviso "sem ela, o backup criptografado nao pode ser restaurado."
+    aviso "Preencha SMTP_HOST em $REMOTE_DIR/.env: sem e-mail nao ha recuperacao de senha."
 }
 
 enviar_configuracao() {

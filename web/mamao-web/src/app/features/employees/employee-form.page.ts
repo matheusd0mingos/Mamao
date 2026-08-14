@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { ApiProblem, EmployeeResponse } from '../../core/http/api.types';
@@ -45,6 +46,18 @@ import { EmployeesStore } from './employees.store';
             <div class="field" [class.field--invalid]="!!erroDoCampo('hiredOn')">
               <label for="hiredOn">Data de admissão</label>
               <input id="hiredOn" type="date" formControlName="hiredOn" />
+
+              <!--
+                O <input type="date"> nativo renderiza no locale do NAVEGADOR, que nao
+                controlamos: um usuario brasileiro com Chrome em ingles ve MM/DD e digita
+                errado. O eco abaixo mostra a data interpretada, sempre em pt-BR, para
+                nao restar ambiguidade. O DatePicker proprio do design system resolve isso
+                de vez quando o TimeGrid chegar (Marco 4).
+              -->
+              @if (dataInterpretada(); as legivel) {
+                <span class="muted eco">{{ legivel }}</span>
+              }
+
               @if (erroDoCampo('hiredOn'); as msg) {
                 <span class="field__error">{{ msg }}</span>
               }
@@ -74,7 +87,8 @@ import { EmployeesStore } from './employees.store';
     .volta a { color: var(--text-secondary); font-size: 14px; text-decoration: none; }
     .form { margin-top: var(--space-4); max-width: 560px; padding: var(--space-5); }
     .linha { display: grid; gap: var(--space-4); grid-template-columns: 1fr 1fr; }
-    .acoes { display: flex; gap: var(--space-3); margin-top: var(--space-2); }
+    .acoes { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+    .eco { font-size: 13px; }
     @media (max-width: 640px) { .linha { grid-template-columns: 1fr; } }
   `,
 })
@@ -86,8 +100,21 @@ export class EmployeeFormPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly id = signal<string | null>(null);
+  private readonly admissao = signal(new Date().toISOString().slice(0, 10));
   readonly salvando = signal(false);
   readonly erro = signal<ApiProblem | null>(null);
+
+  /** Data que o formulario realmente vai enviar, escrita por extenso em pt-BR. */
+  readonly dataInterpretada = computed(() => {
+    const iso = this.admissao();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+
+    const [ano, mes, dia] = iso.split('-').map(Number);
+    const data = new Date(ano, mes - 1, dia);
+    if (Number.isNaN(data.getTime())) return null;
+
+    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' }).format(data);
+  });
 
   readonly form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required]],
@@ -95,6 +122,13 @@ export class EmployeeFormPage implements OnInit {
     hiredOn: [new Date().toISOString().slice(0, 10), [Validators.required]],
     code: [''],
   });
+
+  constructor() {
+    // O valor do controle vira signal para o eco reagir sem subscribe manual.
+    this.form.controls.hiredOn.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((valor) => this.admissao.set(valor));
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

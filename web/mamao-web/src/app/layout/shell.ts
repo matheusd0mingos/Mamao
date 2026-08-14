@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { rotuloDoPapel } from '../core/auth/role-label';
 import { SessionService } from '../core/auth/session.service';
 
 /**
@@ -27,7 +28,7 @@ import { SessionService } from '../core/auth/session.service';
 
         <div class="sidebar__foot">
           <div class="tenant">{{ session.tenantName() }}</div>
-          <div class="role muted">{{ session.role() }}</div>
+          <div class="role muted">{{ rotuloDoPapel(session.role()) }}</div>
           <button type="button" class="btn btn--ghost" (click)="session.logout()">Sair</button>
         </div>
       </aside>
@@ -38,7 +39,10 @@ import { SessionService } from '../core/auth/session.service';
     </div>
   `,
   styles: `
-    .shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+    /* min-width: 0 nas duas colunas: sem isso um filho largo (tabela) se recusa a
+       encolher e empurra a pagina inteira para a direita. */
+    .shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+    .shell > * { min-width: 0; }
 
     .sidebar {
       background: var(--mamao-green-900);
@@ -69,17 +73,36 @@ import { SessionService } from '../core/auth/session.service';
     .role { color: rgb(247 243 234 / 65%); font-size: 13px; }
     .sidebar__foot .btn { border-color: rgb(255 255 255 / 25%); color: var(--text-on-dark); }
 
-    .content { padding: var(--space-6); }
+    .content { padding: var(--space-6); min-width: 0; }
 
     @media (max-width: 860px) {
-      .shell { grid-template-columns: 1fr; }
-      .sidebar { flex-direction: row; align-items: center; gap: var(--space-4); padding: var(--space-3); }
-      .sidebar__foot { border: 0; flex-direction: row; padding: 0; }
-      nav { flex-direction: row; }
+      .shell { grid-template-columns: minmax(0, 1fr); }
+
+      .sidebar {
+        align-items: center;
+        display: grid;
+        gap: var(--space-3);
+        grid-template-columns: auto 1fr auto;
+        padding: var(--space-3) var(--space-4);
+      }
+
+      .brand { margin-bottom: 0; }
+      .brand__text { font-size: 18px; }
+      .brand__text small { display: none; }
+
+      /* A navegacao rola em si mesma quando nao couber, em vez de esticar o cabecalho. */
+      nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
+      nav::-webkit-scrollbar { display: none; }
+      nav a { white-space: nowrap; }
+
+      .sidebar__foot { border: 0; flex-direction: row; align-items: center; padding: 0; }
+      .tenant, .role { display: none; }   /* o nome da empresa volta no cabecalho da pagina */
+
       .content { padding: var(--space-4); }
     }
   `,
 })
 export class Shell {
   readonly session = inject(SessionService);
+  readonly rotuloDoPapel = rotuloDoPapel;
 }

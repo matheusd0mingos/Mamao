@@ -20,6 +20,12 @@ appsettings.Local.json
 .idea/
 .DS_Store
 
+# Chaves do Data Protection: assinam os tokens de recuperacao de senha.
+# Sao segredo e sao POR AMBIENTE — versionar seria vazar e, pior, compartilhar
+# chave entre desenvolvimento e producao.
+.keys/
+**/.keys/
+
 # Saidas de deploy
 deploy/web-dist/
 deploy/.env

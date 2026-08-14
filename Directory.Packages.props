@@ -21,12 +21,17 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup Label="E-mail">
+    <PackageVersion Include="MailKit" Version="4.17.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Extensions">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.9.0" />
   </ItemGroup>
 

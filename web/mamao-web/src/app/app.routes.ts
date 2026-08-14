@@ -13,6 +13,17 @@ export const routes: Routes = [
       import('./features/auth/register-company.page').then((m) => m.RegisterCompanyPage),
   },
   {
+    path: 'esqueci-minha-senha',
+    loadComponent: () =>
+      import('./features/auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    // O link do e-mail cai aqui, com email e token na query string.
+    path: 'redefinir-senha',
+    loadComponent: () =>
+      import('./features/auth/reset-password.page').then((m) => m.ResetPasswordPage),
+  },
+  {
     path: '',
     canMatch: [authGuard],
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),

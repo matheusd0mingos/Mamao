@@ -52,6 +52,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["forgotPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -160,6 +192,9 @@ export interface components {
             isActive: boolean;
             hasLogin: boolean;
         };
+        ForgotPasswordRequest: {
+            email: string;
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -206,6 +241,11 @@ export interface components {
             fullName: string;
             email: string;
             password: string;
+        };
+        ResetPasswordRequest: {
+            email: string;
+            token: string;
+            newPassword: string;
         };
         TenantOption: {
             /** Format: uuid */
@@ -318,6 +358,52 @@ export interface operations {
                     "application/json": components["schemas"]["AuthResponse"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    forgotPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
             /** @description Bad Request */
             400: {
                 headers: {

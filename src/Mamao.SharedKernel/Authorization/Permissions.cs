@@ -48,10 +48,13 @@ public static class Permissions
 /// </summary>
 public static class Roles
 {
+    // Codigo em ingles, como todo identificador persistido (ADR-0012). O rotulo em
+    // portugues e responsabilidade da UI — traduzir o valor guardado misturaria dado
+    // com apresentacao e quebraria na primeira mudanca de texto.
     public const string Owner = "Owner";
-    public const string Hr = "RH";
-    public const string Manager = "Gestor";
-    public const string Employee = "Funcionario";
+    public const string Hr = "Hr";
+    public const string Manager = "Manager";
+    public const string Employee = "Employee";
 
     public static IReadOnlyList<string> All { get; } = [Owner, Hr, Manager, Employee];
 

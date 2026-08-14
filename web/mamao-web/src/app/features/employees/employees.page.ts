@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -14,7 +14,7 @@ import { EmployeesStore } from './employees.store';
     <header class="head">
       <div>
         <h1>Pessoas</h1>
-        <p class="muted">{{ store.total() }} cadastrada(s)</p>
+        <p class="muted">{{ resumo() }}</p>
       </div>
 
       <button *mamaoHasPermission="'people.write'" class="btn btn--primary" routerLink="/pessoas/nova">
@@ -99,12 +99,19 @@ import { EmployeesStore } from './employees.store';
     </div>
   `,
   styles: `
-    .head { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: var(--space-5); }
+    .head {
+      align-items: flex-start; display: flex; flex-wrap: wrap; gap: var(--space-3);
+      justify-content: space-between; margin-bottom: var(--space-5);
+    }
     .head p { margin: var(--space-1) 0 0; }
-    .filtros { align-items: center; display: flex; gap: var(--space-4); margin-bottom: var(--space-4); }
+    .filtros {
+      align-items: center; display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-4);
+    }
     .filtros input[type='text'], .filtros input:not([type]) {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-      font: inherit; max-width: 380px; padding: var(--space-2) var(--space-3); width: 100%;
+      flex: 1 1 240px; font: inherit; max-width: 380px; min-width: 0;
+      padding: var(--space-2) var(--space-3);
     }
     .inativos { align-items: center; color: var(--text-secondary); display: flex; font-size: 14px; gap: var(--space-2); white-space: nowrap; }
     .paginacao { align-items: center; display: flex; gap: var(--space-4); justify-content: center; padding: var(--space-4); }
@@ -113,6 +120,13 @@ import { EmployeesStore } from './employees.store';
 })
 export class EmployeesPage implements OnInit {
   readonly store = inject(EmployeesStore);
+
+  /** "(s)" e preguica: o texto aparece em toda listagem e o usuario le todo dia. */
+  readonly resumo = computed(() => {
+    const total = this.store.total();
+    if (total === 0) return 'Nenhuma pessoa cadastrada';
+    return total === 1 ? '1 pessoa cadastrada' : `${total} pessoas cadastradas`;
+  });
   readonly busca = new FormControl('', { nonNullable: true });
 
   constructor() {

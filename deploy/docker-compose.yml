@@ -29,9 +29,22 @@ services:
       Jwt__Issuer: mamao
       Jwt__Audience: mamao
       Cors__Origins__0: ${PUBLIC_ORIGIN:?}
+      App__PublicOrigin: ${PUBLIC_ORIGIN:?}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__UseStartTls: ${SMTP_USE_STARTTLS:-true}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-nao-responda@mamao.tech}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Mamao}
+      Smtp__ReplyTo: ${SMTP_REPLY_TO:-}
+      DataProtection__KeysPath: /var/mamao/keys
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_ENDPOINT:-}
     volumes:
       - uploads:/var/mamao/uploads
+      # As chaves assinam os tokens de recuperacao de senha. Em volume porque, sem
+      # persistir, todo restart invalida os links ja enviados.
+      - keys:/var/mamao/keys
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz/ready"]
       interval: 15s
@@ -86,5 +99,6 @@ services:
 volumes:
   pgdata:
   uploads:
+  keys:
   caddy_data:
   caddy_config:
