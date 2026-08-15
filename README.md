@@ -12,7 +12,20 @@ perguntar o que está acontecendo.
 **Segmento inicial:** operação com plantão, turno e rodízio — manutenção,
 segurança, saúde, campo e facilities, de 15 a 60 funcionários.
 
-`mamao.tech`
+`mamao.tech` · [Apache-2.0](LICENSE)
+
+> **English** — Mamão is a multi-tenant B2B SaaS for running small operational teams
+> (5–60 people): people, shift rosters, leave, absences, documents with expiry dates,
+> and the manager's daily view. It is a .NET 10 modular monolith with schema-per-module,
+> tenant isolation enforced three independent ways (EF Core global query filters,
+> PostgreSQL Row-Level Security under `FORCE ROW LEVEL SECURITY`, and architecture tests
+> that fail the build when an index does not start with `tenant_id`), a transactional
+> outbox, an append-only audit log with `UPDATE`/`DELETE` revoked at the database, and an
+> Angular 22 front end typed from the generated OpenAPI schema.
+>
+> Code and docs are in Portuguese. The best entry point is
+> [`docs/adr/`](docs/adr/) — 20 architecture decision records explaining what was decided
+> and, more usefully, what was rejected.
 
 ---
 
@@ -186,3 +199,18 @@ O código próprio se concentra no que ninguém entrega pronto: regras de féria
 validação de jornada, disponibilidade da equipe, capacidade, escalas, validade de
 documentos e o painel do gestor. Todo o resto — autenticação, HTTP, routing, DI,
 ORM, OpenAPI, logging, health checks, drag & drop — é do framework.
+
+---
+
+## Licença
+
+[Apache License 2.0](LICENSE). Copyright 2026 Matheus Domingos.
+
+Você pode usar, modificar e distribuir, inclusive comercialmente, desde que preserve o
+aviso de copyright e sinalize os arquivos que alterou. A escolha é Apache e não MIT pela
+**concessão explícita de patente** (seção 3), que o MIT não tem — quem adota o código não
+fica exposto a uma reivindicação futura de quem o publicou.
+
+Duas coisas que a licença **não** faz, e que valem estar escritas: ela não cede a marca
+"Mamão" (seção 6) e não é exclusiva — publicar sob Apache-2.0 não impede licenciamento
+comercial do mesmo código.
