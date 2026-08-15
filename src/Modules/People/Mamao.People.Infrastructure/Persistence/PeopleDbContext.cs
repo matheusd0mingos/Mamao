@@ -97,6 +97,7 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.FullName).HasMaxLength(200).IsRequired();
+        builder.Property(e => e.NormalizedName).HasMaxLength(200).IsRequired();
         builder.Property(e => e.Code).HasMaxLength(50);
         builder.Property(e => e.Email).HasMaxLength(200);
 
@@ -114,6 +115,9 @@ public sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasFilter("email IS NOT NULL");
 
         builder.HasIndex(e => new { e.TenantId, e.FullName });
+
+        // A busca global filtra por aqui. Sem o indice, procurar "ana" varre a tabela.
+        builder.HasIndex(e => new { e.TenantId, e.NormalizedName });
         builder.HasIndex(e => new { e.TenantId, e.PositionId });
         builder.HasIndex(e => new { e.TenantId, e.DepartmentId });
         builder.HasIndex(e => new { e.TenantId, e.ManagerId });
@@ -303,12 +307,17 @@ public sealed class MissionConfiguration : IEntityTypeConfiguration<Mission>
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Name).HasMaxLength(Mission.MaxNome).IsRequired();
+        builder.Property(m => m.NormalizedName).HasMaxLength(Mission.MaxNome).IsRequired();
         builder.Property(m => m.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(m => m.Notes).HasMaxLength(500);
 
         // "O que tem pela frente" e "quantas vezes o fulano foi nos ultimos 90 dias" sao as
         // duas consultas desta tabela, e as duas ordenam por data.
         builder.HasIndex(m => new { m.TenantId, m.On });
+
+        // O historico do rodizio: "missoes DESTE TIPO nesta janela". Antes o filtro por
+        // tipo era feito em memoria, sobre o historico inteiro.
+        builder.HasIndex(m => new { m.TenantId, m.NormalizedName, m.On });
 
         builder.HasMany(m => m.Assignments)
             .WithOne()
@@ -379,6 +388,7 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
         builder.HasKey(w => w.Id);
 
         builder.Property(w => w.Title).HasMaxLength(WorkItem.MaxTitulo).IsRequired();
+        builder.Property(w => w.NormalizedTitle).HasMaxLength(WorkItem.MaxTitulo).IsRequired();
         builder.Property(w => w.Details).HasMaxLength(WorkItem.MaxDetalhes);
         builder.Property(w => w.CreatedByName).HasMaxLength(200).IsRequired();
 

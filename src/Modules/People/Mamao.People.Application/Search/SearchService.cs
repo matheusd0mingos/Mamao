@@ -1,4 +1,5 @@
 using Mamao.People.Domain.Missions;
+using Mamao.People.Domain.Organization;
 using Mamao.People.Domain.Work;
 using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Authorization;
@@ -53,18 +54,18 @@ public sealed class SearchService(IPeopleDbContext dbContext, ICurrentActor acto
         if (termo.Length < MinimoDeCaracteres)
             return new SearchResponse(termo, [], false);
 
-        // Minusculas no C# e Contains no LINQ, que o EF traduz para LOWER(x) LIKE '%y%'
-        // com o termo PARAMETRIZADO — entao "100%" e "a_b" sao texto, nao curinga.
+        // O termo e DOBRADO com a mesma funcao que gravou as colunas: "Joao" acha "João",
+        // "SEÇÃO" acha "secao". A alternativa era a extensao unaccent do Postgres, que
+        // exige superusuario para instalar e nao entraria num banco ja criado sem passo
+        // manual no servidor.
         //
-        // Nao usa ILIKE: ILIKE e do provider do Postgres, e esta camada nao referencia o
-        // provider de proposito (ver a arquitetura do modulo). Trocar um LIKE por uma
-        // dependencia de infraestrutura na camada de aplicacao seria caro pelo motivo
-        // errado.
-        //
-        // Acento conta: "Joao" nao acha "Joao" com til. Resolver exige a extensao unaccent
-        // no banco, que e decisao de infraestrutura — fica registrado como limite conhecido,
-        // nao como esquecimento.
-        var alvo = termo.ToLowerInvariant();
+        // Contains no LINQ vira LIKE '%y%' com o termo PARAMETRIZADO, entao "100%" e "a_b"
+        // sao texto e nao curinga. Nao usa ILIKE porque ILIKE e do provider do Postgres, e
+        // esta camada nao referencia o provider de proposito.
+        var alvo = Position.Normalize(termo);
+
+        if (alvo.Length == 0)
+            return new SearchResponse(termo, [], false);
 
         var resultados = new List<SearchResult>();
         var truncado = false;
@@ -72,7 +73,7 @@ public sealed class SearchService(IPeopleDbContext dbContext, ICurrentActor acto
         if (actor.Can(Permissions.PeopleRead))
         {
             var pessoas = await dbContext.Employees.AsNoTracking()
-                .Where(e => e.FullName.ToLower().Contains(alvo)
+                .Where(e => e.NormalizedName.Contains(alvo)
                     || (e.Code != null && e.Code.ToLower().Contains(alvo))
                     || (e.Email != null && e.Email.ToLower().Contains(alvo)))
                 // Quem está na ativa primeiro: procurar alguém desligado é a exceção.
@@ -103,7 +104,7 @@ public sealed class SearchService(IPeopleDbContext dbContext, ICurrentActor acto
         if (actor.Can(Permissions.ScheduleRead))
         {
             var missoes = await dbContext.Missions.AsNoTracking()
-                .Where(m => m.Name.ToLower().Contains(alvo))
+                .Where(m => m.NormalizedName.Contains(alvo))
                 .OrderByDescending(m => m.On)
                 .Take(MaxPorTipo + 1)
                 .Select(m => new { m.Id, m.Name, m.On, m.Status, Escalados = m.Assignments.Count, m.RequiredPeople })
@@ -121,7 +122,7 @@ public sealed class SearchService(IPeopleDbContext dbContext, ICurrentActor acto
         if (actor.Can(Permissions.WorkRead))
         {
             var demandas = await dbContext.WorkItems.AsNoTracking()
-                .Where(w => w.Title.ToLower().Contains(alvo))
+                .Where(w => w.NormalizedTitle.Contains(alvo))
                 // Aberta antes de concluída: procurar o que já foi entregue é a exceção.
                 .OrderBy(w => w.Status == WorkItemStatus.Concluida || w.Status == WorkItemStatus.Cancelada)
                 .ThenBy(w => w.DueOn)
@@ -155,7 +156,7 @@ public sealed class SearchService(IPeopleDbContext dbContext, ICurrentActor acto
         if (actor.Can(Permissions.PeopleRead))
         {
             var setores = await dbContext.Departments.AsNoTracking()
-                .Where(d => d.Name.ToLower().Contains(alvo))
+                .Where(d => d.NormalizedName.Contains(alvo))
                 .OrderBy(d => d.Name)
                 .Take(MaxPorTipo)
                 .Select(d => new { d.Id, d.Name, Pessoas = dbContext.Employees.Count(e => e.DepartmentId == d.Id && e.TerminatedOn == null) })
@@ -166,7 +167,7 @@ public sealed class SearchService(IPeopleDbContext dbContext, ICurrentActor acto
                 d.Pessoas == 1 ? "1 pessoa" : $"{d.Pessoas} pessoas")));
 
             var cargos = await dbContext.Positions.AsNoTracking()
-                .Where(p => p.Name.ToLower().Contains(alvo))
+                .Where(p => p.NormalizedName.Contains(alvo))
                 .OrderBy(p => p.Name)
                 .Take(MaxPorTipo)
                 .Select(p => new { p.Id, p.Name, Pessoas = dbContext.Employees.Count(e => e.PositionId == p.Id && e.TerminatedOn == null) })

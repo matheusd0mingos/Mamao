@@ -22,6 +22,16 @@ public sealed class Employee : ITenantOwned
 
     public string FullName { get; private set; } = null!;
 
+    /// <summary>
+    /// Nome dobrado (minusculas, sem acento), so para busca.
+    ///
+    /// Existe porque "Joao" tem que achar "João" — quem procura no celular nao poe acento.
+    /// A alternativa era a extensao `unaccent` do Postgres, que exige superusuario para
+    /// instalar e nao entraria num banco ja criado sem passo manual no servidor. Coluna
+    /// dobrada e o padrao que <see cref="Organization.Position"/> e Department ja usam.
+    /// </summary>
+    public string NormalizedName { get; private set; } = null!;
+
     /// <summary>Cargo. Referencia, nao texto: o Marco 4 pergunta "quantos vigilantes neste turno?".</summary>
     public PositionId PositionId { get; private set; }
 
@@ -89,6 +99,7 @@ public sealed class Employee : ITenantOwned
         {
             Id = EmployeeId.New(),
             FullName = fullName,
+            NormalizedName = Organization.Position.Normalize(fullName),
             PositionId = positionId,
             DepartmentId = departmentId,
             HiredOn = hiredOn,
@@ -144,6 +155,7 @@ public sealed class Employee : ITenantOwned
             return Result.Failure("employee.name_required", "Informe o nome do funcionario.", nameof(FullName));
 
         FullName = fullName;
+        NormalizedName = Organization.Position.Normalize(fullName);
         return Result.Success();
     }
 

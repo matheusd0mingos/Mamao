@@ -171,14 +171,18 @@ public sealed class MissionService(IPeopleDbContext dbContext, IAuditLog audit, 
         // mesmo de inspeção, e misturar os dois faria a sugestão parecer arbitrária.
         // O custo é conhecido: renomear a missão começa um rodízio novo. Um catálogo de
         // tipos resolve isso melhor, e é para onde isto caminha quando doer.
+        // O filtro por TIPO vai ao banco, pela coluna dobrada. Antes carregava o historico
+        // inteiro da janela para descartar a maior parte em memoria — barato com uma
+        // secao, caro no dia em que a empresa tiver um ano de escala.
         var historico = await dbContext.MissionAssignments.AsNoTracking()
             .Join(dbContext.Missions.Where(m =>
-                    m.Status == MissionStatus.Confirmada && m.On >= desde && m.On <= missao.On),
-                a => a.MissionId, m => m.Id, (a, m) => new { a.EmployeeId, m.On, m.Name })
+                    m.Status == MissionStatus.Confirmada
+                    && m.NormalizedName == chave
+                    && m.On >= desde && m.On <= missao.On),
+                a => a.MissionId, m => m.Id, (a, m) => new { a.EmployeeId, m.On })
             .ToListAsync(ct);
 
         var doMesmoTipo = historico
-            .Where(h => Position.Normalize(h.Name) == chave)
             .GroupBy(h => h.EmployeeId)
             .ToDictionary(g => g.Key, g => (Vezes: g.Count(), Ultima: g.Max(x => x.On)));
 

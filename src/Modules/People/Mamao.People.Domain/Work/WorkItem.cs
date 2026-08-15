@@ -1,4 +1,5 @@
 using Mamao.People.Contracts;
+using Mamao.People.Domain.Organization;
 using Mamao.SharedKernel.Results;
 using Mamao.SharedKernel.Tenancy;
 
@@ -65,6 +66,9 @@ public sealed class WorkItem : ITenantOwned
     public Guid TenantId { get; set; }
 
     public string Title { get; private set; } = null!;
+
+    /// <summary>Titulo dobrado, so para busca. Mesmo motivo do nome do funcionario.</summary>
+    public string NormalizedTitle { get; private set; } = null!;
     public string? Details { get; private set; }
 
     public WorkItemStatus Status { get; private set; }
@@ -115,6 +119,7 @@ public sealed class WorkItem : ITenantOwned
         {
             Id = WorkItemId.New(),
             Title = title,
+            NormalizedTitle = Organization.Position.Normalize(title),
             Details = string.IsNullOrWhiteSpace(details) ? null : details.Trim(),
             Status = WorkItemStatus.Aberta,
             Priority = priority,
@@ -146,6 +151,7 @@ public sealed class WorkItem : ITenantOwned
             return Result.Failure("work.details_too_long", $"A descrição passa de {MaxDetalhes} caracteres.", nameof(details));
 
         Title = title;
+        NormalizedTitle = Organization.Position.Normalize(title);
         Details = string.IsNullOrWhiteSpace(details) ? null : details.Trim();
         Priority = priority;
         AssigneeId = assigneeId;

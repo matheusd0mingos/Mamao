@@ -1,5 +1,6 @@
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Availability;
+using Mamao.People.Domain.Organization;
 using Mamao.SharedKernel.Results;
 using Mamao.SharedKernel.Tenancy;
 
@@ -36,6 +37,13 @@ public sealed class Mission : ITenantOwned
     public Guid TenantId { get; set; }
 
     public string Name { get; private set; } = null!;
+
+    /// <summary>
+    /// Nome dobrado. Serve a busca e — mais importante — ao historico de rodizio: contar
+    /// "quantas formaturas o Pedro fez" comparava o nome dobrado EM MEMORIA, carregando o
+    /// historico inteiro para descartar a maior parte. Com a coluna, o filtro vai ao banco.
+    /// </summary>
+    public string NormalizedName { get; private set; } = null!;
 
     public DateOnly On { get; private set; }
     public TimeOnly? StartsAt { get; private set; }
@@ -100,6 +108,7 @@ public sealed class Mission : ITenantOwned
         {
             Id = MissionId.New(),
             Name = name,
+            NormalizedName = Organization.Position.Normalize(name),
             On = on,
             StartsAt = startsAt,
             EndsAt = endsAt,
