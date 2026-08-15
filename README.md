@@ -232,6 +232,17 @@ Comece por [docs/](docs/) — em especial o
 [sumário de decisões](docs/00-sumario-de-decisoes.md), que responde "o que já está
 decidido e por quê", e as [ADRs](docs/README.md#decisões-de-arquitetura-adrs).
 
+### 📘 Apostila: Angular + .NET do zero
+
+O repositório traz um **[material de estudo completo](docs/apostila/README.md)** — 14
+capítulos que ensinam Angular e a integração Angular ↔ .NET usando este código como
+laboratório, do "o que é uma SPA" até o contrato gerado por OpenAPI, com exercícios
+resolvidos.
+
+Inclui um capítulo de [**bugs reais**](docs/apostila/13-bugs-reais.md): sete defeitos
+verdadeiros deste projeto, com sintoma, investigação, causa e lição. Nenhum deles foi
+pego por compilador, tipagem estrita ou revisão de código.
+
 ## Princípio que governa as decisões
 
 > **Use framework para plumbing. Use nosso código para domínio.**
