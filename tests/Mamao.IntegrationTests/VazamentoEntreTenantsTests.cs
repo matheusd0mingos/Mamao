@@ -36,7 +36,13 @@ public class VazamentoEntreTenantsTests(MamaoApiFactory factory) : IClassFixture
             if (resposta.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
                 continue;
 
-            resposta.StatusCode.ShouldBe(HttpStatusCode.OK, $"GET {rota} deveria responder para a empresa A.");
+            // 400 e resposta legitima aqui: ha rotas que exigem parametro de query (o preview
+            // de convite pede o token) e a varredura as chama sem nenhum. O que NAO se abre mao
+            // e da checagem de vazamento abaixo — mensagem de erro tambem vaza, e vaza calada.
+            if (resposta.StatusCode is not HttpStatusCode.BadRequest)
+            {
+                resposta.StatusCode.ShouldBe(HttpStatusCode.OK, $"GET {rota} deveria responder para a empresa A.");
+            }
 
             var corpo = await resposta.Content.ReadAsStringAsync(Ct);
 
@@ -105,10 +111,12 @@ public class VazamentoEntreTenantsTests(MamaoApiFactory factory) : IClassFixture
     private static async Task<string> CriarFuncionarioAsync(
         MamaoApiFactory.TenantFixture empresa, string nome, string cargo)
     {
+        var cargoId = await MamaoApiFactory.CreatePositionAsync(empresa.Client, cargo);
+
         var resposta = await empresa.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = nome,
-            positionName = cargo,
+            positionId = cargoId,
             hiredOn = "2026-01-10",
             code = (string?)null,
         }, Ct);

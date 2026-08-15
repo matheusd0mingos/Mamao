@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Mamao.Audit.Persistence;
 using Mamao.Identity.Persistence;
 using Mamao.Messaging;
 using Mamao.People.Infrastructure.Persistence;
@@ -62,9 +63,23 @@ public sealed class MamaoApiFactory : WebApplicationFactory<Program>, IAsyncLife
             return;
         }
 
+        await MigrarTudoAsync();
+    }
+
+    /// <summary>
+    /// Migra TODOS os contextos, e nao so os tres obvios.
+    ///
+    /// O <see cref="AuditDbContext"/> precisa estar aqui porque a auditoria e gravada na mesma
+    /// transacao do fato: sem a tabela, admitir um funcionario estoura no SaveChanges e o
+    /// endpoint responde 500. Existe um metodo so para isto para que esquecer um contexto novo
+    /// custe uma linha num lugar, em vez de um 500 que so aparece no CI.
+    /// </summary>
+    private async Task MigrarTudoAsync()
+    {
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<MamaoIdentityDbContext>().Database.MigrateAsync(Ct);
         await scope.ServiceProvider.GetRequiredService<MessagingDbContext>().Database.MigrateAsync(Ct);
+        await scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.MigrateAsync(Ct);
         await scope.ServiceProvider.GetRequiredService<PeopleDbContext>().Database.MigrateAsync(Ct);
     }
 
@@ -111,7 +126,28 @@ public sealed class MamaoApiFactory : WebApplicationFactory<Program>, IAsyncLife
         return new TenantFixture(auth.TenantId, authenticated);
     }
 
+    /// <summary>
+    /// Cria um cargo e devolve o id.
+    ///
+    /// Existe porque admitir alguem exige um cargo que JA existe: o endpoint recebe
+    /// <c>positionId</c>, nao um nome solto. E de proposito — aceitar nome criaria "Vigilante"
+    /// e "vigilante" como dois cargos ao primeiro erro de digitacao, e o rodizio passaria a
+    /// comparar gente de cargos que sao o mesmo cargo.
+    /// </summary>
+    public static async Task<Guid> CreatePositionAsync(HttpClient client, string name)
+    {
+        var response = await client.PostAsJsonAsync("/api/v1/positions", new { name }, Ct);
+        response.EnsureSuccessStatusCode();
+
+        var criado = await response.Content.ReadFromJsonAsync<PositionPayload>(Ct)
+            ?? throw new InvalidOperationException("Resposta de criacao de cargo vazia.");
+
+        return criado.Id;
+    }
+
     public sealed record TenantFixture(Guid TenantId, HttpClient Client);
 
     private sealed record AuthPayload(string AccessToken, Guid TenantId);
+
+    private sealed record PositionPayload(Guid Id);
 }

@@ -20,11 +20,12 @@ public class AdmissaoPontaAPontaTests(MamaoApiFactory factory) : IClassFixture<M
         SkipSeSemDocker();
 
         var empresa = await factory.CreateTenantAsync("Alfa Outbox", "owner-outbox@teste.local");
+        var cargo = await MamaoApiFactory.CreatePositionAsync(empresa.Client, "Tecnico de manutencao");
 
         var resposta = await empresa.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = "Carlos Mendes",
-            positionName = "Tecnico de manutencao",
+            positionId = cargo,
             hiredOn = "2026-02-01",
             code = "M-001",
         }, Ct);
@@ -49,11 +50,12 @@ public class AdmissaoPontaAPontaTests(MamaoApiFactory factory) : IClassFixture<M
         SkipSeSemDocker();
 
         var empresa = await factory.CreateTenantAsync("Alfa Matricula", "owner-matricula@teste.local");
+        var cargo = await MamaoApiFactory.CreatePositionAsync(empresa.Client, "Vigilante");
 
         var primeiro = await empresa.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = "Ana Lima",
-            positionName = "Vigilante",
+            positionId = cargo,
             hiredOn = "2026-02-01",
             code = "V-100",
         }, Ct);
@@ -62,7 +64,7 @@ public class AdmissaoPontaAPontaTests(MamaoApiFactory factory) : IClassFixture<M
         var segundo = await empresa.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = "Outra Pessoa",
-            positionName = "Vigilante",
+            positionId = cargo,
             hiredOn = "2026-03-01",
             code = "V-100",
         }, Ct);
@@ -82,20 +84,27 @@ public class AdmissaoPontaAPontaTests(MamaoApiFactory factory) : IClassFixture<M
         var empresaA = await factory.CreateTenantAsync("Alfa Cross", "owner-cross-a@teste.local");
         var empresaB = await factory.CreateTenantAsync("Beta Cross", "owner-cross-b@teste.local");
 
-        var payload = new
+        // Um cargo POR EMPRESA, com o mesmo nome. Reaproveitar o id da Alfa na Beta nao
+        // testaria a matricula: pararia antes, no cargo que nao existe la.
+        var cargoA = await MamaoApiFactory.CreatePositionAsync(empresaA.Client, "Vigilante");
+        var cargoB = await MamaoApiFactory.CreatePositionAsync(empresaB.Client, "Vigilante");
+
+        (await empresaA.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = "Homonimo",
-            positionName = "Vigilante",
+            positionId = cargoA,
             hiredOn = "2026-02-01",
             code = "X-1",
-        };
-
-        (await empresaA.Client.PostAsJsonAsync("/api/v1/employees", payload, Ct))
-            .StatusCode.ShouldBe(HttpStatusCode.Created);
+        }, Ct)).StatusCode.ShouldBe(HttpStatusCode.Created);
 
         // O indice unico e (tenant_id, code): unicidade e por empresa, nao global.
-        (await empresaB.Client.PostAsJsonAsync("/api/v1/employees", payload, Ct))
-            .StatusCode.ShouldBe(HttpStatusCode.Created);
+        (await empresaB.Client.PostAsJsonAsync("/api/v1/employees", new
+        {
+            fullName = "Homonimo",
+            positionId = cargoB,
+            hiredOn = "2026-02-01",
+            code = "X-1",
+        }, Ct)).StatusCode.ShouldBe(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -108,7 +117,7 @@ public class AdmissaoPontaAPontaTests(MamaoApiFactory factory) : IClassFixture<M
         var resposta = await empresa.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = "",
-            positionName = "",
+            positionId = Guid.Empty,
             hiredOn = "2026-02-01",
             code = (string?)null,
         }, Ct);
@@ -118,7 +127,7 @@ public class AdmissaoPontaAPontaTests(MamaoApiFactory factory) : IClassFixture<M
         var corpo = await resposta.Content.ReadAsStringAsync(Ct);
         corpo.ShouldContain("fieldErrors");
         corpo.ShouldContain("fullName");
-        corpo.ShouldContain("positionName");
+        corpo.ShouldContain("positionId");
     }
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;

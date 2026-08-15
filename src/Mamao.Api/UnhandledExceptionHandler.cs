@@ -17,6 +17,34 @@ public sealed class UnhandledExceptionHandler(
     {
         var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
+        // Requisicao malformada nao e falha do servidor. O ASP.NET Core lanca
+        // BadHttpRequestException quando falta um parametro obrigatorio ou o corpo nao
+        // converte, e ela JA carrega o status certo — 400. Transformar isso em 500 mente
+        // duas vezes: diz ao cliente que a culpa e nossa, e enche o log de erro com engano
+        // de digitacao, escondendo a falha de verdade no meio.
+        if (exception is BadHttpRequestException requisicaoRuim)
+        {
+            logger.LogInformation(
+                "Requisicao invalida em {Method} {Path}: {Motivo}",
+                httpContext.Request.Method, httpContext.Request.Path, requisicaoRuim.Message);
+
+            var invalida = new ProblemDetails
+            {
+                Status = requisicaoRuim.StatusCode,
+                Title = "Requisição inválida",
+                Detail = "Confira os parâmetros enviados.",
+                Extensions =
+                {
+                    ["traceId"] = traceId,
+                    ["code"] = "bad_request",
+                },
+            };
+
+            httpContext.Response.StatusCode = invalida.Status.Value;
+            await httpContext.Response.WriteAsJsonAsync(invalida, cancellationToken);
+            return true;
+        }
+
         logger.LogError(exception, "Falha nao tratada em {Method} {Path}. TraceId {TraceId}.",
             httpContext.Request.Method, httpContext.Request.Path, traceId);
 

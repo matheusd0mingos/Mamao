@@ -1,3 +1,4 @@
+using Mamao.SharedKernel.Auditing;
 using Mamao.SharedKernel.Tenancy;
 using System.Net.Http.Json;
 using Npgsql;
@@ -69,8 +70,8 @@ public class RowLevelSecurityTests(MamaoApiFactory factory) : IClassFixture<Mama
 
         await using var insercao = new NpgsqlCommand(
             """
-            INSERT INTO people.employees (id, tenant_id, full_name, position_name, hired_on)
-            VALUES (gen_random_uuid(), $1, 'Invasor', 'x', '2024-01-01')
+            INSERT INTO people.employees (id, tenant_id, full_name, normalized_name, hired_on)
+            VALUES (gen_random_uuid(), $1, 'Invasor', 'invasor', '2024-01-01')
             """, conexao);
         insercao.Parameters.AddWithValue(beta.TenantId);
 
@@ -140,6 +141,13 @@ public class RowLevelSecurityTests(MamaoApiFactory factory) : IClassFixture<Mama
                 TenantRls.GrantSchemaTo(schema, RoleDaAplicacao), conexao);
             await concessao.ExecuteNonQueryAsync(Ct);
         }
+
+        // Auditoria fora do laco, exatamente como o Worker faz em producao: insert e select,
+        // com update e delete revogados. Se este teste concedesse o schema inteiro, ele
+        // estaria provando a RLS contra um banco mais permissivo que o de verdade.
+        await using var auditoria = new NpgsqlCommand(
+            TenantRls.GrantAppendOnlyTo(AuditEntry.Schema, AuditEntry.Table, RoleDaAplicacao), conexao);
+        await auditoria.ExecuteNonQueryAsync(Ct);
     }
 
     private async Task<long> ContarAsync(NpgsqlConnection conexao, Guid? tenant, Guid? filtro)
@@ -167,10 +175,12 @@ public class RowLevelSecurityTests(MamaoApiFactory factory) : IClassFixture<Mama
 
     private static async Task CriarFuncionarioAsync(MamaoApiFactory.TenantFixture empresa, string nome)
     {
+        var cargo = await MamaoApiFactory.CreatePositionAsync(empresa.Client, "Vigilante");
+
         var resposta = await empresa.Client.PostAsJsonAsync("/api/v1/employees", new
         {
             fullName = nome,
-            positionName = "Vigilante",
+            positionId = cargo,
             hiredOn = "2024-01-10",
             code = (string?)null,
         }, Ct);
