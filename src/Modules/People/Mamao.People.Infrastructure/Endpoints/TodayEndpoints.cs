@@ -15,8 +15,9 @@ public static class TodayEndpoints
 {
     public static IEndpointRouteBuilder MapTodayEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/v1/today", async Task<IResult> (TodayService service, CancellationToken ct) =>
-            TypedResults.Ok(await service.GetAsync(ct)))
+        app.MapGet("/api/v1/today", async Task<IResult> (
+            Guid? departmentId, bool? all, TodayService service, CancellationToken ct) =>
+            TypedResults.Ok(await service.GetAsync(departmentId, all ?? false, ct)))
         .WithName("today")
         .WithTags("Today")
         .Produces<TodayPanel>()

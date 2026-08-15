@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:34903"
+      "url": "http://127.0.0.1:37869"
     }
   ],
   "paths": {
@@ -16,6 +16,23 @@
           "Today"
         ],
         "operationId": "today",
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "all",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -4053,6 +4070,9 @@
         "required": [
           "today",
           "teamSize",
+          "scope",
+          "scopes",
+          "sections",
           "out",
           "backTomorrow",
           "missions",
@@ -4068,6 +4088,21 @@
           "teamSize": {
             "format": "int32",
             "type": "integer"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/TodayScope"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayScope"
+            }
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodaySection"
+            }
           },
           "out": {
             "type": "array",
@@ -4127,6 +4162,68 @@
           "until": {
             "type": "string",
             "format": "date"
+          }
+        }
+      },
+      "TodayScope": {
+        "required": [
+          "departmentId",
+          "name",
+          "isChief"
+        ],
+        "type": "object",
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "isChief": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TodaySection": {
+        "required": [
+          "departmentId",
+          "name",
+          "chiefName",
+          "teamSize",
+          "out",
+          "missionsMissingPeople",
+          "overdueWork"
+        ],
+        "type": "object",
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "chiefName": {
+            "type": "string",
+            "nullable": true
+          },
+          "teamSize": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "out": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "missionsMissingPeople": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "overdueWork": {
+            "format": "int32",
+            "type": "integer"
           }
         }
       },

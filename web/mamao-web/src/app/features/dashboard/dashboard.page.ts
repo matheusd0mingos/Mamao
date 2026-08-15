@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { ApiProblem, OccupancyKind, TodayPanel } from '../../core/http/api.types';
 import { SessionService } from '../../core/auth/session.service';
@@ -29,13 +30,28 @@ const MOTIVOS: Record<OccupancyKind, string> = {
  */
 @Component({
   selector: 'mamao-dashboard',
-  imports: [RouterLink, Icon],
+  imports: [FormsModule, RouterLink, Icon],
   template: `
     <header class="head">
       <div>
         <h1>Hoje</h1>
-        <p class="muted">{{ session.tenantName() }} · {{ dataPorExtenso() }}</p>
+        <p class="muted">{{ escopoAtual() }} · {{ dataPorExtenso() }}</p>
       </div>
+
+      <!-- O seletor só aparece para quem chefia alguma seção: para todo mundo mais ele
+           seria um controle com uma opção só. -->
+      @if ((painel()?.scopes ?? []).length > 1) {
+        <label class="escopo">
+          <span class="muted">Olhando</span>
+          <select [(ngModel)]="escopo" (ngModelChange)="trocarEscopo()">
+            @for (e of painel()!.scopes; track e.departmentId) {
+              <option [value]="e.departmentId ?? ''">
+                {{ e.name }}{{ e.isChief ? ' (sua seção)' : '' }}
+              </option>
+            }
+          </select>
+        </label>
+      }
     </header>
 
     @if (erro(); as problema) {
@@ -126,6 +142,48 @@ const MOTIVOS: Record<OccupancyKind, string> = {
         </section>
       }
 
+      <!-- ── o retrato da empresa, para quem olha a empresa ──────────────────── -->
+      @if (p.sections.length > 0) {
+        <section class="card bloco">
+          <h2><mamao-icon name="estrutura" [size]="18" /> Por seção</h2>
+          <table class="secoes">
+            <thead>
+              <tr>
+                <th>Seção</th>
+                <th>Chefe</th>
+                <th class="num">Equipe</th>
+                <th class="num">Fora</th>
+                <th class="num">Escala</th>
+                <th class="num">Atrasadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of p.sections; track s.departmentId) {
+                <tr>
+                  <td>
+                    <button type="button" class="link-secao" (click)="verSecao(s.departmentId)">
+                      {{ s.name }}
+                    </button>
+                  </td>
+                  <td [class.sem-chefe]="!s.chiefName">{{ s.chiefName ?? 'sem chefe' }}</td>
+                  <td class="num">{{ s.teamSize }}</td>
+                  <td class="num" [class.ruim]="s.out > 0">{{ s.out || '—' }}</td>
+                  <td class="num" [class.ruim]="s.missionsMissingPeople > 0">
+                    {{ s.missionsMissingPeople || '—' }}
+                  </td>
+                  <td class="num" [class.ruim]="s.overdueWork > 0">{{ s.overdueWork || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <p class="muted nota">
+            “Escala” conta as missões de hoje e amanhã que estão restritas a esta seção e
+            ainda sem gente suficiente. Missão da casa inteira não pertence a seção
+            nenhuma: ela aparece no bloco “Escala de hoje e amanhã”.
+          </p>
+        </section>
+      }
+
       <!-- ── quem está fora ──────────────────────────────────────────────────── -->
       <section class="card bloco">
         <h2><mamao-icon name="pessoas" [size]="18" /> Equipe</h2>
@@ -167,7 +225,11 @@ const MOTIVOS: Record<OccupancyKind, string> = {
     }
   `,
   styles: `
-    .head { margin-bottom: var(--space-5); }
+    .head {
+      align-items: flex-start; display: flex; flex-wrap: wrap; gap: var(--space-3);
+      justify-content: space-between; margin-bottom: var(--space-5);
+    }
+    .escopo { align-items: center; display: flex; font-size: 14px; gap: 8px; }
     .head h1 { margin: 0; }
     .head p { margin: var(--space-1) 0 0; }
 
@@ -199,6 +261,18 @@ const MOTIVOS: Record<OccupancyKind, string> = {
     .etiqueta--ok { color: var(--status-success-fg); }
 
     .volta { align-items: center; display: flex; font-size: 13px; gap: 6px; margin: 0 0 var(--space-3); }
+
+    .secoes { border-collapse: collapse; font-size: 14px; width: 100%; }
+    .secoes th { color: var(--text-secondary); font-weight: 500; padding: 6px 8px; text-align: left; }
+    .secoes td { border-top: 1px solid var(--border); padding: 6px 8px; }
+    .secoes .num { text-align: right; width: 72px; }
+    .secoes .ruim { color: var(--status-danger-fg); font-weight: 600; }
+    .secoes .sem-chefe { color: var(--text-secondary); font-style: italic; }
+    .link-secao {
+      background: none; border: 0; color: var(--mamao-green-900); cursor: pointer;
+      font: inherit; font-weight: 600; padding: 0; text-align: left; text-decoration: underline;
+    }
+    .nota { font-size: 12px; margin: var(--space-3) 0 0; }
   `,
 })
 export class DashboardPage implements OnInit {
@@ -208,6 +282,12 @@ export class DashboardPage implements OnInit {
   protected readonly MOTIVOS = MOTIVOS;
 
   protected readonly painel = signal<TodayPanel | null>(null);
+
+  /** '' = a empresa inteira. Vem do servidor na primeira carga e o usuário pode trocar. */
+  protected escopo = '';
+
+  /** Distingue "ainda não escolhi" de "escolhi a empresa inteira". */
+  private escolheu = false;
   protected readonly erro = signal<ApiProblem | null>(null);
 
   protected readonly tudoQuieto = computed(() => {
@@ -233,12 +313,34 @@ export class DashboardPage implements OnInit {
     void this.carregar();
   }
 
-  private async carregar(): Promise<void> {
+  protected async carregar(): Promise<void> {
     try {
-      this.painel.set(await this.api.today());
+      const p = await this.api.today(this.escopo || null, this.escolheu && !this.escopo);
+      this.painel.set(p);
+
+      // O servidor decide o escopo INICIAL — ele é quem sabe que esta pessoa chefia a
+      // Seção Técnica. A tela só reflete a decisão, senão o painel abriria na empresa
+      // e o chefe teria que escolher a própria seção toda manhã.
+      this.escopo = p.scope.departmentId ?? '';
     } catch (e) {
       this.erro.set(e as ApiProblem);
     }
+  }
+
+  protected escopoAtual(): string {
+    const p = this.painel();
+    return p?.scope.departmentId ? p.scope.name : this.session.tenantName();
+  }
+
+  protected verSecao(departmentId: string): void {
+    this.escopo = departmentId;
+    this.escolheu = true;
+    void this.carregar();
+  }
+
+  protected trocarEscopo(): void {
+    this.escolheu = true;
+    void this.carregar();
   }
 
   protected dataPorExtenso(): string {

@@ -96,3 +96,6 @@ export type TodayApproval = Schemas['TodayApproval'];
 export type SearchResponse = Schemas['SearchResponse'];
 export type SearchResult = Schemas['SearchResult'];
 export type SearchResultKind = Schemas['SearchResultKind'];
+
+export type TodayScope = Schemas['TodayScope'];
+export type TodaySection = Schemas['TodaySection'];

@@ -1221,6 +1221,9 @@ export interface components {
             today: string;
             /** Format: int32 */
             teamSize: number;
+            scope: components["schemas"]["TodayScope"];
+            scopes: components["schemas"]["TodayScope"][];
+            sections: components["schemas"]["TodaySection"][];
             out: components["schemas"]["TodayPerson"][];
             backTomorrow: components["schemas"]["TodayPerson"][];
             missions: components["schemas"]["TodayMission"][];
@@ -1234,6 +1237,26 @@ export interface components {
             kind: components["schemas"]["OccupancyKind"];
             /** Format: date */
             until: string;
+        };
+        TodayScope: {
+            /** Format: uuid */
+            departmentId: string | null;
+            name: string;
+            isChief: boolean;
+        };
+        TodaySection: {
+            /** Format: uuid */
+            departmentId: string;
+            name: string;
+            chiefName: string | null;
+            /** Format: int32 */
+            teamSize: number;
+            /** Format: int32 */
+            out: number;
+            /** Format: int32 */
+            missionsMissingPeople: number;
+            /** Format: int32 */
+            overdueWork: number;
         };
         TodayWorkItem: {
             id: components["schemas"]["WorkItemId"];
@@ -1324,7 +1347,10 @@ export type $defs = Record<string, never>;
 export interface operations {
     today: {
         parameters: {
-            query?: never;
+            query?: {
+                departmentId?: string;
+                all?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;

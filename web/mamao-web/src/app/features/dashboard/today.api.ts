@@ -8,8 +8,17 @@ import type { SearchResponse, TodayPanel } from '../../core/http/api.types';
 export class TodayApi {
   private readonly http = inject(HttpClient);
 
-  today(): Promise<TodayPanel> {
-    return firstValueFrom(this.http.get<TodayPanel>('/api/v1/today'));
+  /**
+   * `departmentId` nulo pede o escopo natural de quem esta olhando; `all` pede a empresa
+   * inteira DE PROPOSITO. Sao coisas diferentes: sem o `all`, o chefe de secao que
+   * escolhesse "a empresa inteira" caia de volta na propria secao.
+   */
+  today(departmentId?: string | null, all = false): Promise<TodayPanel> {
+    let params = new HttpParams();
+    if (departmentId) params = params.set('departmentId', departmentId);
+    if (all) params = params.set('all', 'true');
+
+    return firstValueFrom(this.http.get<TodayPanel>('/api/v1/today', { params }));
   }
 
   search(q: string): Promise<SearchResponse> {

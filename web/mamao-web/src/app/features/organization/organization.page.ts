@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { ApiProblem, DepartmentNode, PositionResponse } from '../../core/http/api.types';
 import { HasPermissionDirective } from '../../core/auth/has-permission.directive';
+import { EmployeesApi } from '../employees/employees.api';
 import { OrganizationApi } from './organization.api';
 
 /**
@@ -34,7 +35,8 @@ import { OrganizationApi } from './organization.api';
         <h2>Setores</h2>
         <p class="muted dica">
           Opcional. Crie quando servir para alguma coisa — filtrar a equipe, montar escala
-          por turno, definir quem aprova.
+          por turno, definir quem aprova. O <strong>chefe</strong> de cada seção abre o
+          painel já na seção dele.
         </p>
 
         @if (carregando()) {
@@ -45,18 +47,38 @@ import { OrganizationApi } from './organization.api';
           <ul class="arvore">
             @for (setor of setores(); track setor.id) {
               <li [style.padding-left.px]="setor.depth * 20">
-                <span class="arvore__nome">{{ setor.name }}</span>
-                <span class="muted arvore__contagem">
-                  {{ rotuloDePessoas(setor) }}
-                </span>
-                <button
-                  *mamaoHasPermission="'people.write'"
-                  class="link-perigo"
-                  type="button"
-                  (click)="excluirSetor(setor)"
-                >
-                  Excluir
-                </button>
+                <div class="arvore__linha">
+                  <span class="arvore__nome">{{ setor.name }}</span>
+                  <span class="muted arvore__contagem">
+                    {{ rotuloDePessoas(setor) }}
+                  </span>
+                  <button
+                    *mamaoHasPermission="'people.write'"
+                    class="link-perigo"
+                    type="button"
+                    (click)="excluirSetor(setor)"
+                  >
+                    Excluir
+                  </button>
+                </div>
+
+                <label class="chefe" *mamaoHasPermission="'people.write'">
+                  <span class="muted">Chefe</span>
+                  <!-- ngModel e nao [value]: as pessoas chegam por uma segunda requisicao,
+                       e um [value] escrito antes das <option> existirem nao seleciona nada —
+                       a tela mostrava "Ninguem" para setor que TEM chefe. -->
+                  <select
+                    [ngModel]="setor.managerId ?? ''"
+                    [ngModelOptions]="{ standalone: true }"
+                    [attr.aria-label]="'Chefe de ' + setor.name"
+                    (ngModelChange)="salvarChefe(setor, $event)"
+                  >
+                    <option value="">Ninguém</option>
+                    @for (p of pessoas(); track p.id) {
+                      <option [value]="p.id">{{ p.fullName }}</option>
+                    }
+                  </select>
+                </label>
               </li>
             }
           </ul>
@@ -157,10 +179,16 @@ import { OrganizationApi } from './organization.api';
     .painel h2 { font-size: 16px; margin: 0 0 var(--space-2); }
     .dica { font-size: 13px; margin: 0 0 var(--space-4); }
     .arvore, .lista { list-style: none; margin: 0 0 var(--space-4); padding: 0; }
+    .arvore__linha { align-items: center; display: flex; gap: var(--space-3); width: 100%; }
+    .chefe { align-items: center; display: flex; font-size: 13px; gap: 8px; margin-top: 4px; width: 100%; }
+    .chefe select { font-size: 13px; padding: 4px 28px 4px 8px; }
+
     .arvore li, .lista li {
       align-items: center; border-bottom: 1px solid var(--border); display: flex;
       gap: var(--space-3); padding: var(--space-2) 0;
     }
+    /* O setor tem duas linhas (nome e chefe); o cargo continua numa so. */
+    .arvore li { align-items: stretch; flex-direction: column; gap: 0; }
     .arvore__nome { font-weight: 500; }
     .arvore__contagem { font-size: 13px; margin-left: auto; white-space: nowrap; }
     .ordem { flex: none; }
@@ -177,8 +205,10 @@ import { OrganizationApi } from './organization.api';
 })
 export class OrganizationPage implements OnInit {
   private readonly api = inject(OrganizationApi);
+  private readonly employees = inject(EmployeesApi);
 
   readonly setores = signal<DepartmentNode[]>([]);
+  readonly pessoas = signal<Array<{ id: string; fullName: string }>>([]);
   readonly cargos = signal<PositionResponse[]>([]);
   readonly carregando = signal(true);
   readonly salvando = signal(false);
@@ -226,6 +256,16 @@ export class OrganizationPage implements OnInit {
       this.ordemDoCargo = '';
       this.nomeDoCargo = '';
     });
+  }
+
+  /** Nomeia (ou tira) o chefe da seção. E o que faz o painel dela abrir para essa pessoa. */
+  async salvarChefe(setor: DepartmentNode, employeeId: string): Promise<void> {
+    const novo = employeeId || null;
+    if (novo === (setor.managerId ?? null)) return;
+
+    await this.executar(() =>
+      this.api.updateDepartment(setor.id, { name: setor.name, managerId: novo }),
+    );
   }
 
   async excluirSetor(setor: DepartmentNode): Promise<void> {
@@ -278,6 +318,13 @@ export class OrganizationPage implements OnInit {
 
       this.setores.set(setores);
       this.cargos.set(cargos);
+
+      // A lista de pessoas é só para o seletor de chefe: falhar aqui não pode esconder a
+      // estrutura, que é o conteúdo da tela.
+      void this.employees.list('', false, 1, 200).then(
+        (p) => this.pessoas.set(p.items.map((e) => ({ id: e.id as string, fullName: e.fullName }))),
+        () => this.pessoas.set([]),
+      );
     } catch (problema) {
       this.erro.set(problema as ApiProblem);
     } finally {
