@@ -2,6 +2,7 @@ using FluentValidation;
 using Mamao.People.Application;
 using Mamao.People.Application.Availability;
 using Mamao.People.Application.Missions;
+using Mamao.People.Application.Documents;
 using Mamao.People.Application.Search;
 using Mamao.People.Application.Today;
 using Mamao.People.Application.Work;
@@ -68,6 +69,12 @@ public static class PeopleModule
         services.AddScoped<RestrictionService>();
         services.AddScoped<TodayService>();
         services.AddScoped<SearchService>();
+        services.AddScoped<DocumentService>();
+
+        services.AddOptions<Storage.DocumentStorageOptions>()
+            .BindConfiguration(Storage.DocumentStorageOptions.SectionName);
+
+        services.AddSingleton<IDocumentStorage, Storage.FileSystemDocumentStorage>();
 
         services.AddValidatorsFromAssemblyContaining<CreateEmployeeRequestValidator>(includeInternalTypes: true);
 

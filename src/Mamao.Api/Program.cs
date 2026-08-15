@@ -113,6 +113,7 @@ app.MapMissionEndpoints();
 app.MapWorkEndpoints();
 app.MapTodayEndpoints();
 app.MapAuditEndpoints();
+app.MapDocumentEndpoints();
 
 // Geracao do documento OpenAPI sem subir servidor nem tocar no banco. Usado pelo CI
 // para gerar o cliente TypeScript. Ver docs/adr/0009-cliente-gerado-do-openapi.md.

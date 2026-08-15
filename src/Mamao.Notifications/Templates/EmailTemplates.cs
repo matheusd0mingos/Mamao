@@ -180,6 +180,67 @@ public sealed class EmailTemplates(IOptions<AppOptions> options)
         { ToName = nome };
     }
 
+    /// <param name="itens">Uma linha por documento: tipo, pessoa e quantos dias faltam.</param>
+    public EmailMessage ExpiringDocuments(
+        string destinatario, string nome, IReadOnlyList<(string Tipo, string Pessoa, int Dias)> itens)
+    {
+        var vencidos = itens.Count(i => i.Dias < 0);
+
+        // O assunto diz o TAMANHO do problema. "Documentos vencendo" todo mes vira ruido;
+        // "2 vencidos e 3 vencendo" faz a pessoa abrir.
+        var assunto = vencidos > 0
+            ? $"{vencidos} documento(s) vencido(s) e {itens.Count - vencidos} vencendo"
+            : $"{itens.Count} documento(s) vencendo nos próximos dias";
+
+        static string Prazo(int dias) => dias switch
+        {
+            < 0 => $"venceu há {-dias} dia(s)",
+            0 => "vence hoje",
+            1 => "vence amanhã",
+            _ => $"vence em {dias} dias",
+        };
+
+        var linhas = string.Join("\n", itens.Select(i => $"  • {i.Tipo} de {i.Pessoa} — {Prazo(i.Dias)}"));
+
+        var texto = $"""
+            Olá, {nome}.
+
+            {assunto}:
+
+            {linhas}
+
+            {_app.ProductName} — a operação da sua equipe em um lugar só
+            """;
+
+        var html = string.Join("", itens.Select(i => $"""
+            <tr>
+              <td style="padding:6px 0;border-top:1px solid #e6e6e1">
+                <strong>{Escapar(i.Tipo)}</strong> de {Escapar(i.Pessoa)}
+              </td>
+              <td style="padding:6px 0;border-top:1px solid #e6e6e1;text-align:right;color:{(i.Dias < 0 ? "#a32020" : "#8a6100")}">
+                {Escapar(Prazo(i.Dias))}
+              </td>
+            </tr>
+            """));
+
+        return new EmailMessage(
+            destinatario,
+            assunto,
+            Layout(
+                titulo: assunto,
+                corpo: $"""
+                    <p>Olá, {Escapar(nome)}.</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">
+                      {html}
+                    </table>
+                    <p style="margin-top:16px;color:#55605b;font-size:13px">
+                      Este aviso é enviado uma vez por documento. Renovar a validade faz o aviso valer de novo.
+                    </p>
+                    """),
+            texto)
+        { ToName = nome };
+    }
+
     private string Layout(string titulo, string corpo) => $"""
         <!doctype html>
         <html lang="pt-BR">

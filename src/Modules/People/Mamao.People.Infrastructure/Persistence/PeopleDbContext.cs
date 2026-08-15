@@ -1,6 +1,7 @@
 using Mamao.People.Application;
 using Mamao.People.Contracts;
 using Mamao.People.Domain.Availability;
+using Mamao.People.Domain.Documents;
 using Mamao.People.Domain.Missions;
 using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Organization;
@@ -33,6 +34,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
     public DbSet<WorkItem> WorkItems => Set<WorkItem>();
     public DbSet<RotationPolicy> RotationPolicies => Set<RotationPolicy>();
     public DbSet<EmployeeRestriction> EmployeeRestrictions => Set<EmployeeRestriction>();
+    public DbSet<Document> Documents => Set<Document>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,6 +50,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         modelBuilder.ApplyConfiguration(new WorkItemConfiguration());
         modelBuilder.ApplyConfiguration(new RotationPolicyConfiguration());
         modelBuilder.ApplyConfiguration(new EmployeeRestrictionConfiguration());
+        modelBuilder.ApplyConfiguration(new DocumentConfiguration());
 
         // Outbox e auditoria moram em schemas de outros donos (messaging e audit), que sao
         // quem gera as migrations delas. Aqui sao apenas MAPEADAS, para que o Enqueue e o
@@ -82,6 +85,7 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options, I
         configurationBuilder.Properties<MissionId>().HaveConversion<MissionIdConverter>();
         configurationBuilder.Properties<WorkItemId>().HaveConversion<WorkItemIdConverter>();
         configurationBuilder.Properties<RestrictionId>().HaveConversion<RestrictionIdConverter>();
+        configurationBuilder.Properties<DocumentId>().HaveConversion<DocumentIdConverter>();
         base.ConfigureConventions(configurationBuilder);
     }
 
@@ -325,6 +329,41 @@ public sealed class MissionConfiguration : IEntityTypeConfiguration<Mission>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(m => m.Assignments).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+public sealed class DocumentIdConverter()
+    : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DocumentId, Guid>(
+        id => id.Value,
+        value => new DocumentId(value));
+
+public sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
+{
+    public void Configure(EntityTypeBuilder<Document> builder)
+    {
+        builder.ToTable("documents");
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.Kind).HasMaxLength(Document.MaxTipo).IsRequired();
+        builder.Property(d => d.NormalizedKind).HasMaxLength(Document.MaxTipo).IsRequired();
+        builder.Property(d => d.FileName).HasMaxLength(Document.MaxNome).IsRequired();
+        builder.Property(d => d.ContentType).HasMaxLength(120).IsRequired();
+        builder.Property(d => d.StoragePath).HasMaxLength(200).IsRequired();
+        builder.Property(d => d.Notes).HasMaxLength(Document.MaxObservacao);
+        builder.Property(d => d.UploadedByName).HasMaxLength(200).IsRequired();
+
+        // A consulta que da sentido ao objeto: "o que vence nos proximos 30 dias".
+        builder.HasIndex(d => new { d.TenantId, d.ExpiresOn });
+
+        // A tela da pessoa.
+        builder.HasIndex(d => new { d.TenantId, d.EmployeeId });
+
+        // Desligar alguem NAO apaga o documento: obrigacao legal de guarda nao acaba com o
+        // contrato. Quem apaga e a exclusao explicita, ou o fim da retencao.
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(d => d.EmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

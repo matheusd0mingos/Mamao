@@ -1,4 +1,5 @@
 using Mamao.People.Domain.Availability;
+using Mamao.People.Domain.Documents;
 using Mamao.People.Domain.Missions;
 using Mamao.People.Domain.Employees;
 using Mamao.People.Domain.Organization;
@@ -27,6 +28,7 @@ public interface IPeopleDbContext
     DbSet<WorkItem> WorkItems { get; }
     DbSet<RotationPolicy> RotationPolicies { get; }
     DbSet<EmployeeRestriction> EmployeeRestrictions { get; }
+    DbSet<Document> Documents { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
 

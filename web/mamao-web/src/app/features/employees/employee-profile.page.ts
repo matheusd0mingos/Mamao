@@ -7,12 +7,14 @@ import type {
   ContractResponse,
   EmployeeResponse,
   InviteResponse,
+  DocumentResponse,
   RestrictionResponse,
 } from '../../core/http/api.types';
 import { HasPermissionDirective } from '../../core/auth/has-permission.directive';
 import { SessionService } from '../../core/auth/session.service';
 import { InvitesApi } from '../access/invites.api';
 import { OrganizationApi } from '../organization/organization.api';
+import { DocumentsApi } from '../documents/documents.api';
 import { RestrictionsApi } from './restrictions.api';
 import { EmployeesApi } from './employees.api';
 
@@ -154,6 +156,71 @@ import { EmployeesApi } from './employees.api';
           }
         </section>
 
+        <section class="card bloco" *mamaoHasPermission="'documents.read'">
+          <h2>Documentos</h2>
+          <p class="muted ajuda">
+            Documento com validade avisa sozinho: 30 dias antes do vencimento sai um e-mail
+            para quem cuida disso. É o único lugar do sistema que não depende de alguém
+            lembrar de atualizar.
+          </p>
+
+          @if (documentos().length === 0) {
+            <p class="muted">Nenhum documento.</p>
+          } @else {
+            <ul class="documentos">
+              @for (d of documentos(); track d.id) {
+                <li>
+                  <div class="doc__texto">
+                    <strong>{{ d.kind }}</strong>
+                    <span class="doc__estado" [attr.data-estado]="d.status">{{ validade(d) }}</span>
+                    <div class="muted doc__arquivo">
+                      {{ d.fileName }} · {{ tamanho(d.sizeBytes) }} · por {{ d.uploadedByName }}
+                    </div>
+                    @if (d.notes) {
+                      <div class="muted doc__obs">{{ d.notes }}</div>
+                    }
+                  </div>
+                  <div class="doc__acoes">
+                    <button type="button" class="mini" (click)="baixar(d)">Baixar</button>
+                    <button
+                      *mamaoHasPermission="'documents.approve'"
+                      type="button"
+                      class="mini link-perigo"
+                      (click)="excluirDocumento(d)"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+
+          <form *mamaoHasPermission="'documents.upload'" class="novo-doc" (ngSubmit)="enviarDocumento()">
+            <label>
+              <span>Tipo</span>
+              <input [(ngModel)]="tipoDoDocumento" name="tipoDoDocumento" placeholder="ASO, CNH…" maxlength="120" required />
+            </label>
+            <label>
+              <span>Emissão</span>
+              <input type="date" [(ngModel)]="emissao" name="emissao" />
+            </label>
+            <label>
+              <span>Validade</span>
+              <input type="date" [(ngModel)]="validadeNova" name="validadeNova" />
+            </label>
+            <label class="larga">
+              <span>Arquivo</span>
+              <input type="file" (change)="escolherArquivo($event)" required />
+            </label>
+            <div class="larga">
+              <button class="btn btn--ghost" type="submit" [disabled]="salvando() || !arquivo">
+                {{ salvando() ? 'Enviando…' : 'Enviar documento' }}
+              </button>
+            </div>
+          </form>
+        </section>
+
         <section class="card bloco" *mamaoHasPermission="'availability.read'">
           <h2>Restrições de escala</h2>
           <p class="muted ajuda">
@@ -289,6 +356,28 @@ import { EmployeesApi } from './employees.api';
     .nova-restricao { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
     .nova-restricao label { display: flex; flex-direction: column; font-size: 13px; gap: 4px; }
     .nova-restricao .larga { grid-column: 1 / -1; }
+
+    .documentos { list-style: none; margin: 0 0 var(--space-3); padding: 0; }
+    .documentos li {
+      align-items: flex-start; border-top: 1px solid var(--border); display: flex;
+      gap: var(--space-3); justify-content: space-between; padding: 8px 0;
+    }
+    .documentos li:first-child { border-top: 0; }
+    .doc__texto { min-width: 0; }
+    .doc__estado { font-size: 12px; margin-left: 8px; }
+    .doc__estado[data-estado='Vencido'] { color: var(--status-danger-fg); font-weight: 600; }
+    .doc__estado[data-estado='Vencendo'] { color: var(--status-warning-fg, #8a6100); font-weight: 600; }
+    .doc__estado[data-estado='Valido'] { color: var(--status-success-fg); }
+    .doc__estado[data-estado='SemValidade'] { color: var(--text-secondary); }
+    .doc__arquivo, .doc__obs { font-size: 12px; margin-top: 2px; }
+    .doc__acoes { display: flex; flex: none; gap: 8px; }
+    .mini {
+      background: none; border: 0; color: var(--text-secondary); cursor: pointer;
+      font: inherit; font-size: 12px; padding: 0; text-decoration: underline;
+    }
+    .novo-doc { display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+    .novo-doc label { display: flex; flex-direction: column; font-size: 13px; gap: 4px; }
+    .novo-doc .larga { grid-column: 1 / -1; }
     @media (max-width: 900px) { .colunas { grid-template-columns: 1fr; } }
   `,
 })
@@ -297,6 +386,7 @@ export class EmployeeProfilePage implements OnInit {
   private readonly invites = inject(InvitesApi);
   private readonly restrictions = inject(RestrictionsApi);
   private readonly organization = inject(OrganizationApi);
+  private readonly documents = inject(DocumentsApi);
   private readonly route = inject(ActivatedRoute);
   private readonly session = inject(SessionService);
 
@@ -308,6 +398,12 @@ export class EmployeeProfilePage implements OnInit {
   readonly salvando = signal(false);
   readonly restricoes = signal<RestrictionResponse[]>([]);
   readonly setores = signal<Array<{ id: string; name: string }>>([]);
+  readonly documentos = signal<DocumentResponse[]>([]);
+
+  tipoDoDocumento = '';
+  emissao = '';
+  validadeNova = '';
+  arquivo: File | null = null;
 
   atividade = '';
   motivoDaRestricao = '';
@@ -321,6 +417,84 @@ export class EmployeeProfilePage implements OnInit {
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
     void this.carregar();
+  }
+
+  private async carregarDocumentos(): Promise<void> {
+    try {
+      this.documentos.set(await this.documents.list(this.id));
+    } catch {
+      this.documentos.set([]);
+    }
+  }
+
+  /** "vence em 12 dias", "venceu há 3 dias", "sem validade" — o que decide se alguém age. */
+  validade(d: DocumentResponse): string {
+    if (d.expiresOn === null) return 'sem validade';
+
+    const dias = d.daysToExpiry ?? 0;
+    if (dias < 0) return `venceu há ${-dias} dia(s)`;
+    if (dias === 0) return 'vence hoje';
+    if (dias === 1) return 'vence amanhã';
+
+    return `vence em ${dias} dias`;
+  }
+
+  tamanho(bytes: number): string {
+    return bytes < 1024 * 1024
+      ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  escolherArquivo(evento: Event): void {
+    this.arquivo = (evento.target as HTMLInputElement).files?.[0] ?? null;
+  }
+
+  async enviarDocumento(): Promise<void> {
+    if (!this.arquivo) return;
+
+    this.salvando.set(true);
+    this.erro.set(null);
+
+    try {
+      await this.documents.upload({
+        employeeId: this.id,
+        kind: this.tipoDoDocumento,
+        issuedOn: this.emissao || null,
+        expiresOn: this.validadeNova || null,
+        file: this.arquivo,
+      });
+
+      this.tipoDoDocumento = '';
+      this.emissao = '';
+      this.validadeNova = '';
+      this.arquivo = null;
+      await this.carregarDocumentos();
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    } finally {
+      this.salvando.set(false);
+    }
+  }
+
+  async baixar(d: DocumentResponse): Promise<void> {
+    this.erro.set(null);
+    try {
+      await this.documents.download(d.id as string, d.fileName);
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    }
+  }
+
+  async excluirDocumento(d: DocumentResponse): Promise<void> {
+    if (!globalThis.confirm(`Excluir "${d.kind}"? O arquivo sai do servidor.`)) return;
+
+    this.erro.set(null);
+    try {
+      await this.documents.remove(d.id as string);
+      await this.carregarDocumentos();
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    }
   }
 
   podeMover(): boolean {
@@ -456,6 +630,10 @@ export class EmployeeProfilePage implements OnInit {
 
     if (this.session.has('availability.read')) {
       void this.carregarRestricoes();
+    }
+
+    if (this.session.has('documents.read')) {
+      void this.carregarDocumentos();
     }
 
     if (this.podeMover()) {

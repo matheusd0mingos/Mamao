@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:35561"
+      "url": "http://127.0.0.1:36335"
     }
   ],
   "paths": {
@@ -2367,6 +2367,185 @@
           }
         }
       }
+    },
+    "/api/v1/documents": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "listDocuments",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expiring",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "uploadDocument",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{id}": {
+      "put": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "updateDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "deleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{id}/file": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "downloadDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3139,6 +3318,90 @@
             "format": "date-time"
           }
         }
+      },
+      "DocumentId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "DocumentResponse": {
+        "required": [
+          "id",
+          "employeeId",
+          "employeeName",
+          "kind",
+          "issuedOn",
+          "expiresOn",
+          "status",
+          "daysToExpiry",
+          "fileName",
+          "contentType",
+          "sizeBytes",
+          "notes",
+          "uploadedAt",
+          "uploadedByName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DocumentId"
+          },
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "issuedOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus"
+          },
+          "daysToExpiry": {
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uploadedByName": {
+            "type": "string"
+          }
+        }
+      },
+      "DocumentStatus": {
+        "enum": [
+          "SemValidade",
+          "Valido",
+          "Vencendo",
+          "Vencido"
+        ]
       },
       "EmployeeId": {
         "type": "string",
@@ -4514,6 +4777,30 @@
           }
         }
       },
+      "UpdateDocumentRequest": {
+        "required": [
+          "issuedOn",
+          "expiresOn",
+          "notes"
+        ],
+        "type": "object",
+        "properties": {
+          "issuedOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "UpdateEmployeeRequest": {
         "required": [
           "fullName",
@@ -4812,6 +5099,9 @@
     },
     {
       "name": "Work"
+    },
+    {
+      "name": "Documents"
     }
   ]
 }

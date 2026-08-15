@@ -102,3 +102,7 @@ export type TodaySection = Schemas['TodaySection'];
 
 export type AuditPage = Schemas['AuditPage'];
 export type AuditEntryResponse = Schemas['AuditEntryResponse'];
+
+export type DocumentResponse = Schemas['DocumentResponse'];
+export type DocumentStatus = Schemas['DocumentStatus'];
+export type UpdateDocumentRequest = Schemas['UpdateDocumentRequest'];

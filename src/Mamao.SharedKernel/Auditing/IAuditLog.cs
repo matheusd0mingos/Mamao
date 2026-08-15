@@ -94,6 +94,12 @@ public static class AuditActions
 
     public const string ContractSaved = "employee.contract.saved";
 
+    // Documento. O "downloaded" existe porque a politica de privacidade promete que todo
+    // acesso ao arquivo e auditado — e documento com validade e, muitas vezes, de saude.
+    public const string DocumentUploaded = "document.uploaded";
+    public const string DocumentDownloaded = "document.downloaded";
+    public const string DocumentDeleted = "document.deleted";
+
     public const string DepartmentCreated = "department.created";
     public const string DepartmentRenamed = "department.renamed";
     public const string DepartmentDeleted = "department.deleted";

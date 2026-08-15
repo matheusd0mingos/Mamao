@@ -48,6 +48,10 @@ builder.Services
 // dessincroniza de codigo. Ver docs/arquitetura/infraestrutura-e-deploy.md.
 builder.Services.AddHostedService<DatabaseMigrator>();
 
+// Depois do migrator, pelo mesmo motivo de ordem: ele so tem o que ler quando o schema
+// existe. O proprio job espera dois minutos antes da primeira passada.
+builder.Services.AddHostedService<DocumentExpiryNotifier>();
+
 builder.Services.AddOutbox(
     builder.Configuration,
     connectionString,

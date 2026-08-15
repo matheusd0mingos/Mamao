@@ -52,7 +52,11 @@ fi
 
 echo "[$STAMP] dump ok ($(numfmt --to=iec "$tamanho" 2>/dev/null || echo "$tamanho bytes"))"
 
-echo "[$STAMP] arquivos enviados pelos clientes"
+# Os DOCUMENTOS dos funcionarios moram aqui dentro (uploads/documentos), e nao no banco:
+# blob em Postgres incha o dump. A consequencia esta neste script — restaurar so o dump
+# devolve a lista de documentos com os arquivos faltando. Os dois arquivos deste backup sao
+# um par; restaurar um sem o outro deixa o sistema meio certo, que e pior que fora do ar.
+echo "[$STAMP] arquivos enviados pelos clientes (inclui os documentos)"
 docker run --rm -v mamao_uploads:/uploads:ro -v "$WORK:/out" alpine \
     tar -czf "/out/uploads-$STAMP.tar.gz" -C /uploads .
 
