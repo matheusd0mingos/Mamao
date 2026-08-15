@@ -6,10 +6,59 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:35431"
+      "url": "http://127.0.0.1:34903"
     }
   ],
   "paths": {
+    "/api/v1/today": {
+      "get": {
+        "tags": [
+          "Today"
+        ],
+        "operationId": "today",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayPanel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/register-company": {
       "post": {
         "tags": [
@@ -3814,6 +3863,62 @@
           }
         }
       },
+      "SearchResponse": {
+        "required": [
+          "query",
+          "results",
+          "truncated"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SearchResult": {
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "subtitle"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SearchResultKind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SearchResultKind": {
+        "enum": [
+          "Pessoa",
+          "Missao",
+          "Demanda",
+          "Setor",
+          "Cargo"
+        ]
+      },
       "SuggestedPerson": {
         "required": [
           "employeeId",
@@ -3862,6 +3967,196 @@
           "terminatedOn": {
             "type": "string",
             "format": "date"
+          }
+        }
+      },
+      "TodayApproval": {
+        "required": [
+          "id",
+          "employeeName",
+          "kind",
+          "startsOn",
+          "endsOn",
+          "diasAteComecar"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AbsenceRequestId"
+          },
+          "employeeName": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OccupancyKind"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "diasAteComecar": {
+            "format": "int32",
+            "type": "integer"
+          }
+        }
+      },
+      "TodayMission": {
+        "required": [
+          "id",
+          "name",
+          "on",
+          "startsAt",
+          "requiredPeople",
+          "assignedCount",
+          "missing",
+          "confirmed"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/MissionId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "on": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "time",
+            "nullable": true
+          },
+          "requiredPeople": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "assignedCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "missing": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "confirmed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TodayPanel": {
+        "required": [
+          "today",
+          "teamSize",
+          "out",
+          "backTomorrow",
+          "missions",
+          "work",
+          "approvals"
+        ],
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "teamSize": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "out": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayPerson"
+            }
+          },
+          "backTomorrow": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayPerson"
+            }
+          },
+          "missions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayMission"
+            }
+          },
+          "work": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayWorkItem"
+            }
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodayApproval"
+            }
+          }
+        }
+      },
+      "TodayPerson": {
+        "required": [
+          "employeeId",
+          "name",
+          "departmentName",
+          "kind",
+          "until"
+        ],
+        "type": "object",
+        "properties": {
+          "employeeId": {
+            "$ref": "#/components/schemas/EmployeeId"
+          },
+          "name": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OccupancyKind"
+          },
+          "until": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "TodayWorkItem": {
+        "required": [
+          "id",
+          "title",
+          "assigneeName",
+          "dueOn",
+          "overdue"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/WorkItemId"
+          },
+          "title": {
+            "type": "string"
+          },
+          "assigneeName": {
+            "type": "string",
+            "nullable": true
+          },
+          "dueOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "overdue": {
+            "type": "boolean"
           }
         }
       },
@@ -4149,6 +4444,12 @@
     }
   },
   "tags": [
+    {
+      "name": "Today"
+    },
+    {
+      "name": "Search"
+    },
     {
       "name": "Auth"
     },

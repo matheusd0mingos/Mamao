@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/v1/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["today"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register-company": {
         parameters: {
             query?: never;
@@ -1129,6 +1161,20 @@ export interface components {
             compensationAgreementOn: string | null;
             notes: string | null;
         };
+        SearchResponse: {
+            query: string;
+            results: components["schemas"]["SearchResult"][];
+            truncated: boolean;
+        };
+        SearchResult: {
+            kind: components["schemas"]["SearchResultKind"];
+            /** Format: uuid */
+            id: string;
+            title: string;
+            subtitle: string | null;
+        };
+        /** @enum {unknown} */
+        SearchResultKind: "Pessoa" | "Missao" | "Demanda" | "Setor" | "Cargo";
         SuggestedPerson: {
             employeeId: components["schemas"]["EmployeeId"];
             name: string;
@@ -1143,6 +1189,59 @@ export interface components {
         TerminateEmployeeRequest: {
             /** Format: date */
             terminatedOn: string;
+        };
+        TodayApproval: {
+            id: components["schemas"]["AbsenceRequestId"];
+            employeeName: string;
+            kind: components["schemas"]["OccupancyKind"];
+            /** Format: date */
+            startsOn: string;
+            /** Format: date */
+            endsOn: string;
+            /** Format: int32 */
+            diasAteComecar: number;
+        };
+        TodayMission: {
+            id: components["schemas"]["MissionId"];
+            name: string;
+            /** Format: date */
+            on: string;
+            /** Format: time */
+            startsAt: string | null;
+            /** Format: int32 */
+            requiredPeople: number;
+            /** Format: int32 */
+            assignedCount: number;
+            /** Format: int32 */
+            missing: number;
+            confirmed: boolean;
+        };
+        TodayPanel: {
+            /** Format: date */
+            today: string;
+            /** Format: int32 */
+            teamSize: number;
+            out: components["schemas"]["TodayPerson"][];
+            backTomorrow: components["schemas"]["TodayPerson"][];
+            missions: components["schemas"]["TodayMission"][];
+            work: components["schemas"]["TodayWorkItem"][];
+            approvals: components["schemas"]["TodayApproval"][];
+        };
+        TodayPerson: {
+            employeeId: components["schemas"]["EmployeeId"];
+            name: string;
+            departmentName: string | null;
+            kind: components["schemas"]["OccupancyKind"];
+            /** Format: date */
+            until: string;
+        };
+        TodayWorkItem: {
+            id: components["schemas"]["WorkItemId"];
+            title: string;
+            assigneeName: string | null;
+            /** Format: date */
+            dueOn: string | null;
+            overdue: boolean;
         };
         UpdateDepartmentRequest: {
             name: string;
@@ -1223,6 +1322,48 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    today: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodayPanel"];
+                };
+            };
+        };
+    };
+    search: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+        };
+    };
     registerCompany: {
         parameters: {
             query?: never;

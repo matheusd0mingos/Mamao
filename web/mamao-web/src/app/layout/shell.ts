@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { GlobalSearch } from './global-search';
 import { Icon } from '../shared/ui/icon';
 import { rotuloDoPapel } from '../core/auth/role-label';
 import { SessionService } from '../core/auth/session.service';
@@ -10,7 +11,7 @@ import { SessionService } from '../core/auth/session.service';
  */
 @Component({
   selector: 'mamao-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, GlobalSearch],
   template: `
     <div class="shell">
       <aside class="sidebar">
@@ -21,6 +22,8 @@ import { SessionService } from '../core/auth/session.service';
             <small>pessoas, atividades e disponibilidade</small>
           </span>
         </div>
+
+        <mamao-global-search class="busca" />
 
         <!-- O icone acompanha o rotulo, nunca o substitui: navegacao so com desenho
              obriga o usuario a decorar o que cada um significa. -->
@@ -78,6 +81,8 @@ import { SessionService } from '../core/auth/session.service';
     .brand__text { display: flex; flex-direction: column; font-family: var(--font-display); font-size: 22px; line-height: 1.1; }
     .brand__text small { font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.08em; opacity: 0.7; text-transform: uppercase; }
 
+    .busca { display: block; margin-bottom: var(--space-4); }
+
     nav { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
     nav a {
       align-items: center;
@@ -111,6 +116,9 @@ import { SessionService } from '../core/auth/session.service';
       }
 
       .brand { margin-bottom: 0; }
+      /* Segunda linha inteira, em vez de sumir: no celular a busca vale MAIS, porque
+         rolar uma lista de cem pessoas com o polegar e pior que no desktop. */
+      .busca { grid-column: 1 / -1; margin-bottom: 0; }
       .brand__text { font-size: 18px; }
       .brand__text small { display: none; }
 

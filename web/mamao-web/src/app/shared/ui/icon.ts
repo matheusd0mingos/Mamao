@@ -43,6 +43,9 @@ const DESENHOS: Record<string, string> = {
   // Sem responsavel: silhueta com interrogacao implicita (traco cortado).
   ninguem: '<path d="M19 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 7 17.5V19"/><circle cx="13" cy="7.5" r="3.5"/><path d="m3 9 4 4M7 9l-4 4"/>',
 
+  busca: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  confere: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
+
   mais: '<path d="M12 5v14M5 12h14"/>',
   fechar: '<path d="m6 6 12 12M18 6 6 18"/>',
   sair: '<path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9"/><path d="M15 8.5 18.5 12 15 15.5M18.5 12H9"/>',

@@ -86,3 +86,13 @@ export type RotationPolicyResponse = Schemas['RotationPolicyResponse'];
 export type RotationTiebreak = Schemas['RotationTiebreak'];
 export type RestrictionResponse = Schemas['RestrictionResponse'];
 export type CreateRestrictionRequest = Schemas['CreateRestrictionRequest'];
+
+export type TodayPanel = Schemas['TodayPanel'];
+export type TodayPerson = Schemas['TodayPerson'];
+export type TodayMission = Schemas['TodayMission'];
+export type TodayWorkItem = Schemas['TodayWorkItem'];
+export type TodayApproval = Schemas['TodayApproval'];
+
+export type SearchResponse = Schemas['SearchResponse'];
+export type SearchResult = Schemas['SearchResult'];
+export type SearchResultKind = Schemas['SearchResultKind'];
