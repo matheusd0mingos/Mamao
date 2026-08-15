@@ -58,6 +58,21 @@ instalação no [Capítulo 1](01-do-zero-ao-primeiro-hello.md).
 | 13 | [Bugs reais e o que eles ensinam](13-bugs-reais.md) | Sete defeitos verdadeiros do Mamão, com o diagnóstico completo |
 | 14 | [Exercícios](14-exercicios.md) | Onze exercícios com gabarito, do fácil ao difícil |
 
+### Parte IV — A fundação
+
+Os dois capítulos que a Parte II assume que você já sabe. Se em algum momento você se
+pegou pensando *"tá, mas o que é um container, afinal?"* ou *"por que o backend tem
+catorze projetos?"*, é aqui.
+
+| # | Capítulo | O que você sai sabendo |
+|---|---|---|
+| 15 | [Docker para macacos](15-docker-para-macacos.md) | Container vs. VM, Dockerfile, camadas, Compose, volumes, rede — e os dois bugs de produção que moldaram o Dockerfile do Mamão |
+| 16 | [A solução .NET por dentro](16-a-solucao-dotnet.md) | Monolito modular, os 4 projetos de um módulo, Result, outbox, as 3 camadas de multi-tenancy, testes de arquitetura |
+
+> **Pode ler fora de ordem.** O 15 combina bem logo depois do
+> [Capítulo 11](11-dev-vs-producao.md), e o 16 logo depois do
+> [Capítulo 12](12-ponta-a-ponta.md).
+
 ### Apoio
 
 - [Glossário](99-glossario.md) — todo termo em negrito da apostila está aqui.

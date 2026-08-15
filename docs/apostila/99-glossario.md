@@ -7,6 +7,9 @@ Todo termo destacado ao longo da apostila, em ordem alfabética.
 **ADR** (*Architecture Decision Record*) — documento curto registrando o que foi decidido,
 por quê, e o que foi descartado. O Mamão tem 20 em [`docs/adr/`](../adr/).
 
+**Advisory lock** — trava cooperativa do PostgreSQL. O Worker usa para que dois containers
+subindo juntos não apliquem as mesmas migrations em paralelo.
+
 **AOT** (*Ahead-Of-Time*) — compilação dos templates Angular em tempo de build. Erro de
 template vira erro de compilação em vez de erro em execução.
 
@@ -15,13 +18,22 @@ template vira erro de compilação em vez de erro em execução.
 
 **Bundle** — o conjunto de arquivos JavaScript gerados pelo build.
 
-**CI** (*Continuous Integration*) — automação que compila e testa a cada push. O do Mamão
-está em `.github/workflows/ci.yml`.
+**Camada (Docker)** — cada instrução do Dockerfile gera uma. São cacheadas: o Docker só
+refaz a partir da primeira que mudou. Por isso a ordem das instruções importa.
 
 **Chunk** — pedaço separado do bundle, gerado por lazy loading. Um por tela, no Mamão.
 
+**CI** (*Continuous Integration*) — automação que compila e testa a cada push. O do Mamão
+está em `.github/workflows/ci.yml`.
+
+**Compose** — arquivo que descreve vários containers, com variáveis, volumes e
+dependências, subidos com um comando.
+
 **`computed`** — signal derivado de outros. Recalcula só quando uma dependência muda e
 guarda o resultado.
+
+**Container** — processo isolado que enxerga sistema de arquivos, rede e lista de processos
+próprios. Não é máquina virtual: compartilha o núcleo do sistema.
 
 **CORS** (*Cross-Origin Resource Sharing*) — mecanismo pelo qual um servidor autoriza
 requisições de outra origem. O Mamão não usa: o proxy elimina a necessidade.
@@ -31,11 +43,13 @@ requisições de outra origem. O Mamão não usa: o proxy elimina a necessidade.
 **Decorator** — anotação em classe (`@Component`, `@Injectable`). Equivale aos *attributes*
 do C#.
 
+**DI** (*Dependency Injection*) — o objeto declara o que precisa e o container entrega.
+`inject()` no Angular; construtor no .NET.
+
 **Diretiva** — comportamento aplicado a um elemento existente, sem template próprio.
 Exemplo: `*mamaoHasPermission`.
 
-**DI** (*Dependency Injection*) — o objeto declara o que precisa e o container entrega.
-`inject()` no Angular; construtor no .NET.
+**Dockerfile** — a receita de como construir uma imagem.
 
 **DTO** (*Data Transfer Object*) — objeto que existe só para trafegar dados entre camadas.
 No Mamão, gerados do OpenAPI, nunca escritos à mão no TypeScript.
@@ -51,11 +65,19 @@ caminho não encontrado, para o roteamento acontecer no navegador.
 **Guard** — função que decide se uma rota pode ser ativada. `canMatch` age antes de a rota
 ser escolhida; `canActivate`, depois.
 
+**Healthcheck** — comando que o Docker executa dentro do container para saber se ele está
+saudável. `depends_on` só espera de verdade quando combinado com `condition: service_healthy`.
+
 **Hot reload** — recompilação e troca automática na tela ao salvar o arquivo, sem perder
 estado.
 
 **`HttpClient`** — o cliente HTTP do Angular. Passa pelos interceptors — motivo pelo qual o
 Mamão não usa cliente gerado.
+
+**Idempotente** — operação que, repetida, produz o mesmo resultado. Requisito para
+consumidores de outbox, que garante entrega ao menos uma vez.
+
+**Imagem** — o resultado congelado de um Dockerfile. Uma imagem gera muitos containers.
 
 **`inject()`** — obtém uma dependência. Só funciona em contexto de injeção.
 
@@ -79,10 +101,22 @@ fazer. Validado sem consulta ao banco, por isso é curto.
 
 **Migration** — script versionado que altera o esquema do banco. O Worker aplica no startup.
 
+**Minimal API** — forma de declarar endpoints no ASP.NET Core sem Controllers, com injeção
+direta nos parâmetros.
+
+**Monolito modular** — um único programa com fronteiras internas fortes, verificadas pelo
+compilador e por testes de arquitetura. A escolha do Mamão.
+
 **Monorepo** — um repositório com backend, frontend e infraestrutura juntos.
+
+**Multi-estágio** — Dockerfile com mais de um `FROM`: um estágio compila, outro só roda. A
+imagem final não carrega o SDK.
 
 **Observable** — fluxo de valores ao longo do tempo (RxJS). `firstValueFrom` converte em
 Promise.
+
+**OOM killer** — mecanismo do Linux que mata um processo quando a memória acaba. Motivo dos
+`mem_limit` no Compose.
 
 **OpenAPI** — formato padrão para descrever uma API HTTP. Antes chamado Swagger.
 
@@ -105,6 +139,9 @@ cross-origin não simples.
 parecer vir da mesma origem.
 
 **Refresh token** — token de vida longa cuja única função é obter um access token novo.
+
+**Result** — padrão em que a função devolve sucesso ou erro em vez de lançar exceção. No
+Mamão, reservado para falha de negócio esperada; bug e infraestrutura continuam sendo exceção.
 
 **RLS** (*Row-Level Security*) — recurso do PostgreSQL que filtra linhas por política, no
 próprio banco. Terceira camada de isolamento entre empresas no Mamão.
@@ -137,13 +174,19 @@ implícito.
 **Tenant** — a empresa cliente num sistema multi-inquilino. Todo dado do Mamão pertence a
 um.
 
-**`track`** — expressão obrigatória no `@for` que identifica cada item para o Angular
-reaproveitar elementos.
+**Teste de arquitetura** — teste que verifica estrutura em vez de comportamento: quem pode
+referenciar quem, se todo índice começa por `tenant_id`. Substitui convenção que ninguém lembra.
 
 **`traceId`** — identificador que liga a mensagem de erro na tela à linha exata no log do
 servidor.
 
+**`track`** — expressão obrigatória no `@for` que identifica cada item para o Angular
+reaproveitar elementos.
+
 **Tree-shaking** — remoção de código não utilizado durante o build.
+
+**Volume** — armazenamento gerenciado pelo Docker que sobrevive à destruição do container.
+Sem ele, recriar o container apaga o banco.
 
 **XSS** (*Cross-Site Scripting*) — injeção de script malicioso numa página. A interpolação
 do Angular escapa por padrão.

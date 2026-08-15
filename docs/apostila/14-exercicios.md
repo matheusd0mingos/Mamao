@@ -368,4 +368,5 @@ O último item é o mais importante e o mais esquecido.
 
 ---
 
-**Anterior:** [Capítulo 13](13-bugs-reais.md) · **Apoio:** [Glossário](99-glossario.md)
+**Anterior:** [Capítulo 13](13-bugs-reais.md) ·
+**Próximo:** [Capítulo 15 — Docker para macacos](15-docker-para-macacos.md)
