@@ -1,11 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <title>Mamão — gestão sem complicação</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!--
+    O "ã" sobre o verde e a marca, e e o mesmo arquivo da landing — o icone da aba
+    precisa ser o mesmo nos dois dominios, senao parecem dois produtos.
+
+    SVG para navegador moderno; o PNG existe porque o iOS ignora favicon SVG ao
+    salvar na tela de inicio, e e la que o gestor abre isto.
+  -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#11362d">
 </head>
 <body>
   <app-root></app-root>
