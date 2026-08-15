@@ -43,6 +43,22 @@ function normalizar(no) {
 }
 
 normalizar(documento);
+
+// Fora o `servers`.
+//
+// O host escreve ali a URL em que ele subiu para gerar o documento — com uma porta
+// EFEMERA, diferente a cada execucao. Comitado, isso transforma a checagem de contrato do
+// CI num teste que nunca passa duas vezes seguidas: o diff acusa "openapi desatualizado"
+// quando a unica coisa que mudou foi o numero da porta sorteada.
+//
+// Tirar nao perde nada: este documento existe para gerar os tipos do frontend, que fala
+// com a API por caminho relativo atras do proxy. O endereco de verdade e do deploy, nao
+// do contrato.
+const removidos = documento.servers?.length ?? 0;
+delete documento.servers;
+
 writeFileSync(caminho, `${JSON.stringify(documento, null, 2)}\n`);
 
-console.log(`openapi normalizado: ${corrigidos} schema(s) numerico(s) com type ausente.`);
+console.log(
+  `openapi normalizado: ${corrigidos} schema(s) numerico(s) com type ausente, ` +
+  `${removidos} servidor(es) de porta efemera removido(s).`);
