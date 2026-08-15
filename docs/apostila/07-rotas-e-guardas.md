@@ -96,8 +96,8 @@ chunk-B3ddEZ47.js   | organization-page     |  11.73 kB
 chunk-DCblMCoR.js   | audit-page            |   9.09 kB
 ```
 
-Um pedaço por tela. O bundle inicial fica com a casca e o essencial — cerca de 79 KB
-comprimidos.
+Um pedaço por tela. O bundle inicial fica com a casca e o essencial — **95 kB comprimidos**,
+medidos somando os quatro arquivos que o `index.html` referencia.
 
 > **Chimpanzé pergunta:** *"E a tela demora ao abrir pela primeira vez?"*
 >

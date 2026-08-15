@@ -425,7 +425,243 @@ UPDATE people.employees SET normalized_name = lower(full_name);
 ALTER TABLE people.employees FORCE ROW LEVEL SECURITY;
 ```
 
-## 16.12 O quadro geral
+## 16.12 As bibliotecas: o que entrou, o que não entrou e por quê
+
+Arquitetura você já viu. Falta dizer **com o que ela é feita** — e, mais interessante, o
+que foi recusado.
+
+### Onde ficam as versões
+
+O Mamão usa **Central Package Management**: nenhum `.csproj` traz número de versão. Tudo
+mora num arquivo só, o `Directory.Packages.props`:
+
+```xml
+<PropertyGroup>
+  <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+</PropertyGroup>
+
+<ItemGroup Label="ASP.NET Core / EF Core">
+  <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+  <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+</ItemGroup>
+```
+
+E o `.csproj` só diz **o que** usa:
+
+```xml
+<PackageReference Include="Microsoft.EntityFrameworkCore" />
+```
+
+Com 14 projetos, isso elimina a classe inteira de bug em que dois projetos usam versões
+diferentes do mesmo pacote e o comportamento muda conforme quem carrega primeiro.
+
+### O que entrou
+
+**Acesso a dados**
+
+| Pacote | Para quê | Por que este |
+|---|---|---|
+| `Microsoft.EntityFrameworkCore` | ORM: objetos ⇄ tabelas, migrations, LINQ | Padrão do ecossistema, migrations integradas |
+| `Npgsql.EntityFrameworkCore.PostgreSQL` | O provedor PostgreSQL do EF | É **o** provedor; suporta `jsonb`, arrays, `DateOnly` |
+| `Npgsql` | O driver puro | Usado direto nos testes de RLS, que precisam de SQL cru |
+| `EFCore.NamingConventions` | `FullName` → `full_name` | Convenção do Postgres é snake_case. Sem isso, todo SQL manual precisaria de aspas |
+
+**Web e identidade**
+
+| Pacote | Para quê |
+|---|---|
+| `Microsoft.AspNetCore.Authentication.JwtBearer` | Valida o token em cada requisição |
+| `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | Hash de senha, recuperação, bloqueio por tentativas |
+| `Microsoft.AspNetCore.OpenApi` | Gera o documento do Capítulo 9 |
+
+⚠️ Sobre o Identity: é tentador escrever "é só um `SHA256` na senha". **Não é.** É salt por
+usuário, algoritmo lento e parametrizado (PBKDF2), migração de algoritmo quando o padrão
+mudar, token de recuperação assinado com expiração, e contagem de tentativas. Cada um
+desses é uma vulnerabilidade quando feito por conta própria.
+
+**Validação e e-mail**
+
+| Pacote | Para quê | Nota |
+|---|---|---|
+| `FluentValidation` | Regras de forma da requisição | Produz o `fieldErrors` do Capítulo 8 |
+| `MailKit` | Envio SMTP | O `SmtpClient` da BCL é obsoleto e a própria Microsoft recomenda MailKit |
+
+**Importação de planilha** — e este comentário no arquivo diz exatamente onde traçar a
+linha entre biblioteca e código próprio:
+
+```xml
+<!-- CsvHelper faz o parsing de baixo nivel (aspas, delimitador dentro de campo).
+     O mapeamento de cabecalho e a coercao de valores sao nossos: e ali que mora a
+     tolerancia a arquivo sujo, que e o diferencial. Licenca MS-PL/Apache-2.0. -->
+<PackageVersion Include="CsvHelper" Version="33.1.0" />
+```
+
+Ninguém deve reimplementar parsing de CSV — aspas dentro de campo, delimitador dentro de
+aspas, quebra de linha dentro de célula. Mas aceitar que a coluna se chame "Nome", "nome
+completo" ou "NOME DO FUNCIONÁRIO" é o **produto**, não plumbing.
+
+**Observabilidade** — cinco pacotes de `OpenTelemetry`, desde o primeiro commit. Um padrão
+aberto: traces e métricas saem para qualquer coletor sem prender o projeto a um fornecedor.
+
+**Testes**
+
+| Pacote | Para quê |
+|---|---|
+| `xunit.v3` | O framework de teste |
+| `Shouldly` | Asserções legíveis: `resultado.IsSuccess.ShouldBeTrue()` |
+| `Testcontainers.PostgreSql` | Sobe um Postgres **de verdade** por execução |
+| `NetArchTest.Rules` | Os testes de arquitetura da seção 16.7 |
+| `Microsoft.AspNetCore.Mvc.Testing` | Sobe a API em memória para teste ponta a ponta |
+
+### O que **não** entrou — e esta é a parte instrutiva
+
+Três bibliotecas aparecem em quase todo projeto .NET e **não estão** aqui:
+
+**MediatR** — o padrão mediator, `_mediator.Send(new CreateEmployeeCommand(…))`. O Mamão
+chama o serviço direto: `service.CreateAsync(request, ct)`. O MediatR resolve o problema de
+desacoplar quem chama de quem executa; num monolito modular onde a fronteira já é o
+projeto, ele adiciona uma indireção que você paga toda vez que quer saber quem trata um
+comando — o "vá para a definição" para de funcionar.
+
+**AutoMapper** — mapeia objeto em objeto por convenção. O Mamão escreve o mapeamento à mão:
+
+```csharp
+new EmployeeResponse(e.Id, e.Code, e.FullName, …)
+```
+
+Chato, e o compilador vigia. Com AutoMapper, remover um campo compila e falha em execução —
+ou pior, mapeia silenciosamente para o valor padrão. (E o AutoMapper também passou a exigir
+licença comercial em versões recentes.)
+
+**Serilog** — o `ILogger` do próprio .NET, com OpenTelemetry por trás, cobre o caso.
+
+O critério é sempre o mesmo, e está no README do projeto:
+
+> **Use framework para plumbing. Use nosso código para domínio.**
+
+Uma biblioteca precisa resolver um problema que você **tem hoje**. Adicionada antes disso,
+ela é custo puro: mais uma superfície de atualização, de vulnerabilidade e de licença.
+
+### O critério de adoção — [ADR-0016](../adr/0016-bibliotecas-de-terceiros.md)
+
+Quatro perguntas, a fazer **na data de hoje** e não pela memória:
+
+1. **Qual a licença da versão que você vai usar** — não a do projeto em geral.
+2. **O custo aparece quando o produto crescer?** Licença gratuita "abaixo de X de
+   faturamento" é dívida com data marcada.
+3. **O benefício é real hoje?**
+4. **Há advisory?** — verificado pelo CI, inclusive em dependência transitiva.
+
+E a ADR registra três casos concretos em que isso mudou uma decisão:
+
+**FluentAssertions → Shouldly.** O briefing pedia FluentAssertions. A partir da v8 ela
+passou a exigir licença comercial para uso comercial. Trocada por Shouldly, gratuita e
+igualmente legível. O comentário ficou no arquivo:
+
+```xml
+<!-- Shouldly no lugar de FluentAssertions: a v8+ da FluentAssertions passou a
+     exigir licenca comercial. Ver docs/adr/0016-bibliotecas-de-terceiros.md -->
+```
+
+**MassTransit → outbox próprio.** Também mudou de licenciamento. E, mais importante, o
+Mamão ainda não tem o problema que ele resolve — mensageria distribuída. A ADR já anota a
+alternativa para o dia em que tiver: Wolverine, MIT.
+
+**SSH.NET — pin transitivo.** Este é o mais técnico e o mais útil:
+
+```xml
+<!-- Pin transitivo: o Testcontainers arrasta SSH.NET 2025.1.0, que tem advisory de
+     severidade alta (GHSA-q939-rpr3-3284). Com TreatWarningsAsErrors, o build quebra —
+     que e exatamente o comportamento desejado. -->
+<PackageVersion Include="SSH.NET" Version="2026.0.0" />
+```
+
+O `SSH.NET` **não é dependência sua** — o Testcontainers o traz junto. Você não pode
+esperar o Testcontainers atualizar. Com `CentralPackageTransitivePinningEnabled`, você fixa
+a versão corrigida de uma dependência de dependência. É a forma certa de tratar
+vulnerabilidade em pacote que não é seu.
+
+E o CI cobra:
+
+```yaml
+- name: Pacotes com vulnerabilidade conhecida
+  run: |
+    saida=$(dotnet list Mamao.slnx package --vulnerable --include-transitive)
+    if echo "$saida" | grep -q "has the following vulnerable packages"; then
+      echo "::error::Dependencia com vulnerabilidade conhecida."
+      exit 1
+    fi
+```
+
+`--include-transitive` é o que importa: a maioria das vulnerabilidades vem de pacotes que
+você nunca escolheu.
+
+### Duas configurações de build que valem por uma biblioteca
+
+```xml
+<Nullable>enable</Nullable>
+<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+```
+
+`TreatWarningsAsErrors` é rigoroso e é o que faz o item anterior funcionar: um aviso de
+pacote vulnerável **quebra o build** em vez de rolar na tela.
+
+E há um comentário no topo do `Directory.Build.props` que é uma história inteira:
+
+```xml
+<!--
+  NAO ligue InvariantGlobalization aqui. Ja esteve ligado e custou caro: sem ICU,
+  string.Normalize vira no-op silencioso e "Admissão" deixa de casar com "admissao",
+  ou seja, toda planilha brasileira era recusada sem erro visivel.
+-->
+```
+
+`InvariantGlobalization` é uma otimização recomendada em vários guias de container: reduz a
+imagem tirando as tabelas de internacionalização (ICU). Num produto brasileiro, o efeito é
+que `string.Normalize` — usado para comparar texto ignorando acento — **vira uma operação
+que não faz nada**, sem erro. Toda planilha com cabeçalho acentuado era recusada, e a
+mensagem não fazia sentido.
+
+**Otimização copiada de guia genérico, aplicada a um produto com requisito específico.** É
+o mesmo padrão dos bugs do Capítulo 13: nada estourou, o build ficou verde, e o
+comportamento mudou em silêncio.
+
+### E no frontend?
+
+Vale a comparação, porque é curta. As dependências de produção do Angular são:
+
+```
+@angular/*   (common, compiler, core, forms, platform-browser, router)
+rxjs
+tslib
+@fontsource/dm-serif-display, @fontsource/inter
+```
+
+**Nenhuma biblioteca de terceiro além das fontes.** Sem NgRx, sem biblioteca de
+componentes, sem Lodash, sem date-fns, sem Tailwind. O design system é próprio, o estado é
+signals, as datas usam `DatePipe`.
+
+Não é ascetismo: cada dependência de frontend entra no bundle que o usuário baixa. O
+resultado é um build inicial de **95 kB comprimidos** — os quatro arquivos que o
+`index.html` referencia. Uma biblioteca de componentes típica custa mais que isso sozinha.
+
+Meça o seu antes de acreditar em qualquer número:
+
+```bash
+npm run build
+python3 - <<'EOF'
+import gzip, pathlib, re
+d = pathlib.Path('dist/mamao-web/browser')
+idx = (d / 'index.html').read_text()
+unicos = sorted(set(re.findall(r'(?:src|href)="([^"]+\.(?:js|css))"', idx)))
+total = sum(len(gzip.compress((d / n).read_bytes())) for n in unicos)
+print(f'{len(unicos)} arquivos iniciais, {total/1024:.0f} kB gzip')
+EOF
+```
+
+## 16.13 O quadro geral
 
 ```
                     Mamao.Api  (HTTP)          Mamao.Worker  (fundo)
@@ -490,6 +726,29 @@ CLT, validação de jornada, disponibilidade, rodízio, validade de documentos.
    exigiria revisar todos eles.
    </details>
 
+6. **Por que o Mamão não usa MediatR nem AutoMapper?**
+   <details><summary>Resposta</summary>
+   MediatR desacopla quem chama de quem executa — problema que, num monolito modular, a
+   fronteira de projeto já resolve; em troca, você perde o "ir para a definição".
+   AutoMapper mapeia por convenção, então remover um campo compila e falha em execução, em
+   vez de o compilador acusar. Ambos também mudaram para modelos de licença mais restritos
+   em versões recentes.
+   </details>
+
+7. **O que é *pin transitivo* e quando ele é necessário?**
+   <details><summary>Resposta</summary>
+   É fixar a versão de uma dependência **da sua dependência**. Necessário quando um pacote
+   que você usa arrasta outro com vulnerabilidade e você não pode esperar a correção
+   upstream — foi o caso do `SSH.NET` vindo pelo Testcontainers.
+   </details>
+
+8. **Por que `InvariantGlobalization` é perigoso num produto brasileiro?**
+   <details><summary>Resposta</summary>
+   Sem ICU, `string.Normalize` vira uma operação que não faz nada, **sem erro**. Comparações
+   ignorando acento param de funcionar: "Admissão" deixa de casar com "admissao", e toda
+   planilha com cabeçalho acentuado é recusada sem mensagem que faça sentido.
+   </details>
+
 ## Laboratório
 
 1. Na `Loja.Api` do Capítulo 2, separe em três projetos: `Loja.Domain`, `Loja.Application`,
@@ -503,6 +762,16 @@ CLT, validação de jornada, disponibilidade, rodízio, validade de documentos.
 5. **Reproduza a armadilha da migration:** crie uma tabela com `FORCE ROW LEVEL SECURITY`,
    rode um `UPDATE` sem definir `app.tenant_id`, e confira com `SELECT count(*)` que zero
    linhas mudaram — sem nenhum erro.
+6. **Audite as suas dependências:**
+   ```bash
+   dotnet list Mamao.slnx package --vulnerable --include-transitive
+   dotnet list Mamao.slnx package --include-transitive | head -40
+   ```
+   Compare a segunda saída com o `Directory.Packages.props`. A diferença são os pacotes que
+   você nunca escolheu — e é de onde vem a maioria das vulnerabilidades.
+7. **Meça o custo de uma dependência de frontend.** Instale uma biblioteca de componentes
+   qualquer, importe **um** componente dela, rode `npm run build` e compare o tamanho do
+   bundle inicial com os 95 kB atuais.
 
 ---
 

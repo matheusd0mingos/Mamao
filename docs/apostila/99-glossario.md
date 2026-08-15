@@ -1,7 +1,6 @@
 # Glossário
 
-Todo termo destacado ao longo da apostila, em ordem alfabética.
----
+Todo termo destacado ao longo da apostila, em ordem alfabética.---
 
 **`$ref`** — referência a um schema definido em `components`. É o que evita repetir a
 descrição do mesmo tipo em cada endpoint que o usa.
@@ -29,6 +28,10 @@ Mamão e encaminha `/api/*` para a aplicação.
 **Camada (Docker)** — cada instrução do Dockerfile gera uma. São cacheadas: o Docker só
 refaz a partir da primeira que mudou. Por isso a ordem das instruções importa.
 
+**Central Package Management** — versões de pacote num arquivo só
+(`Directory.Packages.props`), e os `.csproj` dizendo apenas o que usam. Evita dois projetos
+com versões divergentes do mesmo pacote.
+
 **Chunk** — pedaço separado do bundle, gerado por lazy loading. Um por tela, no Mamão.
 
 **CI** (*Continuous Integration*) — automação que compila e testa a cada push. O do Mamão
@@ -48,6 +51,10 @@ próprios. Não é máquina virtual: compartilha o núcleo do sistema.
 
 **CORS** (*Cross-Origin Resource Sharing*) — mecanismo pelo qual um servidor autoriza
 requisições de outra origem. O Mamão não usa: o proxy elimina a necessidade.
+
+**CsvHelper** — biblioteca de parsing de CSV. No Mamão faz só o nível baixo (aspas,
+delimitador dentro de campo); o mapeamento de cabeçalho é código próprio, porque é ali que
+mora a tolerância a planilha suja.
 
 **DbContext** — a sessão do Entity Framework com o banco. O Mamão tem um por módulo.
 
@@ -73,6 +80,9 @@ caminho não encontrado, para o roteamento acontecer no navegador.
 
 **FluentValidation** — biblioteca .NET para regras de validação. Alimenta o `fieldErrors`.
 
+**FluentValidation** — biblioteca .NET de regras de validação. Produz o `fieldErrors` que o
+formulário do Angular consome.
+
 **Guard** — função que decide se uma rota pode ser ativada. `canMatch` age antes de a rota
 ser escolhida; `canActivate`, depois.
 
@@ -87,6 +97,9 @@ naquele domínio pelo período declarado. Difícil de desfazer: o navegador lemb
 
 **`HttpClient`** — o cliente HTTP do Angular. Passa pelos interceptors — motivo pelo qual o
 Mamão não usa cliente gerado.
+
+**ICU** — biblioteca de internacionalização. Sem ela (`InvariantGlobalization`),
+`string.Normalize` vira no-op silencioso e comparação sem acento para de funcionar.
 
 **Idempotente** — operação que, repetida, produz o mesmo resultado. Requisito para
 consumidores de outbox, que garante entrega ao menos uma vez.
@@ -119,6 +132,8 @@ emissão (5 por domínio por semana), o que importa ao testar deploy.
 
 **LINQ** — sintaxe de consulta do C#.
 
+**MailKit** — cliente SMTP para .NET. Substitui o `SmtpClient` da BCL, que é obsoleto.
+
 **Matcher** — em Caddy, a expressão que decide a quais requisições uma diretiva se aplica.
 Pode ser nomeado (`@estaticos`) e reutilizado.
 
@@ -135,6 +150,9 @@ compilador e por testes de arquitetura. A escolha do Mamão.
 **Multi-estágio** — Dockerfile com mais de um `FROM`: um estágio compila, outro só roda. A
 imagem final não carrega o SDK.
 
+**NetArchTest** — biblioteca usada nos testes de arquitetura: verifica por reflexão quem
+pode referenciar quem.
+
 **Observable** — fluxo de valores ao longo do tempo (RxJS). `firstValueFrom` converte em
 Promise.
 
@@ -143,6 +161,9 @@ Promise.
 
 **OpenAPI** — formato padrão para descrever uma API HTTP. Antes chamado Swagger.
 
+**OpenTelemetry** — padrão aberto de traces e métricas. No Mamão desde o primeiro commit,
+para não prender a observabilidade a um fornecedor.
+
 **`operationId`** — nome da operação no OpenAPI, vindo de `.WithName()` no C#. Vira a chave
 em `operations` no TypeScript gerado.
 
@@ -150,6 +171,9 @@ em `operations` no TypeScript gerado.
 
 **Outbox** — padrão em que o evento é gravado na mesma transação do fato e publicado depois
 por um processo separado, garantindo que não se perca.
+
+**Pin transitivo** — fixar a versão de uma dependência da sua dependência. A forma correta
+de tratar vulnerabilidade em pacote que você não escolheu.
 
 **Pipe** — transformação aplicada só na exibição: `{{ data | date: 'dd/MM/yyyy' }}`.
 
@@ -185,6 +209,9 @@ origem.
 
 **Selector** — a etiqueta HTML de um componente. No Mamão, sempre com prefixo `mamao-`.
 
+**Shouldly** — biblioteca de asserções dos testes. Escolhida no lugar de FluentAssertions,
+que passou a exigir licença comercial a partir da v8.
+
 **`signal`** — caixa reativa que sabe quem depende dela e avisa quando o valor muda.
 Compara por **referência**.
 
@@ -206,6 +233,9 @@ implícito.
 **Tenant** — a empresa cliente num sistema multi-inquilino. Todo dado do Mamão pertence a
 um.
 
+**Testcontainers** — sobe containers reais durante os testes. No Mamão, um PostgreSQL de
+verdade por execução, em vez de banco em memória.
+
 **Teste de arquitetura** — teste que verifica estrutura em vez de comportamento: quem pode
 referenciar quem, se todo índice começa por `tenant_id`. Substitui convenção que ninguém lembra.
 
@@ -215,6 +245,9 @@ servidor.
 **`track`** — expressão obrigatória no `@for` que identifica cada item para o Angular
 reaproveitar elementos.
 
+**`TreatWarningsAsErrors`** — configuração que transforma aviso em erro de compilação. É o
+que faz o alerta de pacote vulnerável quebrar o build em vez de rolar na tela.
+
 **Tree-shaking** — remoção de código não utilizado durante o build.
 
 **Volume** — armazenamento gerenciado pelo Docker que sobrevive à destruição do container.
@@ -222,6 +255,8 @@ Sem ele, recriar o container apaga o banco.
 
 **XSS** (*Cross-Site Scripting*) — injeção de script malicioso numa página. A interpolação
 do Angular escapa por padrão.
+
+**xUnit** — o framework de teste usado no backend.
 
 **Zone.js** — biblioteca que substituía funções do navegador para o Angular saber quando
 verificar mudanças. Substituída por signals.
