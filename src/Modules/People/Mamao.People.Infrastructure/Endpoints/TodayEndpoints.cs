@@ -21,7 +21,9 @@ public static class TodayEndpoints
         .WithName("today")
         .WithTags("Today")
         .Produces<TodayPanel>()
-        .RequireAuthorization(Permissions.PeopleRead);
+        // AvailabilityRead e nao PeopleRead: o painel e, em boa parte, quem esta fora e por
+        // que. Quem cuida so das contas nao precisa disso.
+        .RequireAuthorization(Permissions.AvailabilityRead);
 
         // A busca nao exige permissao propria: ela filtra POR TIPO com as permissoes que a
         // pessoa ja tem. Uma permissao "search" separada daria a falsa impressao de que

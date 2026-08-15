@@ -14,6 +14,16 @@ public static class Permissions
     public const string PeopleWrite = "people.write";
     public const string PeopleDelete = "people.delete";
 
+    /// <summary>
+    /// Ver quem esta fora e por que: calendario, disponibilidade e o painel de hoje.
+    ///
+    /// Separada de <see cref="PeopleRead"/> de proposito. "Quem trabalha aqui" e "quem esta
+    /// de afastamento medico" nao sao a mesma sensibilidade — a segunda pode revelar dado de
+    /// saude. Sem esta separacao, dar acesso ao sistema para quem cuida das CONTAS obrigaria
+    /// a entregar junto a agenda medica da empresa inteira.
+    /// </summary>
+    public const string AvailabilityRead = "availability.read";
+
     public const string TimeOffRequest = "timeoff.request";
     public const string TimeOffApprove = "timeoff.approve";
 
@@ -37,6 +47,7 @@ public static class Permissions
     public static IReadOnlyList<string> All { get; } =
     [
         PeopleRead, PeopleWrite, PeopleDelete,
+        AvailabilityRead,
         TimeOffRequest, TimeOffApprove,
         DocumentsRead, DocumentsUpload, DocumentsApprove,
         WorkRead, WorkAssign,
@@ -59,14 +70,33 @@ public static class Roles
     public const string Manager = "Manager";
     public const string Employee = "Employee";
 
-    public static IReadOnlyList<string> All { get; } = [Owner, Hr, Manager, Employee];
+    /// <summary>
+    /// Quem cuida do sistema: contas, configuracao e auditoria. Nao cuida de gente.
+    ///
+    /// Existe porque as duas responsabilidades sao de pessoas diferentes ate numa empresa
+    /// pequena — quem instala o computador do novo funcionario nao e quem aprova as ferias
+    /// dele. E o unico papel que NAO enxerga disponibilidade: dar conta a alguem nao exige
+    /// saber quem esta de afastamento medico.
+    /// </summary>
+    public const string ItManager = "ItManager";
+
+    public static IReadOnlyList<string> All { get; } = [Owner, Hr, Manager, ItManager, Employee];
 
     public static IReadOnlyList<string> PermissionsOf(string role) => role switch
     {
         Owner => Permissions.All,
+        ItManager =>
+        [
+            // Ve o quadro de pessoas para saber a quem dar acesso, e nada da agenda delas.
+            Permissions.PeopleRead,
+            Permissions.UsersInvite,
+            Permissions.AuditRead,
+            Permissions.SettingsWrite,
+        ],
         Hr =>
         [
             Permissions.PeopleRead, Permissions.PeopleWrite,
+            Permissions.AvailabilityRead,
             Permissions.DocumentsRead, Permissions.DocumentsUpload, Permissions.DocumentsApprove,
             Permissions.TimeOffRequest, Permissions.TimeOffApprove,
             Permissions.WorkRead, Permissions.ScheduleRead,
@@ -76,6 +106,7 @@ public static class Roles
         Manager =>
         [
             Permissions.PeopleRead,
+            Permissions.AvailabilityRead,
             Permissions.DocumentsRead,
             Permissions.TimeOffRequest, Permissions.TimeOffApprove,
             Permissions.WorkRead, Permissions.WorkAssign,
@@ -84,6 +115,7 @@ public static class Roles
         Employee =>
         [
             Permissions.PeopleRead,
+            Permissions.AvailabilityRead,
             Permissions.DocumentsRead, Permissions.DocumentsUpload,
             Permissions.TimeOffRequest,
             Permissions.WorkRead,

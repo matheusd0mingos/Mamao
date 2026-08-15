@@ -37,7 +37,7 @@ public static class AvailabilityEndpoints
         })
         .WithName("listAvailability")
         .Produces<IReadOnlyList<AvailabilityResponse>>()
-        .RequireAuthorization(Permissions.PeopleRead);
+        .RequireAuthorization(Permissions.AvailabilityRead);
 
         disponibilidade.MapGet("/occupancies", async Task<IResult> (
             DateOnly from,
@@ -53,7 +53,7 @@ public static class AvailabilityEndpoints
         })
         .WithName("listOccupancies")
         .Produces<IReadOnlyList<OccupancyResponse>>()
-        .RequireAuthorization(Permissions.PeopleRead);
+        .RequireAuthorization(Permissions.AvailabilityRead);
 
         disponibilidade.MapPost("/occupancies", async Task<IResult> (
             CreateOccupancyRequest request,
@@ -98,7 +98,7 @@ public static class AvailabilityEndpoints
         })
         .WithName("listAbsenceRequests")
         .Produces<IReadOnlyList<AbsenceRequestResponse>>()
-        .RequireAuthorization(Permissions.PeopleRead);
+        .RequireAuthorization(Permissions.AvailabilityRead);
 
         // Pedir exige `timeoff.request`, que todo funcionario tem. Decidir exige
         // `timeoff.approve`, que e da chefia — a separacao existe para que o proprio

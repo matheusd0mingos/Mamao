@@ -6,6 +6,7 @@ const ROTULOS: Record<string, string> = {
   Owner: 'Proprietário',
   Hr: 'RH',
   Manager: 'Gestor',
+  ItManager: 'Gerente de TI',
   Employee: 'Funcionário',
 };
 

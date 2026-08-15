@@ -187,6 +187,7 @@ export class AccessPage implements OnInit {
     { valor: 'Employee', rotulo: 'Funcionário' },
     { valor: 'Manager', rotulo: 'Gestor' },
     { valor: 'Hr', rotulo: 'RH' },
+    { valor: 'ItManager', rotulo: 'Gerente de TI' },
     { valor: 'Owner', rotulo: 'Proprietário' },
   ];
 

@@ -68,11 +68,28 @@ ASP.NET Core (`IAuthorizationHandler<TRequirement, TResource>`), capaz de pergun
 | Papel | Permissões | Escopo padrão |
 |---|---|---|
 | Owner | todas | Company |
-| RH | pessoas, documentos, férias (aprovar), auditoria | Company |
-| Gestor | leitura, aprovação, atribuição | Team ou Department |
-| Funcionário | próprio registro, solicitar, enviar documento | Self |
+| RH | pessoas, documentos, férias (aprovar), auditoria, disponibilidade | Company |
+| Gestor | leitura, aprovação, atribuição, disponibilidade | Team ou Department |
+| Gerente de TI | contas, configuração, auditoria, quadro de pessoas | Company |
+| Funcionário | próprio registro, solicitar, enviar documento, disponibilidade | Self |
 
 Papéis customizados por tenant entram na V2 — o modelo já suporta, é só UI.
+
+### Por que o gerente de TI existe, e por que ele não vê disponibilidade
+
+Quem cuida das contas não é quem cuida das pessoas — isso é verdade até numa empresa de
+quinze. Quem instala o computador do novo funcionário não é quem aprova as férias dele.
+
+A consequência de desenho é a permissão `availability.read`, separada de `people.read`.
+"Quem trabalha aqui" e "quem está de afastamento médico" não têm a mesma sensibilidade: a
+segunda pode revelar dado de saúde. Sem essa separação, dar acesso ao sistema para quem
+administra as contas obrigaria a entregar junto a agenda médica da empresa inteira — e o
+próprio texto da política de privacidade deixaria de ser verdade.
+
+**O que isto NÃO é:** o gerente de TI tem `settings.write` e `users.invite`, então ele pode
+se conceder outro papel. A separação é organizacional e auditável, não uma barreira contra
+quem administra o sistema. Barreira contra o administrador exige separação de ambiente, e
+isso não existe neste estágio. Está escrito aqui para ninguém vender o que não temos.
 
 ## Dado sensível de saúde
 

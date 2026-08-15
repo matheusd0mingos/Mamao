@@ -1,5 +1,11 @@
 import { Routes } from '@angular/router';
-import { authGuard, permissionGuard } from './core/auth/auth.guard';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { SessionService } from './core/auth/session.service';
+import { authGuard, permissionGuard, rotaInicial } from './core/auth/auth.guard';
+
+/** Manda a raiz para a tela que faz sentido para este papel. */
+const rotaPadraoGuard = () => inject(Router).parseUrl(rotaInicial(inject(SessionService)));
 
 /** Lazy loading por feature: o bundle inicial carrega casca + visao geral. */
 export const routes: Routes = [
@@ -34,9 +40,12 @@ export const routes: Routes = [
     canMatch: [authGuard],
     loadComponent: () => import('./layout/shell').then((m) => m.Shell),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      // O destino de '' depende do papel: quem nao ve disponibilidade nao tem casa em
+      // /inicio. Sem isto, o gerente de TI entrava e era redirecionado em circulo.
+      { path: '', pathMatch: 'full', canMatch: [rotaPadraoGuard], children: [] },
       {
         path: 'inicio',
+        canMatch: [permissionGuard('availability.read')],
         loadComponent: () =>
           import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
       },
@@ -54,13 +63,13 @@ export const routes: Routes = [
       },
       {
         path: 'disponibilidade',
-        canMatch: [permissionGuard('people.read')],
+        canMatch: [permissionGuard('availability.read')],
         loadComponent: () =>
           import('./features/availability/availability.page').then((m) => m.AvailabilityPage),
       },
       {
         path: 'calendario',
-        canMatch: [permissionGuard('people.read')],
+        canMatch: [permissionGuard('availability.read')],
         loadComponent: () =>
           import('./features/availability/calendar.page').then((m) => m.CalendarPage),
       },

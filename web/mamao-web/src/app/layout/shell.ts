@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { HasPermissionDirective } from '../core/auth/has-permission.directive';
 import { GlobalSearch } from './global-search';
 import { Icon } from '../shared/ui/icon';
 import { rotuloDoPapel } from '../core/auth/role-label';
@@ -11,7 +12,7 @@ import { SessionService } from '../core/auth/session.service';
  */
 @Component({
   selector: 'mamao-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, GlobalSearch],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, GlobalSearch, HasPermissionDirective],
   template: `
     <div class="shell">
       <aside class="sidebar">
@@ -27,24 +28,33 @@ import { SessionService } from '../core/auth/session.service';
 
         <!-- O icone acompanha o rotulo, nunca o substitui: navegacao so com desenho
              obriga o usuario a decorar o que cada um significa. -->
+        <!-- Cada link so aparece para quem consegue abrir a tela. Antes eram todos
+             visiveis, e o guarda de rota devolvia a pessoa para a visao geral em
+             silencio: um menu que nao leva a lugar nenhum e pior que um menu curto. -->
         <nav>
-          <a routerLink="/inicio" routerLinkActive="active">
+          <a *mamaoHasPermission="'availability.read'" routerLink="/inicio" routerLinkActive="active">
             <mamao-icon name="inicio" [size]="18" /> Visão geral
           </a>
-          <a routerLink="/pessoas" routerLinkActive="active">
+          <a *mamaoHasPermission="'people.read'" routerLink="/pessoas" routerLinkActive="active">
             <mamao-icon name="pessoas" [size]="18" /> Pessoas
           </a>
-          <a routerLink="/disponibilidade" routerLinkActive="active">
+          <a *mamaoHasPermission="'availability.read'" routerLink="/disponibilidade" routerLinkActive="active">
             <mamao-icon name="disponibilidade" [size]="18" /> Disponibilidade
           </a>
-          <a routerLink="/calendario" routerLinkActive="active">
+          <a *mamaoHasPermission="'availability.read'" routerLink="/calendario" routerLinkActive="active">
             <mamao-icon name="calendario" [size]="18" /> Calendário
           </a>
-          <a routerLink="/demandas" routerLinkActive="active">
+          <a *mamaoHasPermission="'work.read'" routerLink="/demandas" routerLinkActive="active">
             <mamao-icon name="demandas" [size]="18" /> Demandas
           </a>
-          <a routerLink="/escala" routerLinkActive="active">
+          <a *mamaoHasPermission="'schedule.read'" routerLink="/escala" routerLinkActive="active">
             <mamao-icon name="escala" [size]="18" /> Escala
+          </a>
+          <a *mamaoHasPermission="'users.invite'" routerLink="/acessos" routerLinkActive="active">
+            <mamao-icon name="acessos" [size]="18" /> Acessos
+          </a>
+          <a *mamaoHasPermission="'people.read'" routerLink="/estrutura" routerLinkActive="active">
+            <mamao-icon name="estrutura" [size]="18" /> Estrutura
           </a>
         </nav>
 
