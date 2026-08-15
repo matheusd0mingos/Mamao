@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Backup diario: dump do Postgres + uploads, criptografado, enviado para FORA do VPS.
 #
-# Backup nunca restaurado nao e backup, e esperanca. O ensaio de restore esta em
-# deploy/README.md e precisa ser feito UMA VEZ, cronometrado, antes do primeiro cliente.
+# Backup nunca restaurado nao e backup, e esperanca. O ensaio agora e um comando:
+#     ./deploy/restaurar.sh --ensaio <arquivo.dump.gpg>
+# Ele restaura num banco descartavel, confere as policies de RLS e cronometra.
 # Ver docs/arquitetura/infraestrutura-e-deploy.md#backup
 #
 # cron:  15 3 * * *  /opt/mamao/backup.sh >> /var/log/mamao-backup.log 2>&1

@@ -267,8 +267,39 @@ Duas coisas que o ensaio confirmou e que ninguém pensa em checar:
   Postgres onde ele não existe, suba o Worker antes de apontar a API.
 
 Faça o exercício inteiro uma vez, cronometrado, com um backup de verdade do seu servidor.
-O tempo aqui foi de 2 segundos com um banco pequeno; o que importa é você medir o **seu**,
-porque é esse número que você vai prometer para o cliente.
+### Agora é um comando
+
+```bash
+# Ensaio — restaura num banco descartável, confere e apaga. Não toca em nada em produção.
+./deploy/restaurar.sh --ensaio mamao-20260814T031500Z.dump.gpg
+
+# De verdade — DESTRÓI o banco atual. Pede confirmação digitada.
+./deploy/restaurar.sh --producao mamao-….dump.gpg uploads-….tar.gz.gpg
+```
+
+O script decifra, confere que o dump não está truncado, restaura, conta as linhas por
+tabela, **verifica que as políticas de RLS vieram junto** e imprime quanto tempo levou.
+
+**Os dois arquivos são um par.** Os documentos dos funcionários não estão no dump — estão
+no tar de uploads. Restaurar só o banco devolve a lista de documentos com os arquivos
+faltando, que é pior que estar fora do ar, porque parece que funcionou. O script avisa se
+você passar só um.
+
+### Os dois números que você precisa saber de cor
+
+| | O que é | Quanto é hoje |
+|---|---|---|
+| **RPO** | Quanto de trabalho se perde num desastre | Até **24 horas** — é o intervalo do cron |
+| **RTO** | Quanto tempo até voltar | Meça com `--ensaio`. Aqui deu **1 segundo** com o banco de desenvolvimento |
+
+O RTO real inclui o que o script não faz: perceber que caiu, achar o backup, e — se o
+servidor morreu de vez — provisionar outra máquina e rodar o `no-servidor.sh`. Chute
+honesto: **algumas horas**, dominado pelo tempo de subir um servidor novo, não pelo
+restore. É por isso que os Termos de Uso dizem que não há SLA.
+
+Rodar `--ensaio` uma vez por mês é o que transforma esses números de estimativa em fato.
+
+### O passo a passo manual, se o script falhar
 
 ```bash
 # 1. Baixe e descriptografe
