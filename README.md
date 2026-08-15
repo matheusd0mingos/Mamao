@@ -29,37 +29,64 @@ segurança, saúde, campo e facilities, de 15 a 60 funcionários.
 
 ---
 
-## Estado atual — Marco 0 (esqueleto vertical)
+## Estado atual — em produção, em validação
 
-O circuito completo está fechado: cadastro de empresa → login com JWT → cadastro de
-funcionário com isolamento por tenant → evento na outbox → consumo no Worker, com
-observabilidade, migrations e testes.
+O sistema está no ar num VPS (Cloudflare → Caddy → Docker Compose), com backup diário
+criptografado saindo do servidor e script de restore cronometrado. Está em uso por uma
+equipe real; o produto ainda não tem preço público.
+
+### O que existe
 
 | Área | Situação |
 |---|---|
-| Solução .NET 10, modular monolith | ✅ 8 projetos + 3 de teste, compilando |
-| Aspire (Postgres + API + Worker) | ✅ `dotnet run --project src/Mamao.AppHost` |
-| Tenancy: contexto, filtro global, interceptor | ✅ coberto por teste de arquitetura |
-| RLS no PostgreSQL | ✅ ligada e provada contra banco real — ver [ADR-0003](docs/adr/0003-multi-tenancy.md) |
-| Identity: empresa, usuário **da empresa**, JWT + refresh | ✅ [ADR-0020](docs/adr/0020-usuario-pertence-a-empresa.md) |
-| Autorização por permissão | ✅ policies geradas de `Permissions.All` |
-| Módulo People (CRUD de funcionário) | ✅ |
-| Outbox + publisher + dispatcher idempotente | ✅ `People.EmployeeHired.v1` ponta a ponta |
-| Migrations por módulo, com advisory lock | ✅ |
-| OpenAPI → tipos TypeScript gerados | ✅ verificado no CI dos dois lados |
-| Angular 22: login, cadastro, shell, pessoas | ✅ build de 79 kB gzip inicial |
-| Importação de planilha (formato na tela + prévia linha a linha) | ✅ |
-| Setores em árvore e cargos, com filtro por subárvore | ✅ Marco 1 em andamento |
-| Convite de acesso (token com prazo, uso único, aceite público) | ✅ |
-| Contrato de trabalho com regime de vínculo e alertas por regime | ✅ |
-| Perfil do funcionário, com desligamento | ✅ |
-| Auditoria append-only, provada contra o banco | ✅ |
-| Testes | ✅ 92 unitários + 9 de arquitetura + 10 de integração |
-| CI (GitHub Actions) | ✅ |
-| Deploy (`deploy.sh` com provisionamento + Compose + Caddy + backup) | ✅ escrito e lintado, ainda não executado contra um servidor |
+| **Pessoas** — cadastro, perfil, contrato por regime de vínculo, desligamento | ✅ |
+| **Estrutura** — setores em árvore, cargos, filtro por subárvore | ✅ [ADR-0018](docs/adr/0018-organizacoes-e-unidades.md) |
+| **Disponibilidade** — ocupações, férias, ausências, solicitação e aprovação | ✅ regras CLT em [ADR-0014](docs/adr/0014-regras-clt-de-ferias.md) |
+| **Escala por rodízio** — "preciso de 20 pessoas amanhã", com o motivo de cada posição | ✅ [ADR-0019](docs/adr/0019-escala-por-rodizio.md) |
+| **Calendário** — mês, trimestre, semestre e ano, com filtros e corte de sobreposição | ✅ |
+| **Demandas** — quadro por estado, prioridade e responsável | ✅ em avaliação de uso |
+| **Documentos com validade** — aviso por e-mail antes de vencer, uma vez por validade | ✅ |
+| **Painel "Hoje"** e busca global (sem sensibilidade a acento) | ✅ |
+| **Auditoria** append-only, na mesma transação do fato | ✅ |
+| **Acessos** — convite com prazo e uso único, 5 papéis, 24 permissões | ✅ [ADR-0007](docs/adr/0007-autorizacao.md) |
+| Importação de planilha com prévia linha a linha | ✅ |
 
-**Pendente do Marco 0:** primeiro deploy no VPS e a rotina de backup rodando com
-restore testado. Ver [roadmap](docs/roadmap.md).
+### Como isso se sustenta
+
+| Fundamento | Situação |
+|---|---|
+| Modular monolith, .NET 10 — 10 projetos + 4 do módulo People | ✅ [ADR-0001](docs/adr/0001-modular-monolith.md) |
+| Isolamento entre empresas por **três** caminhos independentes | ✅ [ADR-0003](docs/adr/0003-multi-tenancy.md) |
+| ├ filtro global do EF Core | ✅ |
+| ├ Row-Level Security do PostgreSQL, sob `FORCE ROW LEVEL SECURITY` | ✅ API roda em role **sem** `BYPASSRLS` |
+| └ teste de arquitetura que quebra o build se um índice não começar em `tenant_id` | ✅ |
+| Outbox transacional + dispatcher idempotente | ✅ [ADR-0005](docs/adr/0005-outbox-e-mensageria.md) |
+| Auditoria com `UPDATE`/`DELETE`/`TRUNCATE` revogados no banco | ✅ |
+| 12 migrations por módulo, com advisory lock | ✅ |
+| OpenAPI → tipos TypeScript, verificado nos dois lados pelo CI | ✅ [ADR-0009](docs/adr/0009-cliente-gerado-do-openapi.md) |
+| Testes | ✅ **183** unitários + **21** de arquitetura + 10 de integração |
+| CI (GitHub Actions) | ✅ |
+| Deploy, backup com retenção GFS, ensaio de restore | ✅ rodando no servidor |
+
+Os 10 testes de integração sobem Postgres via Testcontainers e provam a RLS contra o
+banco de verdade. **Sem Docker eles se marcam como `skipped`, não como aprovados** — o
+número honesto numa máquina sem Docker é 204, não 214.
+
+### Limites conhecidos
+
+Estão aqui porque um README que só lista acertos não serve para avaliar nada:
+
+- **Um servidor só, sem SLA.** Está escrito nos termos de uso, e continua sendo o risco
+  operacional real. RPO de até 24h (intervalo do cron); o RTO é o que o
+  [`restaurar.sh`](deploy/restaurar.sh) cronometra.
+- O quadro de **demandas** está em observação. Se ninguém além do autor mexer nos cartões
+  em duas semanas, a tela sai — kanban sem equipe que o alimente é enfeite.
+- Política de privacidade e termos de uso **precisam de revisão jurídica** antes do
+  primeiro cliente pagante; os arquivos dizem isso no topo.
+- Não há tela de configurações da empresa, e `billing.manage` ainda não tem rota.
+
+Ver [roadmap](docs/roadmap.md) e
+[riscos e pontos de atenção](docs/riscos-e-pontos-de-atencao.md).
 
 ---
 
@@ -147,6 +174,14 @@ cd web/mamao-web && npm run generate:api
 ./deploy/deploy.sh              # prepara (se preciso) e publica
 ./deploy/deploy.sh --status
 ./deploy/deploy.sh --rollback
+
+# NO servidor, quando se prefere publicar de la em vez de por SSH
+sudo ./deploy/no-servidor.sh
+
+# Restore. O --ensaio restaura num banco descartavel e NAO toca em producao;
+# os dois imprimem quanto tempo levaram, que e o RTO de verdade.
+./deploy/restaurar.sh --ensaio   /caminho/mamao-....dump.gpg
+./deploy/restaurar.sh --producao /caminho/mamao-....dump.gpg /caminho/uploads-....tar.gz.gpg
 ```
 
 ---
@@ -160,16 +195,22 @@ src/
   Mamao.SharedKernel/         Tenancy, outbox, Result, permissoes
   Mamao.SharedKernel.Web/     Traducao de Result -> ProblemDetails
   Mamao.Identity/             Usuario, tenant, membership, JWT
+  Mamao.Audit/                Trilha append-only, mapeada em cada modulo
   Mamao.Messaging/            Outbox: publisher e dispatcher
+  Mamao.Notifications/        E-mail (MailKit) e templates
   Mamao.Api/                  Host HTTP
-  Mamao.Worker/               Migrations + publicacao da outbox
+  Mamao.Worker/               Migrations, outbox e avisos de vencimento
   Modules/People/             Contracts | Domain | Application | Infrastructure
 tests/                        Unitarios | Arquitetura | Integracao
 web/landing/                  Landing estatica (mamao.tech)
 web/mamao-web/                Angular 22 (app.mamao.tech)
-deploy/                       deploy.sh, Compose, Caddy, init do banco, backup
-docs/                         Decisoes de produto e arquitetura
+deploy/                       Scripts, Compose, Caddy, init do banco, backup, restore
+docs/                         Decisoes de produto e arquitetura (20 ADRs)
 ```
+
+O módulo People é o único extraído até agora — os demais contextos ainda vivem no host.
+A regra que decide quando extrair está na [ADR-0001](docs/adr/0001-modular-monolith.md):
+módulo nasce quando tem domínio próprio, não quando a pasta fica grande.
 
 ## Stack
 
