@@ -1,8 +1,10 @@
 # Glossário
 
 Todo termo destacado ao longo da apostila, em ordem alfabética.
-
 ---
+
+**`$ref`** — referência a um schema definido em `components`. É o que evita repetir a
+descrição do mesmo tipo em cada endpoint que o usa.
 
 **ADR** (*Architecture Decision Record*) — documento curto registrando o que foi decidido,
 por quê, e o que foi descartado. O Mamão tem 20 em [`docs/adr/`](../adr/).
@@ -18,6 +20,12 @@ template vira erro de compilação em vez de erro em execução.
 
 **Bundle** — o conjunto de arquivos JavaScript gerados pelo build.
 
+**Cabeçalho de segurança** — resposta HTTP que instrui o navegador a restringir algo:
+HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy`. Configurados no Caddy, não na aplicação.
+
+**Caddy** — servidor web e proxy reverso com HTTPS automático. Serve os dois domínios do
+Mamão e encaminha `/api/*` para a aplicação.
+
 **Camada (Docker)** — cada instrução do Dockerfile gera uma. São cacheadas: o Docker só
 refaz a partir da primeira que mudou. Por isso a ordem das instruções importa.
 
@@ -25,6 +33,9 @@ refaz a partir da primeira que mudou. Por isso a ordem das instruções importa.
 
 **CI** (*Continuous Integration*) — automação que compila e testa a cada push. O do Mamão
 está em `.github/workflows/ci.yml`.
+
+**Clickjacking** — ataque em que o site é embutido num iframe invisível para induzir
+cliques. Barrado por `X-Frame-Options: DENY`.
 
 **Compose** — arquivo que descreve vários containers, com variáveis, volumes e
 dependências, subidos com um comando.
@@ -71,11 +82,17 @@ saudável. `depends_on` só espera de verdade quando combinado com `condition: s
 **Hot reload** — recompilação e troca automática na tela ao salvar o arquivo, sem perder
 estado.
 
+**HSTS** (*Strict-Transport-Security*) — cabeçalho que força o navegador a usar só HTTPS
+naquele domínio pelo período declarado. Difícil de desfazer: o navegador lembra.
+
 **`HttpClient`** — o cliente HTTP do Angular. Passa pelos interceptors — motivo pelo qual o
 Mamão não usa cliente gerado.
 
 **Idempotente** — operação que, repetida, produz o mesmo resultado. Requisito para
 consumidores de outbox, que garante entrega ao menos uma vez.
+
+**Identificador tipado** — `readonly record struct EmployeeId(Guid Value)`. Impede trocar um
+id por outro em tempo de compilação; exige um transformer para não virar `unknown` no contrato.
 
 **Imagem** — o resultado congelado de um Dockerfile. Uma imagem gera muitos containers.
 
@@ -97,7 +114,13 @@ fazer. Validado sem consulta ao banco, por isso é curto.
 
 **Lazy loading** — carregar o código de uma tela só quando ela é acessada.
 
+**Let's Encrypt** — autoridade certificadora gratuita usada pelo Caddy. Tem limite de
+emissão (5 por domínio por semana), o que importa ao testar deploy.
+
 **LINQ** — sintaxe de consulta do C#.
+
+**Matcher** — em Caddy, a expressão que decide a quais requisições uma diretiva se aplica.
+Pode ser nomeado (`@estaticos`) e reutilizado.
 
 **Migration** — script versionado que altera o esquema do banco. O Worker aplica no startup.
 
@@ -120,6 +143,9 @@ Promise.
 
 **OpenAPI** — formato padrão para descrever uma API HTTP. Antes chamado Swagger.
 
+**`operationId`** — nome da operação no OpenAPI, vindo de `.WithName()` no C#. Vira a chave
+em `operations` no TypeScript gerado.
+
 **Origem** — protocolo + domínio + porta. Base da *Same-Origin Policy*.
 
 **Outbox** — padrão em que o evento é gravado na mesma transação do fato e publicado depois
@@ -138,7 +164,13 @@ cross-origin não simples.
 **Proxy (dev)** — recurso do `ng serve` que encaminha `/api` para o backend, fazendo tudo
 parecer vir da mesma origem.
 
+**Proxy reverso** — servidor na frente da aplicação que recebe as requisições e decide para
+onde encaminhar. "Reverso" porque fica do lado do servidor, não do cliente.
+
 **Refresh token** — token de vida longa cuja única função é obter um access token novo.
+
+**`required` (OpenAPI)** — lista de propriedades que sempre aparecem no JSON. Não tem
+relação com ser anulável: um campo pode ser `required` **e** `nullable`.
 
 **Result** — padrão em que a função devolve sucesso ou erro em vez de lançar exceção. No
 Mamão, reservado para falha de negócio esperada; bug e infraestrutura continuam sendo exceção.

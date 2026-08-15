@@ -6,6 +6,11 @@
 Este é o capítulo central da integração Angular + .NET. Se você levar uma ideia só desta
 apostila, que seja esta.
 
+> **Tem um aprofundamento.** Este capítulo mostra a esteira funcionando. O
+> [Capítulo 17](17-o-contrato-por-dentro.md) abre o `openapi.json` e o `.d.ts` gerado, e
+> mostra os cinco pontos onde a tradução entre C# e TypeScript é traiçoeira — incluindo um
+> defeito que faz o contrato mentir sem quebrar o build.
+
 ---
 
 ## 9.1 O problema: dois lados que combinam de boca

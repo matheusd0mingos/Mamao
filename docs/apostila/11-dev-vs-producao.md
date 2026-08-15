@@ -3,6 +3,9 @@
 > **Objetivo:** entender por que o Mamão não precisa de CORS, o que é o *SPA fallback*, e o
 > que muda quando o código sai da sua máquina.
 
+> O Caddy aparece aqui de passagem. Ele tem capítulo próprio: o
+> [Capítulo 18](18-caddy.md) lê o `Caddyfile` inteiro, linha a linha.
+
 ---
 
 ## 11.1 A regra que causa tudo isso

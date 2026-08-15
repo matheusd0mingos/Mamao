@@ -68,10 +68,14 @@ catorze projetos?"*, é aqui.
 |---|---|---|
 | 15 | [Docker para macacos](15-docker-para-macacos.md) | Container vs. VM, Dockerfile, camadas, Compose, volumes, rede — e os dois bugs de produção que moldaram o Dockerfile do Mamão |
 | 16 | [A solução .NET por dentro](16-a-solucao-dotnet.md) | Monolito modular, os 4 projetos de um módulo, Result, outbox, as 3 camadas de multi-tenancy, testes de arquitetura |
+| 17 | [O contrato por dentro](17-o-contrato-por-dentro.md) | O `openapi.json` aberto e explicado, os 5 pontos onde a tradução C#↔TS engana, e o que o contrato **não** diz |
+| 18 | [Caddy: o porteiro da produção](18-caddy.md) | Proxy reverso, TLS automático, o `Caddyfile` linha a linha, cabeçalhos de segurança |
 
 > **Pode ler fora de ordem.** O 15 combina bem logo depois do
-> [Capítulo 11](11-dev-vs-producao.md), e o 16 logo depois do
-> [Capítulo 12](12-ponta-a-ponta.md).
+> [Capítulo 11](11-dev-vs-producao.md); o 16 depois do
+> [Capítulo 12](12-ponta-a-ponta.md); o 17 é a continuação direta do
+> [Capítulo 9](09-o-contrato-openapi.md); e o 18 aprofunda a parte de produção do
+> [Capítulo 11](11-dev-vs-producao.md).
 
 ### Apoio
 

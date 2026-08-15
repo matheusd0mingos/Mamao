@@ -507,4 +507,4 @@ CLT, validação de jornada, disponibilidade, rodízio, validade de documentos.
 ---
 
 **Anterior:** [Capítulo 15](15-docker-para-macacos.md) ·
-**Apoio:** [Glossário](99-glossario.md)
+**Próximo:** [Capítulo 17 — O contrato por dentro](17-o-contrato-por-dentro.md)
