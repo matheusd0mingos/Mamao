@@ -56,6 +56,9 @@ import { SessionService } from '../core/auth/session.service';
           <a *mamaoHasPermission="'people.read'" routerLink="/estrutura" routerLinkActive="active">
             <mamao-icon name="estrutura" [size]="18" /> Estrutura
           </a>
+          <a *mamaoHasPermission="'audit.read'" routerLink="/auditoria" routerLinkActive="active">
+            <mamao-icon name="auditoria" [size]="18" /> Auditoria
+          </a>
         </nav>
 
         <div class="sidebar__foot">

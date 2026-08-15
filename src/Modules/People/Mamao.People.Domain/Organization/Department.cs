@@ -28,6 +28,17 @@ public sealed class Department : ITenantOwned
     public Guid TenantId { get; set; }
 
     public string Name { get; private set; } = null!;
+
+    /// <summary>
+    /// Nome dobrado (minusculas, sem acento), usado so para impedir duplicata.
+    ///
+    /// Existe porque duas pessoas mexem na estrutura — o dono e quem administra o sistema —
+    /// e sem isto "Secao Tecnica" e "Seção Técnica" viram dois setores. A partir dai a
+    /// equipe se divide entre os dois, e a escala de um nao enxerga a gente do outro. Mesma
+    /// dobra do <see cref="Position"/>, pelo mesmo motivo.
+    /// </summary>
+    public string NormalizedName { get; private set; } = null!;
+
     public DepartmentId? ParentId { get; private set; }
 
     /// <summary>Caminho materializado, sempre com barra no inicio e no fim: "/a/b/".</summary>
@@ -39,7 +50,14 @@ public sealed class Department : ITenantOwned
     /// <summary>Responsavel pelo setor. Opcional: nem toda empresa nomeia gestor de cada setor.</summary>
     public EmployeeId? ManagerId { get; private set; }
 
-    public static Result<Department> Create(string? name, Department? parent)
+    public DateTimeOffset CreatedAt { get; private set; }
+
+    /// <summary>Quem criou. Com duas pessoas mexendo na estrutura, "quem fez isso" e a
+    /// primeira pergunta quando aparece um setor que ninguem reconhece.</summary>
+    public string CreatedByName { get; private set; } = null!;
+
+    public static Result<Department> Create(
+        string? name, Department? parent, DateTimeOffset now = default, string? createdByName = null)
     {
         name = name?.Trim() ?? string.Empty;
 
@@ -61,6 +79,9 @@ public sealed class Department : ITenantOwned
         {
             Id = id,
             Name = name,
+            NormalizedName = Position.Normalize(name),
+            CreatedAt = now,
+            CreatedByName = string.IsNullOrWhiteSpace(createdByName) ? "—" : createdByName.Trim(),
             ParentId = parent?.Id,
             Path = $"{parent?.Path ?? "/"}{id.Value}/",
             Depth = parent is null ? 0 : parent.Depth + 1,
@@ -75,6 +96,7 @@ public sealed class Department : ITenantOwned
             return Result.Failure("department.name_required", "Informe o nome do setor.", nameof(Name));
 
         Name = name;
+        NormalizedName = Position.Normalize(name);
         return Result.Success();
     }
 

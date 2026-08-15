@@ -44,6 +44,9 @@ const DESENHOS: Record<string, string> = {
   ninguem: '<path d="M19 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 7 17.5V19"/><circle cx="13" cy="7.5" r="3.5"/><path d="m3 9 4 4M7 9l-4 4"/>',
 
   busca: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+
+  // Auditoria: uma folha com linhas e o relogio — registro no tempo.
+  auditoria: '<path d="M13 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h6"/><path d="M8.5 7.5h6M8.5 11h4"/><circle cx="17" cy="16" r="4.5"/><path d="M17 14v2.2l1.4.9"/>',
   confere: '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/>',
 
   mais: '<path d="M12 5v14M5 12h14"/>',

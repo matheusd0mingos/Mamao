@@ -148,4 +148,37 @@ public class CargosTests
     [InlineData("A")]
     public void Recusa_cargo_sem_nome_utilizavel(string nome)
         => Position.Create(nome).Error!.Code.ShouldBe("position.name_required");
+
+    // ── nome dobrado ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Acento_e_caixa_nao_criam_dois_setores()
+    {
+        // Duas pessoas mexem na estrutura — o dono e quem administra o sistema. Sem a
+        // dobra, "Secao Tecnica" e "Seção Técnica" viram dois setores, a equipe se divide
+        // entre eles e a escala de um nao enxerga a gente do outro.
+        var a = Department.Create("Seção Técnica", null).Value;
+        var b = Department.Create("  secao   TECNICA ", null).Value;
+
+        b.NormalizedName.ShouldBe(a.NormalizedName);
+    }
+
+    [Fact]
+    public void Renomear_atualiza_o_nome_dobrado()
+    {
+        // Se o dobrado ficasse para tras, o indice unico passaria a proteger o nome antigo.
+        var setor = Department.Create("Operações", null).Value;
+        setor.Rename("Seção de Operações");
+
+        setor.NormalizedName.ShouldBe("secao de operacoes");
+    }
+
+    [Fact]
+    public void Setores_diferentes_continuam_diferentes()
+    {
+        var a = Department.Create("Seção Técnica", null).Value;
+        var b = Department.Create("Seção Jurídica", null).Value;
+
+        b.NormalizedName.ShouldNotBe(a.NormalizedName);
+    }
 }

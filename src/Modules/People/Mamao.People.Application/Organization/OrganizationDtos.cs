@@ -18,7 +18,9 @@ public sealed record DepartmentNode(
     EmployeeId? ManagerId,
     string? ManagerName,
     int EmployeeCount,
-    int SubtreeEmployeeCount);
+    int SubtreeEmployeeCount,
+    string CreatedByName,
+    DateTimeOffset CreatedAt);
 
 /// <param name="PrecedenceOrder">
 /// Ordem de precedencia: MENOR e mais antigo/superior. Nulo deixa o cargo fora da

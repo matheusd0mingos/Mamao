@@ -52,6 +52,9 @@ import { OrganizationApi } from './organization.api';
                   <span class="muted arvore__contagem">
                     {{ rotuloDePessoas(setor) }}
                   </span>
+                  <span class="muted arvore__origem" [title]="'Criado por ' + setor.createdByName">
+                    {{ origem(setor) }}
+                  </span>
                   <button
                     *mamaoHasPermission="'org.write'"
                     class="link-perigo"
@@ -191,6 +194,7 @@ import { OrganizationApi } from './organization.api';
     .arvore li { align-items: stretch; flex-direction: column; gap: 0; }
     .arvore__nome { font-weight: 500; }
     .arvore__contagem { font-size: 13px; margin-left: auto; white-space: nowrap; }
+    .arvore__origem { font-size: 12px; white-space: nowrap; }
     .ordem { flex: none; }
 
     .novo { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -230,6 +234,22 @@ export class OrganizationPage implements OnInit {
     return setor.subtreeEmployeeCount === setor.employeeCount
       ? direto
       : `${direto} · ${setor.subtreeEmployeeCount} com os de baixo`;
+  }
+
+  /**
+   * Quem criou o setor, resumido.
+   *
+   * Duas pessoas mexem na estrutura — o dono e quem administra o sistema. Sem isto, um
+   * setor que apareceu do nada vira uma conversa de corredor; com isto, vira uma linha.
+   */
+  origem(setor: DepartmentNode): string {
+    const quem = setor.createdByName?.trim();
+    if (!quem || quem === '—') return '';
+
+    const primeiro = quem.split(' ')[0];
+    const ano = new Date(setor.createdAt).getFullYear();
+
+    return ano > 1 ? `por ${primeiro}` : '';
   }
 
   rotuloDeOcupantes(cargo: PositionResponse): string {

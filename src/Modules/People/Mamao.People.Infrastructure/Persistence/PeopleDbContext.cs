@@ -172,9 +172,14 @@ public sealed class DepartmentConfiguration : IEntityTypeConfiguration<Departmen
         builder.HasKey(d => d.Id);
 
         builder.Property(d => d.Name).HasMaxLength(120).IsRequired();
+        builder.Property(d => d.NormalizedName).HasMaxLength(120).IsRequired();
         builder.Property(d => d.Path).HasMaxLength(300).IsRequired();
+        builder.Property(d => d.CreatedByName).HasMaxLength(200).IsRequired();
 
-        builder.HasIndex(d => new { d.TenantId, d.ParentId, d.Name }).IsUnique();
+        // A unicidade e sobre o nome DOBRADO: "Secao Tecnica" e "Seção Técnica" sao o mesmo
+        // setor. Com duas pessoas mexendo na estrutura, sem isto a equipe se divide entre
+        // dois setores que so o acento distingue.
+        builder.HasIndex(d => new { d.TenantId, d.ParentId, d.NormalizedName }).IsUnique();
 
         // O indice que faz o caminho materializado valer a pena: "tudo abaixo de
         // Operacoes" vira `WHERE path LIKE '/op/%'`, que usa prefixo deste indice.

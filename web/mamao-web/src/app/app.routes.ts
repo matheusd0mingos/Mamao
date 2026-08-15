@@ -85,6 +85,11 @@ export const routes: Routes = [
           import('./features/missions/missions.page').then((m) => m.MissionsPage),
       },
       {
+        path: 'auditoria',
+        canMatch: [permissionGuard('audit.read')],
+        loadComponent: () => import('./features/audit/audit.page').then((m) => m.AuditPage_),
+      },
+      {
         path: 'acessos',
         canMatch: [permissionGuard('users.invite')],
         loadComponent: () =>

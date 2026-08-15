@@ -94,6 +94,8 @@ public static class AuditActions
 
     public const string ContractSaved = "employee.contract.saved";
 
+    public const string DepartmentCreated = "department.created";
+    public const string DepartmentRenamed = "department.renamed";
     public const string DepartmentDeleted = "department.deleted";
     public const string PositionDeleted = "position.deleted";
 

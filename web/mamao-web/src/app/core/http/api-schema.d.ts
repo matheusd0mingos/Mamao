@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register-company": {
         parameters: {
             query?: never;
@@ -762,6 +778,30 @@ export interface components {
         AssignMissionRequest: {
             employeeIds: string[];
         };
+        AuditEntryResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurredAt: string;
+            actorName: string;
+            actorIp: string | null;
+            action: string;
+            subjectType: string;
+            subjectId: string;
+            subjectLabel: string;
+            metadata: string | null;
+            correlationId: string | null;
+        };
+        AuditPage: {
+            items: components["schemas"]["AuditEntryResponse"][];
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            actions: string[];
+        };
         AuthResponse: {
             accessToken: string;
             /** Format: date-time */
@@ -908,6 +948,9 @@ export interface components {
             employeeCount: number;
             /** Format: int32 */
             subtreeEmployeeCount: number;
+            createdByName: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         /** Format: uuid */
         EmployeeId: string;
@@ -1406,6 +1449,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+        };
+    };
+    listAudit: {
+        parameters: {
+            query?: {
+                action?: string;
+                subjectId?: string;
+                search?: string;
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
                 };
             };
         };

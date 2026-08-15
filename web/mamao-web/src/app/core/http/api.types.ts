@@ -99,3 +99,6 @@ export type SearchResultKind = Schemas['SearchResultKind'];
 
 export type TodayScope = Schemas['TodayScope'];
 export type TodaySection = Schemas['TodaySection'];
+
+export type AuditPage = Schemas['AuditPage'];
+export type AuditEntryResponse = Schemas['AuditEntryResponse'];

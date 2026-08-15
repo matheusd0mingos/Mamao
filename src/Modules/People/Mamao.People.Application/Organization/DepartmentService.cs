@@ -12,7 +12,11 @@ namespace Mamao.People.Application.Organization;
 /// descendentes precisa ser reescrito. Essa e a troca consciente — no produto se lê
 /// "quem está abaixo de Operações?" o tempo todo e se move setor quase nunca.
 /// </summary>
-public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audit)
+public sealed class DepartmentService(
+    IPeopleDbContext dbContext,
+    IAuditLog audit,
+    ICurrentActor actor,
+    TimeProvider timeProvider)
 {
     public async Task<IReadOnlyList<DepartmentNode>> ListAsync(CancellationToken ct)
     {
@@ -27,6 +31,8 @@ public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audi
                 d.Depth,
                 d.Path,
                 d.ManagerId,
+                d.CreatedByName,
+                d.CreatedAt,
                 Diretos = dbContext.Employees.Count(e => e.DepartmentId == d.Id && e.TerminatedOn == null),
             })
             .ToListAsync(ct);
@@ -53,7 +59,9 @@ public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audi
             d.ManagerId,
             d.ManagerId is null ? null : nomes.GetValueOrDefault(d.ManagerId.Value),
             d.Diretos,
-            setores.Where(f => f.Path.StartsWith(d.Path, StringComparison.Ordinal)).Sum(f => f.Diretos)))];
+            setores.Where(f => f.Path.StartsWith(d.Path, StringComparison.Ordinal)).Sum(f => f.Diretos),
+            d.CreatedByName,
+            d.CreatedAt))];
     }
 
     public async Task<Result<DepartmentNode>> CreateAsync(CreateDepartmentRequest request, CancellationToken ct)
@@ -67,25 +75,33 @@ public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audi
                 return Result.Failure<DepartmentNode>(new Error("department.parent_not_found", "Setor pai não encontrado."));
         }
 
-        var criacao = Department.Create(request.Name, pai);
+        var criacao = Department.Create(request.Name, pai, timeProvider.GetUtcNow(), actor.Name);
         if (criacao.IsFailure)
             return Result.Failure<DepartmentNode>(criacao.Error!);
 
         var setor = criacao.Value;
 
-        if (await dbContext.Departments.AnyAsync(d => d.ParentId == setor.ParentId && d.Name == setor.Name, ct))
+        // Compara pelo nome DOBRADO. Antes comparava pelo nome cru, entao "Secao Tecnica"
+        // passava ao lado de "Seção Técnica" — e a equipe se dividia entre os dois.
+        if (await dbContext.Departments.AnyAsync(
+                d => d.ParentId == setor.ParentId && d.NormalizedName == setor.NormalizedName, ct))
         {
             return Result.Failure<DepartmentNode>(new Error(
                 "department.duplicate",
-                $"Já existe o setor \"{setor.Name}\" neste nível.",
+                $"Já existe um setor com esse nome neste nível.",
                 nameof(CreateDepartmentRequest.Name)));
         }
 
         dbContext.Departments.Add(setor);
+
+        audit.Record(
+            AuditActions.DepartmentCreated, nameof(Department), setor.Id.ToString(), setor.Name,
+            new { Pai = pai?.Name });
         await dbContext.SaveChangesAsync(ct);
 
         return Result.Success(new DepartmentNode(
-            setor.Id, setor.Name, setor.ParentId, setor.Depth, null, null, 0, 0));
+            setor.Id, setor.Name, setor.ParentId, setor.Depth, null, null, 0, 0,
+            setor.CreatedByName, setor.CreatedAt));
     }
 
     public async Task<Result> UpdateAsync(DepartmentId id, UpdateDepartmentRequest request, CancellationToken ct)
@@ -100,11 +116,33 @@ public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audi
             return Result.Failure("department.manager_not_found", "Gestor não encontrado.");
         }
 
+        var nomeAnterior = setor.Name;
+        var chefeAnterior = setor.ManagerId;
+
         var renomear = setor.Rename(request.Name);
         if (renomear.IsFailure)
             return renomear;
 
+        // O nome dobrado tem indice unico: renomear "Secao Tecnica" para "Seção Técnica"
+        // com as duas existindo daria erro de banco. Melhor a mensagem do que o 500.
+        if (await dbContext.Departments.AnyAsync(
+                d => d.Id != id && d.ParentId == setor.ParentId && d.NormalizedName == setor.NormalizedName, ct))
+        {
+            return Result.Failure(
+                "department.duplicate",
+                "Já existe um setor com esse nome neste nível.",
+                nameof(UpdateDepartmentRequest.Name));
+        }
+
         setor.AssignManager(request.ManagerId);
+
+        if (nomeAnterior != setor.Name || chefeAnterior != setor.ManagerId)
+        {
+            audit.Record(
+                AuditActions.DepartmentRenamed, nameof(Department), id.ToString(), setor.Name,
+                new { De = nomeAnterior, Para = setor.Name, ChefeMudou = chefeAnterior != setor.ManagerId });
+        }
+
         await dbContext.SaveChangesAsync(ct);
         return Result.Success();
     }
@@ -219,7 +257,7 @@ public sealed class DepartmentService(IPeopleDbContext dbContext, IAuditLog audi
             return Result.Success(existente);
         }
 
-        var criacao = Department.Create(nome, null);
+        var criacao = Department.Create(nome, null, timeProvider.GetUtcNow(), actor.Name);
         if (criacao.IsFailure)
             return criacao;
 
