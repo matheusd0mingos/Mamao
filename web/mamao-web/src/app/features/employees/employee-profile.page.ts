@@ -12,6 +12,7 @@ import type {
 import { HasPermissionDirective } from '../../core/auth/has-permission.directive';
 import { SessionService } from '../../core/auth/session.service';
 import { InvitesApi } from '../access/invites.api';
+import { OrganizationApi } from '../organization/organization.api';
 import { RestrictionsApi } from './restrictions.api';
 import { EmployeesApi } from './employees.api';
 
@@ -69,7 +70,26 @@ import { EmployeesApi } from './employees.api';
             <dd>{{ p.positionName }}</dd>
 
             <dt>Setor</dt>
-            <dd>{{ p.departmentName ?? '—' }}</dd>
+            <dd>
+              <!-- Editavel aqui, e nao so no formulario completo: mover de secao e trabalho
+                   de quem administra a estrutura, que nao precisa (nem deve) abrir o
+                   cadastro inteiro com nome, e-mail e desligamento. -->
+              @if (podeMover()) {
+                <select
+                  [ngModel]="p.departmentId ?? ''"
+                  [ngModelOptions]="{ standalone: true }"
+                  aria-label="Setor"
+                  (ngModelChange)="moverDeSetor($event)"
+                >
+                  <option value="">Sem setor</option>
+                  @for (s of setores(); track s.id) {
+                    <option [value]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              } @else {
+                {{ p.departmentName ?? '—' }}
+              }
+            </dd>
 
             <dt>Gestor</dt>
             <dd>{{ p.managerName ?? '—' }}</dd>
@@ -134,7 +154,7 @@ import { EmployeesApi } from './employees.api';
           }
         </section>
 
-        <section class="card bloco">
+        <section class="card bloco" *mamaoHasPermission="'availability.read'">
           <h2>Restrições de escala</h2>
           <p class="muted ajuda">
             Atividades das quais esta pessoa fica de fora — restrição médica, de função ou
@@ -276,6 +296,7 @@ export class EmployeeProfilePage implements OnInit {
   private readonly api = inject(EmployeesApi);
   private readonly invites = inject(InvitesApi);
   private readonly restrictions = inject(RestrictionsApi);
+  private readonly organization = inject(OrganizationApi);
   private readonly route = inject(ActivatedRoute);
   private readonly session = inject(SessionService);
 
@@ -286,6 +307,7 @@ export class EmployeeProfilePage implements OnInit {
   readonly desligando = signal(false);
   readonly salvando = signal(false);
   readonly restricoes = signal<RestrictionResponse[]>([]);
+  readonly setores = signal<Array<{ id: string; name: string }>>([]);
 
   atividade = '';
   motivoDaRestricao = '';
@@ -299,6 +321,23 @@ export class EmployeeProfilePage implements OnInit {
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
     void this.carregar();
+  }
+
+  podeMover(): boolean {
+    return this.session.has('org.write');
+  }
+
+  /** Move e recarrega: o cabeçalho e o rodapé da tela mostram o setor em três lugares. */
+  async moverDeSetor(departmentId: string): Promise<void> {
+    const atual = this.pessoa()?.departmentId ?? '';
+    if (departmentId === atual) return;
+
+    this.erro.set(null);
+    try {
+      this.pessoa.set(await this.api.moveToDepartment(this.id, departmentId || null));
+    } catch (problema) {
+      this.erro.set(problema as ApiProblem);
+    }
   }
 
   private async carregarRestricoes(): Promise<void> {
@@ -415,7 +454,16 @@ export class EmployeeProfilePage implements OnInit {
       () => this.contrato.set(null),
     );
 
-    void this.carregarRestricoes();
+    if (this.session.has('availability.read')) {
+      void this.carregarRestricoes();
+    }
+
+    if (this.podeMover()) {
+      void this.organization.listDepartments().then(
+        (ds) => this.setores.set(ds.map((d) => ({ id: d.id as string, name: '  '.repeat(d.depth) + d.name }))),
+        () => this.setores.set([]),
+      );
+    }
 
     if (this.session.has('users.invite')) {
       const email = this.pessoa()?.email?.toLowerCase();

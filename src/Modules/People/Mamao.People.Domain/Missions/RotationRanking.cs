@@ -137,6 +137,13 @@ public static class RotationRanking
     /// <summary>
     /// Sorteio estável: mesma semente e mesma pessoa dão sempre o mesmo número. Não usa
     /// Random — Random sorteia de novo a cada chamada, e a ordem mudaria entre dois cliques.
+    ///
+    /// <b>FNV-1a e não o `hash * 31 + b` de sempre.</b> Aquele é ADITIVO: o resultado vira
+    /// "constante da semente + valor da pessoa", e somar a mesma constante em todo mundo
+    /// não muda a ORDEM. Na prática o sorteio era uma ordem fixa disfarçada — medido, duas
+    /// missões diferentes davam a mesma fila em 28% das vezes, e a mesma pessoa pegaria o
+    /// serviço quase sempre. O xor do FNV quebra essa aditividade; com ele a repetição cai
+    /// para 1 em 2000.
     /// </summary>
     private static int Sorte(Guid seed, EmployeeId pessoa)
     {
@@ -144,11 +151,15 @@ public static class RotationRanking
         seed.TryWriteBytes(bytes[..16]);
         pessoa.Value.TryWriteBytes(bytes[16..]);
 
-        var hash = 17;
-        foreach (var b in bytes)
-            hash = unchecked((hash * 31) + b);
+        var hash = 2166136261u;
 
-        return hash;
+        foreach (var b in bytes)
+        {
+            hash ^= b;
+            hash = unchecked(hash * 16777619u);
+        }
+
+        return unchecked((int)hash);
     }
 
     private static string Motivo(

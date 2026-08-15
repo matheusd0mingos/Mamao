@@ -144,20 +144,32 @@ public class PoliticaDeRodizioTests
     [Fact]
     public void Sorteio_de_missoes_diferentes_nao_e_a_mesma_fila()
     {
+        // MEDE a propriedade em vez de confiar em duas sementes. A versão anterior deste
+        // teste comparava dois sorteios e passava por sorte: a função somava uma constante
+        // por semente, o que NÃO muda a ordem, e duas missões davam a mesma fila em 28% das
+        // vezes. Passava isolada, falhava no conjunto, e o defeito era do produto — a mesma
+        // pessoa pegaria o serviço quase sempre.
         var pessoas = Enumerable.Range(1, 8).Select(i => Pessoa($"Pessoa {i:00}")).ToArray();
         var politica = Politica(RotationTiebreak.Sorteio);
 
-        // Sementes FIXAS e não Guid.NewGuid(): um teste que sorteia a própria entrada falha
-        // sozinho um dia, e ninguém confia num teste que falha sozinho.
-        var uma = RotationRanking.Rank(pessoas, Hoje, politica, new Guid("11111111-1111-1111-1111-111111111111"))
-            .Select(r => r.Candidate.Name);
-        var outra = RotationRanking.Rank(pessoas, Hoje, politica, new Guid("22222222-2222-2222-2222-222222222222"))
-            .Select(r => r.Candidate.Name);
+        var filas = new HashSet<string>();
+        var primeiros = new HashSet<string>();
 
-        // Se fosse sempre igual, o "sorteio" seria uma ordem fixa com outro nome — e a mesma
-        // pessoa pegaria o serviço toda vez.
-        outra.ShouldNotBe(uma);
+        for (var i = 0; i < 200; i++)
+        {
+            var ranking = RotationRanking.Rank(pessoas, Hoje, politica, Semente(i));
+            filas.Add(string.Join(",", ranking.Select(r => r.Candidate.Name)));
+            primeiros.Add(ranking[0].Candidate.Name);
+        }
+
+        // Com 200 missões e 8 pessoas, uma função que embaralha de verdade produz muitas
+        // filas distintas e faz quase todo mundo abrir a lista alguma vez.
+        filas.Count.ShouldBeGreaterThan(150);
+        primeiros.Count.ShouldBeGreaterThanOrEqualTo(6);
     }
+
+    /// <summary>Sementes fixas e distintas: um teste que sorteia a propria entrada falha sozinho um dia.</summary>
+    private static Guid Semente(int i) => new($"{i:D8}-0000-0000-0000-000000000000");
 
     // ── descanso mínimo ──────────────────────────────────────────────────────────
 

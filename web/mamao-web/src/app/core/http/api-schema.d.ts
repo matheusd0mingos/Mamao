@@ -260,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/{id}/department": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["moveEmployeeToDepartment"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/{id}/contract": {
         parameters: {
             query?: never;
@@ -1048,6 +1064,10 @@ export interface components {
         };
         MoveDepartmentRequest: {
             parentId: (string & components["schemas"]["DepartmentId"]) | null;
+        };
+        MoveEmployeeRequest: {
+            /** Format: uuid */
+            departmentId: string | null;
         };
         MoveWorkItemRequest: {
             status: components["schemas"]["WorkItemStatus"];
@@ -1862,6 +1882,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TerminateEmployeeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    moveEmployeeToDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveEmployeeRequest"];
             };
         };
         responses: {

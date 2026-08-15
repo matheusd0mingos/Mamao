@@ -161,5 +161,12 @@ pediu, e com duas defesas:
    tela não muda a ordem. Sorteio que muda entre dois cliques seria pior que aleatório:
    seria o sistema parecendo instável.
 
+A primeira implementação do sorteio estava errada, e vale registrar por quê: usava o
+`hash * 31 + byte` de sempre, que é **aditivo** — a semente virava uma constante somada a
+todo mundo, e somar a mesma constante não muda a ordem. O "sorteio" era uma ordem fixa
+disfarçada: medindo, duas missões diferentes davam a mesma fila em 28% das vezes, e a
+mesma pessoa pegaria o serviço quase sempre. O teste que deveria pegar isso comparava dois
+sorteios e passava por sorte. Hoje ele MEDE a propriedade sobre 200 sementes.
+
 Quem sabe qual regra é justa naquela seção é a seção. O nosso trabalho é fazer a regra
 escolhida ser aplicada sempre igual, e mostrar o motivo de cada posição na tela.

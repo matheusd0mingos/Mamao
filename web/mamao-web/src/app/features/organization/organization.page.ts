@@ -53,7 +53,7 @@ import { OrganizationApi } from './organization.api';
                     {{ rotuloDePessoas(setor) }}
                   </span>
                   <button
-                    *mamaoHasPermission="'people.write'"
+                    *mamaoHasPermission="'org.write'"
                     class="link-perigo"
                     type="button"
                     (click)="excluirSetor(setor)"
@@ -62,7 +62,7 @@ import { OrganizationApi } from './organization.api';
                   </button>
                 </div>
 
-                <label class="chefe" *mamaoHasPermission="'people.write'">
+                <label class="chefe" *mamaoHasPermission="'org.write'">
                   <span class="muted">Chefe</span>
                   <!-- ngModel e nao [value]: as pessoas chegam por uma segunda requisicao,
                        e um [value] escrito antes das <option> existirem nao seleciona nada —
@@ -84,7 +84,7 @@ import { OrganizationApi } from './organization.api';
           </ul>
         }
 
-        <form *mamaoHasPermission="'people.write'" class="novo" (ngSubmit)="criarSetor()">
+        <form *mamaoHasPermission="'org.write'" class="novo" (ngSubmit)="criarSetor()">
           <input
             [(ngModel)]="nomeDoSetor"
             name="nomeDoSetor"
@@ -120,7 +120,7 @@ import { OrganizationApi } from './organization.api';
             @for (cargo of cargos(); track cargo.id) {
               <li>
                 <input
-                  *mamaoHasPermission="'people.write'"
+                  *mamaoHasPermission="'org.write'"
                   class="ordem estreito"
                   type="number"
                   min="0"
@@ -134,7 +134,7 @@ import { OrganizationApi } from './organization.api';
                 <span>{{ cargo.name }}</span>
                 <span class="muted arvore__contagem">{{ rotuloDeOcupantes(cargo) }}</span>
                 <button
-                  *mamaoHasPermission="'people.write'"
+                  *mamaoHasPermission="'org.write'"
                   class="link-perigo"
                   type="button"
                   (click)="excluirCargo(cargo)"
@@ -146,7 +146,7 @@ import { OrganizationApi } from './organization.api';
           </ul>
         }
 
-        <form *mamaoHasPermission="'people.write'" class="novo" (ngSubmit)="criarCargo()">
+        <form *mamaoHasPermission="'org.write'" class="novo" (ngSubmit)="criarCargo()">
           <input
             [(ngModel)]="ordemDoCargo"
             name="ordemDoCargo"

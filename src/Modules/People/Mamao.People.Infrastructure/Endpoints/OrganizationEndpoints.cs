@@ -51,7 +51,7 @@ public static class OrganizationEndpoints
         .WithName("createDepartment")
         .Produces<DepartmentNode>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
 
         group.MapPut("/{id:guid}", async Task<IResult> (
             Guid id,
@@ -69,7 +69,7 @@ public static class OrganizationEndpoints
         })
         .WithName("updateDepartment")
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
 
         // Mover e sub-recurso proprio, e nao um campo do PUT: reescrever o caminho de toda
         // a subarvore e uma operacao com regra e custo diferentes de renomear.
@@ -81,7 +81,7 @@ public static class OrganizationEndpoints
         })
         .WithName("moveDepartment")
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
 
         group.MapDelete("/{id:guid}", async Task<IResult> (
             Guid id, DepartmentService service, CancellationToken ct) =>
@@ -91,7 +91,7 @@ public static class OrganizationEndpoints
         })
         .WithName("deleteDepartment")
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
     }
 
     private static void MapPositions(IEndpointRouteBuilder app)
@@ -122,7 +122,7 @@ public static class OrganizationEndpoints
         .WithName("createPosition")
         .Produces<PositionResponse>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
 
         group.MapPut("/{id:guid}", async Task<IResult> (
             Guid id,
@@ -141,7 +141,7 @@ public static class OrganizationEndpoints
         .WithName("updatePosition")
         .Produces<PositionResponse>()
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
 
         group.MapDelete("/{id:guid}", async Task<IResult> (
             Guid id, PositionService service, CancellationToken ct) =>
@@ -151,6 +151,6 @@ public static class OrganizationEndpoints
         })
         .WithName("deletePosition")
         .ProducesProblem(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(Permissions.PeopleWrite);
+        .RequireAuthorization(Permissions.OrgWrite);
     }
 }

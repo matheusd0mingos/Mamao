@@ -173,6 +173,57 @@ public sealed class EmployeeService(
             dbContext.Employees.AsNoTracking().Where(e => e.Id == employee.Id), ct))!);
     }
 
+    /// <summary>
+    /// Move a pessoa de setor, e só isso.
+    ///
+    /// Existe separado do <see cref="UpdateAsync"/> porque reorganizar o organograma é
+    /// trabalho de quem administra a estrutura, e o formulário completo carrega nome,
+    /// e-mail, cargo e chefia — campos que essa pessoa não deveria precisar tocar para
+    /// mover alguém de seção. Dar o formulário inteiro "porque ele precisa mover fulano"
+    /// entregaria junto o botão de desligar.
+    /// </summary>
+    public async Task<Result<EmployeeResponse>> MoveToDepartmentAsync(
+        EmployeeId id, DepartmentId? departmentId, CancellationToken ct)
+    {
+        var employee = await dbContext.Employees.FirstOrDefaultAsync(e => e.Id == id, ct);
+        if (employee is null)
+            return Result.Failure<EmployeeResponse>(NotFound(id));
+
+        if (departmentId is { } destino
+            && !await dbContext.Departments.AnyAsync(d => d.Id == destino, ct))
+        {
+            return Result.Failure<EmployeeResponse>(new Error(
+                "employee.department_not_found", "Setor não encontrado.", nameof(departmentId)));
+        }
+
+        var anterior = employee.DepartmentId;
+        if (anterior == departmentId)
+        {
+            return Result.Success((await ProjectAsync(
+                dbContext.Employees.AsNoTracking().Where(e => e.Id == id), ct))!);
+        }
+
+        employee.MoveToDepartment(departmentId);
+
+        // O DE e o PARA vão para a auditoria: meses depois, "por que o fulano saiu da
+        // escala da Técnica" tem resposta sem depender da memória de ninguém.
+        audit.Record(
+            AuditActions.EmployeeMoved, nameof(Employee), id.ToString(), Rotulo(employee),
+            new
+            {
+                De = anterior is { } a
+                    ? await dbContext.Departments.Where(d => d.Id == a).Select(d => d.Name).FirstOrDefaultAsync(ct)
+                    : null,
+                Para = departmentId is { } p
+                    ? await dbContext.Departments.Where(d => d.Id == p).Select(d => d.Name).FirstOrDefaultAsync(ct)
+                    : null,
+            });
+
+        await dbContext.SaveChangesAsync(ct);
+        return Result.Success((await ProjectAsync(
+            dbContext.Employees.AsNoTracking().Where(e => e.Id == id), ct))!);
+    }
+
     public async Task<Result<EmployeeResponse>> UpdateAsync(
         EmployeeId id, UpdateEmployeeRequest request, CancellationToken ct)
     {

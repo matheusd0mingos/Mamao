@@ -59,6 +59,22 @@ public class PapeisTests
     }
 
     [Fact]
+    public void Gerente_de_TI_mantem_o_organograma()
+    {
+        // Criar seção, nomear chefe e mover gente de setor é o trabalho que sobra para quem
+        // administra o sistema. Sem isto ele dependeria do RH para cada remanejamento.
+        Roles.PermissionsOf(Roles.ItManager).ShouldContain(Permissions.OrgWrite);
+    }
+
+    [Fact]
+    public void Manter_o_organograma_nao_e_poder_contratar()
+    {
+        // A separação inteira existe para isto: dar OrgWrite "porque ele precisa mover
+        // fulano de seção" não pode entregar junto o botão de desligar.
+        Roles.PermissionsOf(Roles.ItManager).ShouldNotContain(Permissions.PeopleWrite);
+    }
+
+    [Fact]
     public void Gerente_de_TI_nao_decide_sobre_gente()
     {
         var permissoes = Roles.PermissionsOf(Roles.ItManager);

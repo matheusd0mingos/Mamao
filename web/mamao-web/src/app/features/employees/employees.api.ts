@@ -61,6 +61,13 @@ export class EmployeesApi {
     return firstValueFrom(this.http.put<EmployeeResponse>(`${this.base}/${id}`, request));
   }
 
+  /** Move de setor, sem tocar no resto do cadastro. Exige org.write, nao people.write. */
+  moveToDepartment(id: string, departmentId: string | null): Promise<EmployeeResponse> {
+    return firstValueFrom(
+      this.http.put<EmployeeResponse>(`${this.base}/${id}/department`, { departmentId }),
+    );
+  }
+
   terminate(id: string, request: TerminateEmployeeRequest): Promise<EmployeeResponse> {
     return firstValueFrom(this.http.post<EmployeeResponse>(`${this.base}/${id}/terminate`, request));
   }

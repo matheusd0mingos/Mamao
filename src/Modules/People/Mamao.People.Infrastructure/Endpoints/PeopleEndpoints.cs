@@ -117,6 +117,24 @@ public static class PeopleEndpoints
         .ProducesProblem(StatusCodes.Status400BadRequest)
         .RequireAuthorization(Permissions.PeopleWrite);
 
+        // Rota propria, e nao um campo do PUT completo: mover de secao e trabalho de quem
+        // administra a estrutura, e o formulario inteiro carrega nome, e-mail, cargo e
+        // chefia — que essa pessoa nao precisa tocar para mover alguem.
+        group.MapPut("/{id:guid}/department", async Task<IResult> (
+            Guid id, MoveEmployeeRequest request, EmployeeService service, CancellationToken ct) =>
+        {
+            var result = await service.MoveToDepartmentAsync(
+                new EmployeeId(id),
+                request.DepartmentId is { } d ? new DepartmentId(d) : null,
+                ct);
+
+            return result.ToHttpResult(value => TypedResults.Ok(value));
+        })
+        .WithName("moveEmployeeToDepartment")
+        .Produces<EmployeeResponse>()
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(Permissions.OrgWrite);
+
         group.MapGet("/{id:guid}/contract", async Task<IResult> (
             Guid id, ContractService service, CancellationToken ct) =>
         {

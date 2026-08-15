@@ -86,6 +86,10 @@ public static class AuditActions
     public const string EmployeeCreated = "employee.created";
     public const string EmployeeUpdated = "employee.updated";
     public const string EmployeeTerminated = "employee.terminated";
+
+    /// <summary>Mudanca de setor. Guarda o DE e o PARA — "por que ele saiu da escala da
+    /// Tecnica" e uma pergunta que aparece meses depois.</summary>
+    public const string EmployeeMoved = "employee.moved";
     public const string EmployeeImported = "employee.imported";
 
     public const string ContractSaved = "employee.contract.saved";

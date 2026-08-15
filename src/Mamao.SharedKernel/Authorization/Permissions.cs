@@ -24,6 +24,17 @@ public static class Permissions
     /// </summary>
     public const string AvailabilityRead = "availability.read";
 
+    /// <summary>
+    /// Mexer na ESTRUTURA: criar setor e cargo, nomear chefe, mover pessoa de setor.
+    ///
+    /// Separada de <see cref="PeopleWrite"/> porque sao trabalhos de gente diferente.
+    /// Reorganizar o organograma e administracao; contratar, desligar e mexer em contrato
+    /// e RH. Quem faz a primeira nao deveria precisar da segunda para trabalhar — e dar
+    /// PeopleWrite "porque ele precisa mover fulano de secao" entregaria junto o botao de
+    /// desligar.
+    /// </summary>
+    public const string OrgWrite = "org.write";
+
     public const string TimeOffRequest = "timeoff.request";
     public const string TimeOffApprove = "timeoff.approve";
 
@@ -47,7 +58,7 @@ public static class Permissions
     public static IReadOnlyList<string> All { get; } =
     [
         PeopleRead, PeopleWrite, PeopleDelete,
-        AvailabilityRead,
+        AvailabilityRead, OrgWrite,
         TimeOffRequest, TimeOffApprove,
         DocumentsRead, DocumentsUpload, DocumentsApprove,
         WorkRead, WorkAssign,
@@ -89,6 +100,11 @@ public static class Roles
         [
             // Ve o quadro de pessoas para saber a quem dar acesso, e nada da agenda delas.
             Permissions.PeopleRead,
+
+            // Cria setor, nomeia chefe e move gente de secao. E o trabalho de manter o
+            // organograma de pe, que na pratica sobra para quem administra o sistema.
+            Permissions.OrgWrite,
+
             Permissions.UsersInvite,
             Permissions.AuditRead,
             Permissions.SettingsWrite,
@@ -96,6 +112,7 @@ public static class Roles
         Hr =>
         [
             Permissions.PeopleRead, Permissions.PeopleWrite,
+            Permissions.OrgWrite,
             Permissions.AvailabilityRead,
             Permissions.DocumentsRead, Permissions.DocumentsUpload, Permissions.DocumentsApprove,
             Permissions.TimeOffRequest, Permissions.TimeOffApprove,

@@ -54,3 +54,6 @@ public sealed record EmployeeListItem(
 
 /// <summary>Paginacao por offset: cadastro cresce devagar e a tela precisa de "pagina 3".</summary>
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize);
+
+/// <param name="DepartmentId">Nulo tira a pessoa de qualquer setor.</param>
+public sealed record MoveEmployeeRequest(Guid? DepartmentId);

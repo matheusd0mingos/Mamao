@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:46609"
+      "url": "http://127.0.0.1:34741"
     }
   ],
   "paths": {
@@ -692,6 +692,57 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TerminateEmployeeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/employees/{id}/department": {
+      "put": {
+        "tags": [
+          "Employees"
+        ],
+        "operationId": "moveEmployeeToDepartment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveEmployeeRequest"
               }
             }
           },
@@ -3495,6 +3546,19 @@
                 "$ref": "#/components/schemas/DepartmentId"
               }
             ],
+            "nullable": true
+          }
+        }
+      },
+      "MoveEmployeeRequest": {
+        "required": [
+          "departmentId"
+        ],
+        "type": "object",
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "format": "uuid",
             "nullable": true
           }
         }

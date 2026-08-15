@@ -70,7 +70,7 @@ ASP.NET Core (`IAuthorizationHandler<TRequirement, TResource>`), capaz de pergun
 | Owner | todas | Company |
 | RH | pessoas, documentos, férias (aprovar), auditoria, disponibilidade | Company |
 | Gestor | leitura, aprovação, atribuição, disponibilidade | Team ou Department |
-| Gerente de TI | contas, configuração, auditoria, quadro de pessoas | Company |
+| Gerente de TI | contas, configuração, auditoria, quadro de pessoas, **estrutura** | Company |
 | Funcionário | próprio registro, solicitar, enviar documento, disponibilidade | Self |
 
 Papéis customizados por tenant entram na V2 — o modelo já suporta, é só UI.
@@ -85,6 +85,13 @@ A consequência de desenho é a permissão `availability.read`, separada de `peo
 segunda pode revelar dado de saúde. Sem essa separação, dar acesso ao sistema para quem
 administra as contas obrigaria a entregar junto a agenda médica da empresa inteira — e o
 próprio texto da política de privacidade deixaria de ser verdade.
+
+Ele também mantém o organograma: cria seção e cargo, nomeia chefe e move gente de setor
+(`org.write`). Isso é uma segunda separação, e pelo mesmo raciocínio: **reorganizar a
+estrutura é administração; contratar, desligar e mexer em contrato é RH.** Dar
+`people.write` "porque ele precisa mover fulano de seção" entregaria junto o botão de
+desligar. Por isso mover de setor tem rota própria (`PUT /employees/{id}/department`), com
+o de/para na auditoria — em vez de ser mais um campo do formulário completo.
 
 **O que isto NÃO é:** o gerente de TI tem `settings.write` e `users.invite`, então ele pode
 se conceder outro papel. A separação é organizacional e auditável, não uma barreira contra

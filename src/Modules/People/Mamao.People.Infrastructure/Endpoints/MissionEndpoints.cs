@@ -118,7 +118,10 @@ public static class MissionEndpoints
             TypedResults.Ok(await service.ListAsync(employeeId, ct)))
         .WithName("listRestrictions")
         .Produces<IReadOnlyList<RestrictionResponse>>()
-        .RequireAuthorization(Permissions.PeopleRead);
+        // AvailabilityRead e nao PeopleRead: restricao diz que a pessoa nao entra em certa
+        // escala, e o motivo pode ser medico. E dado da mesma sensibilidade de um
+        // afastamento — quem cuida so das contas nao precisa dele.
+        .RequireAuthorization(Permissions.AvailabilityRead);
 
         restricoes.MapPost("/", async Task<IResult> (
             CreateRestrictionRequest request, RestrictionService service, CancellationToken ct) =>
